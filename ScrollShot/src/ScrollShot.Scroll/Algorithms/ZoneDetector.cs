@@ -31,7 +31,7 @@ public sealed class ZoneDetector : IZoneDetector
         var fixedTop = ScanTop(previousBuffer, currentBuffer);
         var fixedBottom = ScanBottom(previousBuffer, currentBuffer);
 
-        if (fixedTop + fixedBottom >= previousBuffer.Height - 1)
+        if (fixedTop + fixedBottom >= previousBuffer.Height)
         {
             return new ZoneLayout(0, 0, 0, 0, new ScreenRect(0, 0, previousBuffer.Width, previousBuffer.Height));
         }
@@ -41,15 +41,9 @@ public sealed class ZoneDetector : IZoneDetector
         var fixedLeft = ScanLeft(previousBuffer, currentBuffer, scrollBandTop, scrollBandHeight);
         var fixedRight = ScanRight(previousBuffer, currentBuffer, scrollBandTop, scrollBandHeight);
 
-        if (fixedLeft + fixedRight >= previousBuffer.Width - 1)
+        if (fixedLeft + fixedRight >= previousBuffer.Width)
         {
             return new ZoneLayout(fixedTop, fixedBottom, 0, 0, new ScreenRect(0, fixedTop, previousBuffer.Width, scrollBandHeight));
-        }
-
-        if (direction == ScrollDirection.Horizontal)
-        {
-            fixedTop = ScanTop(previousBuffer, currentBuffer);
-            fixedBottom = ScanBottom(previousBuffer, currentBuffer);
         }
 
         return new ZoneLayout(

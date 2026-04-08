@@ -98,7 +98,7 @@ public sealed class DxgiScreenCapturer : IScreenCapturer
                     0,
                     sourceBox);
 
-                using var bitmap = new Bitmap(region.Width, region.Height, PixelFormat.Format32bppArgb);
+                var bitmap = new Bitmap(region.Width, region.Height, PixelFormat.Format32bppArgb);
                 var bounds = new Rectangle(0, 0, region.Width, region.Height);
                 var destinationBits = bitmap.LockBits(bounds, ImageLockMode.WriteOnly, bitmap.PixelFormat);
 
@@ -114,7 +114,7 @@ public sealed class DxgiScreenCapturer : IScreenCapturer
                             var destination = (byte*)destinationBits.Scan0;
                             var sourceStride = (int)mapped.RowPitch;
                             var destinationStride = destinationBits.Stride;
-                            var bytesPerRow = Math.Min(sourceStride, destinationStride);
+                            var bytesPerRow = region.Width * 4;
 
                             for (var row = 0; row < region.Height; row++)
                             {
@@ -134,7 +134,7 @@ public sealed class DxgiScreenCapturer : IScreenCapturer
                     bitmap.UnlockBits(destinationBits);
                 }
 
-                return new CapturedFrame((Bitmap)bitmap.Clone(), region, DateTimeOffset.UtcNow);
+                return new CapturedFrame(bitmap, region, DateTimeOffset.UtcNow);
             }
             finally
             {

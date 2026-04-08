@@ -27,6 +27,7 @@ public sealed class PreviewEditorViewModel : INotifyPropertyChanged
     private BitmapSource? _previewImage;
     private string? _lastSavedPath;
     private EditState _currentState;
+    private EditState? _lastSavedState;
 
     public PreviewEditorViewModel(
         CaptureResult captureResult,
@@ -80,7 +81,9 @@ public sealed class PreviewEditorViewModel : INotifyPropertyChanged
         }
     }
 
-    public bool HasUnsavedChanges => EditCommands.CanUndo;
+    public bool HasUnsavedChanges => _lastSavedState is null
+        ? EditCommands.CanUndo
+        : !CurrentState.Equals(_lastSavedState);
 
     public string SaveFolder { get; }
 
@@ -145,6 +148,8 @@ public sealed class PreviewEditorViewModel : INotifyPropertyChanged
         var path = Path.Combine(SaveFolder, $"ScrollShot_{timestamp}.png");
         _imageFileService.SavePng(bitmap, path);
         LastSavedPath = path;
+        _lastSavedState = CurrentState;
+        OnPropertyChanged(nameof(HasUnsavedChanges));
     }
 
     private void Copy()

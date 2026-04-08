@@ -30,8 +30,15 @@ public sealed class SettingsService
             return AppSettings.CreateDefault();
         }
 
-        var json = File.ReadAllText(SettingsPath);
-        return JsonSerializer.Deserialize<AppSettings>(json, _serializerOptions) ?? AppSettings.CreateDefault();
+        try
+        {
+            var json = File.ReadAllText(SettingsPath);
+            return JsonSerializer.Deserialize<AppSettings>(json, _serializerOptions) ?? AppSettings.CreateDefault();
+        }
+        catch
+        {
+            return AppSettings.CreateDefault();
+        }
     }
 
     public void Save(AppSettings settings)
