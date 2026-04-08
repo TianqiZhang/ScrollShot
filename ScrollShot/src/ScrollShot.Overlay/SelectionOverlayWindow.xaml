@@ -38,7 +38,7 @@
         <Border x:Name="SelectionBorder"
                 BorderBrush="#FF4DA3FF"
                 BorderThickness="2"
-                Background="Transparent"
+                Background="#01000000"
                 Visibility="Collapsed" />
         <controls:LivePreviewStrip x:Name="PreviewStrip"
                                    Visibility="Collapsed" />
