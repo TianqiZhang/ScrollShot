@@ -33,6 +33,8 @@ public partial class SelectionOverlayWindow : Window
 
     public event EventHandler<OverlayCaptureRequestedEventArgs>? ScrollCaptureStarted;
 
+    public event EventHandler<OverlayCaptureRequestedEventArgs>? ScrollStepRequested;
+
     public event EventHandler? Cancelled;
 
     public event EventHandler? CaptureCompleted;
@@ -46,7 +48,10 @@ public partial class SelectionOverlayWindow : Window
             return;
         }
 
-        Dispatcher.Invoke(() => PreviewStrip.SetPreview(previewBitmap, _captureDirection.Value));
+        using (previewBitmap)
+        {
+            Dispatcher.Invoke(() => PreviewStrip.SetPreview(previewBitmap, _captureDirection.Value));
+        }
     }
 
     private void OnLoaded(object sender, RoutedEventArgs e)
@@ -131,6 +136,7 @@ public partial class SelectionOverlayWindow : Window
             ScrollCaptureStarted?.Invoke(this, new OverlayCaptureRequestedEventArgs(SelectedRegion.Value, _captureDirection));
         }
 
+        ScrollStepRequested?.Invoke(this, new OverlayCaptureRequestedEventArgs(SelectedRegion.Value, _captureDirection));
         e.Handled = true;
     }
 

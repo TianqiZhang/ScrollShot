@@ -3,10 +3,78 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:ScrollShot.App"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
-    <Grid>
+        Title="ScrollShot"
+        Height="340"
+        Width="460">
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
 
+        <Button Grid.Row="0"
+                Grid.ColumnSpan="2"
+                Margin="0,0,0,16"
+                Padding="12,8"
+                FontSize="16"
+                Content="New Capture"
+                Click="OnNewCaptureClick" />
+
+        <TextBlock Grid.Row="1"
+                   Grid.Column="0"
+                   VerticalAlignment="Center"
+                   Margin="0,0,12,8"
+                   Text="Save folder:" />
+        <TextBox x:Name="SaveFolderTextBox"
+                 Grid.Row="1"
+                 Grid.Column="1"
+                 Margin="0,0,0,8" />
+
+        <TextBlock Grid.Row="2"
+                   Grid.Column="0"
+                   VerticalAlignment="Center"
+                   Margin="0,0,12,8"
+                   Text="Hotkey modifiers:" />
+        <TextBox x:Name="HotkeyModifiersTextBox"
+                 Grid.Row="2"
+                 Grid.Column="1"
+                 Margin="0,0,0,8" />
+
+        <TextBlock Grid.Row="3"
+                   Grid.Column="0"
+                   VerticalAlignment="Center"
+                   Margin="0,0,12,8"
+                   Text="Hotkey key:" />
+        <TextBox x:Name="HotkeyKeyTextBox"
+                 Grid.Row="3"
+                 Grid.Column="1"
+                 Margin="0,0,0,8" />
+
+        <CheckBox x:Name="StartWithWindowsCheckBox"
+                  Grid.Row="4"
+                  Grid.ColumnSpan="2"
+                  Margin="0,0,0,16"
+                  Content="Start with Windows" />
+
+        <StackPanel Grid.Row="5"
+                    Grid.ColumnSpan="2">
+            <Button Width="120"
+                    Padding="10,6"
+                    HorizontalAlignment="Left"
+                    Content="Save Settings"
+                    Click="OnSaveSettingsClick" />
+            <TextBlock x:Name="StatusTextBlock"
+                       Margin="0,12,0,0"
+                       TextWrapping="Wrap" />
+        </StackPanel>
     </Grid>
 </Window>

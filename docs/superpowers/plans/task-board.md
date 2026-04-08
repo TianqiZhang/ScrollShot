@@ -7,7 +7,7 @@
 | Phase 2 | Completed | Overlay UI and live preview strip | Multi-monitor helper, selection overlay, and preview strip control are in place |
 | Phase 3 | Completed | Scroll engine orchestration and capture controller | Scroll sessions now produce segments, previews, and capture results through a background controller |
 | Phase 4 | Completed | Preview editor UI and view model | The editor now has viewport/timeline controls, a compositing view model, and save/copy/discard workflows |
-| Phase 5 | Pending | App shell, hotkey, settings, orchestration | Depends on Phases 2-4 |
+| Phase 5 | Completed | App shell, hotkey, settings, orchestration | Tray app, settings persistence, hotkey registration, and capture-to-editor orchestration are in place |
 
 ## Commits
 
@@ -17,8 +17,8 @@
 | Phase 1 | `91bfd01` |
 | Phase 2 | `690060e` |
 | Phase 3 | `1387765` |
-| Phase 4 | Ready to commit |
-| Phase 5 | Pending |
+| Phase 4 | `961c8de` |
+| Phase 5 | Current commit |
 
 ## Notes
 

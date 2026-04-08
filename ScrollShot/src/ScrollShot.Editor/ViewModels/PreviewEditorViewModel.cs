@@ -67,6 +67,8 @@ public sealed class PreviewEditorViewModel : INotifyPropertyChanged
 
     public bool IsVerticalDirection => Direction == ScrollDirection.Vertical;
 
+    public bool HasTimeline => _captureResult.IsScrollingCapture;
+
     public EditState CurrentState
     {
         get => _currentState;

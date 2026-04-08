@@ -10,6 +10,7 @@ public sealed class CaptureResult
         ScrollDirection direction,
         int totalWidth,
         int totalHeight,
+        bool isScrollingCapture = true,
         Bitmap? fixedTopBitmap = null,
         Bitmap? fixedBottomBitmap = null,
         Bitmap? fixedLeftBitmap = null,
@@ -32,6 +33,7 @@ public sealed class CaptureResult
         Direction = direction;
         TotalWidth = totalWidth;
         TotalHeight = totalHeight;
+        IsScrollingCapture = isScrollingCapture;
         FixedTopBitmap = fixedTopBitmap;
         FixedBottomBitmap = fixedBottomBitmap;
         FixedLeftBitmap = fixedLeftBitmap;
@@ -47,6 +49,8 @@ public sealed class CaptureResult
     public int TotalWidth { get; }
 
     public int TotalHeight { get; }
+
+    public bool IsScrollingCapture { get; }
 
     public Bitmap? FixedTopBitmap { get; }
 

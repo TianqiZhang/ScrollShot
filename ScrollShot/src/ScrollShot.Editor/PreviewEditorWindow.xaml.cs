@@ -82,6 +82,14 @@ public partial class PreviewEditorWindow : Window
             ViewModel.CurrentState.TrimRange,
             ViewModel.CurrentState.CutRanges);
 
+        TimelineStripControl.Visibility = ViewModel.HasTimeline ? Visibility.Visible : Visibility.Collapsed;
+        if (!ViewModel.HasTimeline)
+        {
+            RootGrid.ColumnDefinitions[1].Width = new GridLength(0);
+            RootGrid.RowDefinitions[2].Height = new GridLength(0);
+            return;
+        }
+
         if (ViewModel.IsVerticalDirection)
         {
             RootGrid.ColumnDefinitions[1].Width = new GridLength(220);
@@ -89,6 +97,7 @@ public partial class PreviewEditorWindow : Window
             Grid.SetRow(TimelineStripControl, 1);
             Grid.SetColumn(TimelineStripControl, 1);
             Grid.SetColumnSpan(TimelineStripControl, 1);
+            TimelineStripControl.Margin = new Thickness(0, 8, 8, 8);
         }
         else
         {
