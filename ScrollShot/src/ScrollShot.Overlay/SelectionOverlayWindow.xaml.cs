@@ -80,6 +80,7 @@ public partial class SelectionOverlayWindow : Window
         _windowHandle = source.Handle;
         var style = WindowStyles.GetWindowLongPtr(_windowHandle, WindowStyles.GwlExStyle);
         WindowStyles.SetWindowLongPtr(_windowHandle, WindowStyles.GwlExStyle, style | WindowStyles.WsExToolWindow);
+        WindowStyles.SetWindowDisplayAffinity(_windowHandle, WindowStyles.WdaExcludeFromCapture);
     }
 
     private void OnPreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
