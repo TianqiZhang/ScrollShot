@@ -2,14 +2,14 @@ using System.Runtime.InteropServices;
 
 namespace ScrollShot.Overlay.Interop;
 
-internal static partial class WindowStyles
+internal static class WindowStyles
 {
     public const int GwlExStyle = -20;
     public const int WsExToolWindow = 0x00000080;
 
-    [LibraryImport("user32.dll", SetLastError = true)]
-    public static partial IntPtr GetWindowLongPtr(IntPtr hWnd, int nIndex);
+    [DllImport("user32.dll", EntryPoint = "GetWindowLongPtrW")]
+    public static extern IntPtr GetWindowLongPtr(IntPtr hWnd, int nIndex);
 
-    [LibraryImport("user32.dll", SetLastError = true)]
-    public static partial IntPtr SetWindowLongPtr(IntPtr hWnd, int nIndex, IntPtr dwNewLong);
+    [DllImport("user32.dll", EntryPoint = "SetWindowLongPtrW")]
+    public static extern IntPtr SetWindowLongPtr(IntPtr hWnd, int nIndex, IntPtr dwNewLong);
 }
