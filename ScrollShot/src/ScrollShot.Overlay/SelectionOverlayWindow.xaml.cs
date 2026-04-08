@@ -21,7 +21,6 @@ public partial class SelectionOverlayWindow : Window
     private Rect _selectionRect;
     private ScrollDirection? _captureDirection;
     private IntPtr _windowHandle;
-    private bool _inputPassThroughEnabled;
 
     public SelectionOverlayWindow()
     {
@@ -145,10 +144,10 @@ public partial class SelectionOverlayWindow : Window
             InstructionBorder.Visibility = Visibility.Collapsed;
             PreviewStrip.Visibility = Visibility.Visible;
             PositionPreviewStrip(_captureDirection.Value);
-            SetOverlayInputPassThrough(true);
             ScrollCaptureStarted?.Invoke(this, new OverlayCaptureRequestedEventArgs(SelectedRegion.Value, _captureDirection));
         }
 
+        ForwardWheelInput(e);
         ScrollStepRequested?.Invoke(this, new OverlayCaptureRequestedEventArgs(SelectedRegion.Value, _captureDirection));
         e.Handled = true;
     }
@@ -268,9 +267,44 @@ public partial class SelectionOverlayWindow : Window
         Canvas.SetTop(InstructionBorder, (h - InstructionBorder.ActualHeight) / 2);
     }
 
-    private void SetOverlayInputPassThrough(bool enabled)
+    private void ForwardWheelInput(MouseWheelEventArgs e)
     {
-        if (_windowHandle == IntPtr.Zero || _inputPassThroughEnabled == enabled)
+        if (_windowHandle == IntPtr.Zero)
+        {
+            return;
+        }
+
+        SetOverlayTransparency(true);
+        try
+        {
+            if (!WindowStyles.GetCursorPos(out var cursorPosition))
+            {
+                return;
+            }
+
+            var targetWindow = WindowStyles.WindowFromPoint(cursorPosition);
+            if (targetWindow == IntPtr.Zero || targetWindow == _windowHandle)
+            {
+                return;
+            }
+
+            var message = _captureDirection == ScrollDirection.Horizontal
+                ? WindowStyles.WmMouseHWheel
+                : WindowStyles.WmMouseWheel;
+            var keyState = GetMouseWheelKeyState();
+            var wParam = new IntPtr(((short)e.Delta << 16) | keyState);
+            var lParam = new IntPtr(((cursorPosition.Y & 0xFFFF) << 16) | (cursorPosition.X & 0xFFFF));
+            WindowStyles.SendMessage(targetWindow, message, wParam, lParam);
+        }
+        finally
+        {
+            SetOverlayTransparency(false);
+        }
+    }
+
+    private void SetOverlayTransparency(bool enabled)
+    {
+        if (_windowHandle == IntPtr.Zero)
         {
             return;
         }
@@ -281,8 +315,45 @@ public partial class SelectionOverlayWindow : Window
             : style & ~WindowStyles.WsExTransparent;
 
         WindowStyles.SetWindowLongPtr(_windowHandle, WindowStyles.GwlExStyle, new IntPtr(style));
-        _inputPassThroughEnabled = enabled;
-        PreviewStrip.SetInputPassThroughMode(enabled);
+        WindowStyles.SetWindowPos(
+            _windowHandle,
+            IntPtr.Zero,
+            0,
+            0,
+            0,
+            0,
+            WindowStyles.SwpNoMove | WindowStyles.SwpNoSize | WindowStyles.SwpNoZOrder | WindowStyles.SwpNoActivate | WindowStyles.SwpFrameChanged);
+    }
+
+    private static int GetMouseWheelKeyState()
+    {
+        var keyState = 0;
+        if (Mouse.LeftButton == MouseButtonState.Pressed)
+        {
+            keyState |= 0x0001;
+        }
+
+        if (Mouse.RightButton == MouseButtonState.Pressed)
+        {
+            keyState |= 0x0002;
+        }
+
+        if (Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
+        {
+            keyState |= 0x0004;
+        }
+
+        if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
+        {
+            keyState |= 0x0008;
+        }
+
+        if (Mouse.MiddleButton == MouseButtonState.Pressed)
+        {
+            keyState |= 0x0010;
+        }
+
+        return keyState;
     }
 
     private double GetPreviewWidth(ScrollDirection direction)

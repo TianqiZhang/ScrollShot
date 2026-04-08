@@ -1,4 +1,5 @@
 using System.Drawing;
+using System.Windows;
 using ScrollShot.App.Models;
 using ScrollShot.Capture;
 using ScrollShot.Capture.Models;
@@ -54,6 +55,7 @@ public sealed class CaptureOrchestrator
                 session.PreviewUpdated += overlay.UpdatePreview;
                 controller = new CaptureController(ScreenCapturerFactory.Create(args.Region), session);
                 controller.Start(args.Region, args.Direction ?? ScrollDirection.Vertical);
+                await controller.CaptureAsync();
             }
         };
 
@@ -65,12 +67,28 @@ public sealed class CaptureOrchestrator
             }
         };
 
-        overlay.CaptureCompleted += (_, _) =>
+        overlay.CaptureCompleted += async (_, _) =>
         {
             if (controller is not null)
             {
-                var result = controller.Finish();
-                ShowEditor(result);
+                await controller.CaptureAsync();
+
+                try
+                {
+                    var result = controller.Finish();
+                    ShowEditor(result);
+                    overlay.Close();
+                }
+                catch (InvalidOperationException exception)
+                {
+                    MessageBox.Show(
+                        exception.Message,
+                        "ScrollShot",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
+                }
+
+                return;
             }
 
             overlay.Close();

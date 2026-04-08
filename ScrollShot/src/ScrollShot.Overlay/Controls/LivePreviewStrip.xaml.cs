@@ -1,6 +1,5 @@
 using System.Drawing;
 using System.Windows;
-using System.Windows.Controls;
 using ScrollShot.Overlay.Helpers;
 using ScrollShot.Scroll.Models;
 
@@ -14,12 +13,6 @@ public partial class LivePreviewStrip : System.Windows.Controls.UserControl
     }
 
     public event EventHandler? DoneClicked;
-
-    public void SetInputPassThroughMode(bool enabled)
-    {
-        DoneButton.Visibility = enabled ? Visibility.Collapsed : Visibility.Visible;
-        CompletionHintTextBlock.Visibility = enabled ? Visibility.Visible : Visibility.Collapsed;
-    }
 
     public void SetPreview(Bitmap bitmap, ScrollDirection direction)
     {
