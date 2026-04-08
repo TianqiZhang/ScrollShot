@@ -42,6 +42,8 @@ public partial class SelectionOverlayWindow : Window
 
     public ScreenRect? SelectedRegion { get; private set; }
 
+    public bool IsExcludedFromCapture { get; private set; }
+
     public void UpdatePreview(Bitmap previewBitmap)
     {
         if (_captureDirection is null)
@@ -80,7 +82,7 @@ public partial class SelectionOverlayWindow : Window
         _windowHandle = source.Handle;
         var style = WindowStyles.GetWindowLongPtr(_windowHandle, WindowStyles.GwlExStyle);
         WindowStyles.SetWindowLongPtr(_windowHandle, WindowStyles.GwlExStyle, style | WindowStyles.WsExToolWindow);
-        WindowStyles.SetWindowDisplayAffinity(_windowHandle, WindowStyles.WdaExcludeFromCapture);
+        IsExcludedFromCapture = WindowStyles.SetWindowDisplayAffinity(_windowHandle, WindowStyles.WdaExcludeFromCapture);
     }
 
     private void OnPreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)

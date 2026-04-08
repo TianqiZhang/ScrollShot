@@ -7,10 +7,17 @@ namespace ScrollShot.App.Services;
 internal sealed class ScrollCaptureControllerAdapter : IScrollCaptureController
 {
     private readonly CaptureController _controller;
+    private readonly Func<Task>? _beforeCaptureAsync;
+    private readonly Func<Task>? _afterCaptureAsync;
 
-    public ScrollCaptureControllerAdapter(CaptureController controller)
+    public ScrollCaptureControllerAdapter(
+        CaptureController controller,
+        Func<Task>? beforeCaptureAsync = null,
+        Func<Task>? afterCaptureAsync = null)
     {
         _controller = controller;
+        _beforeCaptureAsync = beforeCaptureAsync;
+        _afterCaptureAsync = afterCaptureAsync;
     }
 
     public void Start(ScreenRect region, ScrollDirection direction)
@@ -18,9 +25,24 @@ internal sealed class ScrollCaptureControllerAdapter : IScrollCaptureController
         _controller.Start(region, direction);
     }
 
-    public Task<bool> CaptureAsync(CancellationToken cancellationToken = default)
+    public async Task<bool> CaptureAsync(CancellationToken cancellationToken = default)
     {
-        return _controller.CaptureAsync(cancellationToken);
+        if (_beforeCaptureAsync is not null)
+        {
+            await _beforeCaptureAsync();
+        }
+
+        try
+        {
+            return await _controller.CaptureAsync(cancellationToken);
+        }
+        finally
+        {
+            if (_afterCaptureAsync is not null)
+            {
+                await _afterCaptureAsync();
+            }
+        }
     }
 
     public CaptureResult Finish()

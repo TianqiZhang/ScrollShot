@@ -33,6 +33,7 @@ public sealed class CaptureOrchestrator
         _activeOverlay = overlay;
         ScrollSession? session = null;
         ScrollCaptureWorkflow? workflow = null;
+        var overlayClosed = false;
 
         overlay.InstantCaptureRequested += (_, args) =>
         {
@@ -55,11 +56,30 @@ public sealed class CaptureOrchestrator
             {
                 session = new ScrollSession();
                 session.PreviewUpdated += overlay.UpdatePreview;
+                var shouldSuspendOverlayDuringCapture = !overlay.IsExcludedFromCapture;
                 workflow = new ScrollCaptureWorkflow(
                     new ScrollCaptureControllerAdapter(
                         new CaptureController(
                             ScreenCapturerFactory.Create(args.Region),
-                            session)));
+                            session),
+                        shouldSuspendOverlayDuringCapture
+                            ? () => overlay.Dispatcher.InvokeAsync(() =>
+                            {
+                                if (!overlayClosed && overlay.IsVisible)
+                                {
+                                    overlay.Hide();
+                                }
+                            }).Task
+                            : null,
+                        shouldSuspendOverlayDuringCapture
+                            ? () => overlay.Dispatcher.InvokeAsync(() =>
+                            {
+                                if (!overlayClosed && !overlay.IsVisible)
+                                {
+                                    overlay.Show();
+                                }
+                            }).Task
+                            : null));
 
                 await workflow.StartAsync(args.Region, args.Direction ?? ScrollDirection.Vertical);
             }
@@ -109,6 +129,7 @@ public sealed class CaptureOrchestrator
         };
         overlay.Closed += (_, _) =>
         {
+            overlayClosed = true;
             var workflowToClose = workflow;
             workflow = null;
             _ = workflowToClose?.CloseAsync();
