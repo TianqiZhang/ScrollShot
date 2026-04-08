@@ -56,6 +56,26 @@ public sealed class ScrollCaptureWorkflowTests
         controller.CaptureCount.Should().Be(3);
     }
 
+    [Fact]
+    public async Task CaptureStepAsync_CoalescesBurstOfRequests()
+    {
+        var controller = new FakeScrollCaptureController();
+        var workflow = new ScrollCaptureWorkflow(controller);
+        await workflow.StartAsync(new ScreenRect(0, 0, 3, 3), ScrollDirection.Vertical);
+
+        var releaseCapture = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        controller.NextCaptureTask = releaseCapture.Task;
+
+        var firstStep = workflow.CaptureStepAsync();
+        var secondStep = workflow.CaptureStepAsync();
+        var thirdStep = workflow.CaptureStepAsync();
+
+        releaseCapture.SetResult();
+        await Task.WhenAll(firstStep, secondStep, thirdStep);
+
+        controller.CaptureCount.Should().Be(2);
+    }
+
     private sealed class FakeScrollCaptureController : IScrollCaptureController
     {
         public Task NextCaptureTask { get; set; } = Task.CompletedTask;

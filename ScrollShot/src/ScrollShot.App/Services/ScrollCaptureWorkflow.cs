@@ -11,6 +11,7 @@ internal sealed class ScrollCaptureWorkflow
     private Task _captureQueue = Task.CompletedTask;
     private bool _isCompleting;
     private bool _isClosing;
+    private bool _stepCaptureQueued;
 
     public ScrollCaptureWorkflow(IScrollCaptureController controller)
     {
@@ -25,12 +26,25 @@ internal sealed class ScrollCaptureWorkflow
 
     public Task CaptureStepAsync()
     {
-        if (_isClosing || _isCompleting)
+        lock (_queueLock)
         {
-            return _captureQueue;
+            if (_isClosing || _isCompleting || _stepCaptureQueued)
+            {
+                return _captureQueue;
+            }
+
+            _stepCaptureQueued = true;
         }
 
-        return EnqueueCaptureAsync((controller, cancellationToken) => controller.CaptureAsync(cancellationToken));
+        return EnqueueCaptureAsync(
+            async (controller, cancellationToken) => await controller.CaptureAsync(cancellationToken),
+            () =>
+            {
+                lock (_queueLock)
+                {
+                    _stepCaptureQueued = false;
+                }
+            });
     }
 
     public Task CompleteAsync(Func<CaptureResult, Task> onCompleted, Func<InvalidOperationException, Task> onInvalidOperation)
@@ -87,7 +101,9 @@ internal sealed class ScrollCaptureWorkflow
         }
     }
 
-    private Task EnqueueCaptureAsync(Func<IScrollCaptureController, CancellationToken, Task> work)
+    private Task EnqueueCaptureAsync(
+        Func<IScrollCaptureController, CancellationToken, Task> work,
+        Action? onCompleted = null)
     {
         lock (_queueLock)
         {
@@ -108,6 +124,10 @@ internal sealed class ScrollCaptureWorkflow
                     }
                     catch (ObjectDisposedException) when (_isClosing)
                     {
+                    }
+                    finally
+                    {
+                        onCompleted?.Invoke();
                     }
                 },
                 CancellationToken.None,
