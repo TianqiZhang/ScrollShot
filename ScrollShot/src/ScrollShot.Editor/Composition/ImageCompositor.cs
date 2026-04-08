@@ -21,11 +21,11 @@ public sealed class ImageCompositor : IImageCompositor
     {
         var segmentPrimarySize = result.Segments.Sum(segment => result.Direction == ScrollDirection.Vertical ? segment.Bitmap.Height : segment.Bitmap.Width);
         var width = result.Direction == ScrollDirection.Vertical
-            ? (includeChrome ? result.TotalWidth : result.ZoneLayout.ScrollBand.Width)
+            ? (includeChrome ? (result.FixedLeftBitmap?.Width ?? 0) + result.ZoneLayout.ScrollBand.Width + (result.FixedRightBitmap?.Width ?? 0) : result.ZoneLayout.ScrollBand.Width)
             : (includeChrome ? segmentPrimarySize + (result.FixedLeftBitmap?.Width ?? 0) + (result.FixedRightBitmap?.Width ?? 0) : segmentPrimarySize);
         var height = result.Direction == ScrollDirection.Vertical
             ? (includeChrome ? segmentPrimarySize + (result.FixedTopBitmap?.Height ?? 0) + (result.FixedBottomBitmap?.Height ?? 0) : segmentPrimarySize)
-            : (includeChrome ? result.TotalHeight : result.ZoneLayout.ScrollBand.Height);
+            : (includeChrome ? (result.FixedTopBitmap?.Height ?? 0) + result.ZoneLayout.ScrollBand.Height + (result.FixedBottomBitmap?.Height ?? 0) : result.ZoneLayout.ScrollBand.Height);
 
         if (width <= 0 || height <= 0)
         {
@@ -36,19 +36,24 @@ public sealed class ImageCompositor : IImageCompositor
         using var graphics = Graphics.FromImage(bitmap);
         graphics.Clear(Color.Transparent);
 
-        var offsetX = 0;
-        var offsetY = 0;
+        var leftInset = includeChrome ? result.FixedLeftBitmap?.Width ?? 0 : 0;
+        var topInset = includeChrome ? result.FixedTopBitmap?.Height ?? 0 : 0;
+        var offsetX = leftInset;
+        var offsetY = topInset;
 
         if (includeChrome && result.Direction == ScrollDirection.Vertical && result.FixedTopBitmap is not null)
         {
             graphics.DrawImageUnscaled(result.FixedTopBitmap, 0, 0);
-            offsetY += result.FixedTopBitmap.Height;
         }
 
         if (includeChrome && result.Direction == ScrollDirection.Horizontal && result.FixedLeftBitmap is not null)
         {
             graphics.DrawImageUnscaled(result.FixedLeftBitmap, 0, 0);
-            offsetX += result.FixedLeftBitmap.Width;
+        }
+
+        if (includeChrome && result.Direction == ScrollDirection.Horizontal && result.FixedTopBitmap is not null)
+        {
+            graphics.DrawImage(result.FixedTopBitmap, new Rectangle(offsetX, 0, segmentPrimarySize, result.FixedTopBitmap.Height));
         }
 
         foreach (var segment in result.Segments.OrderBy(segment => segment.Offset))
@@ -67,12 +72,27 @@ public sealed class ImageCompositor : IImageCompositor
 
         if (includeChrome && result.Direction == ScrollDirection.Vertical && result.FixedBottomBitmap is not null)
         {
-            graphics.DrawImageUnscaled(result.FixedBottomBitmap, 0, offsetY);
+            graphics.DrawImageUnscaled(result.FixedBottomBitmap, 0, topInset + segmentPrimarySize);
         }
 
         if (includeChrome && result.Direction == ScrollDirection.Horizontal && result.FixedRightBitmap is not null)
         {
-            graphics.DrawImageUnscaled(result.FixedRightBitmap, offsetX, 0);
+            graphics.DrawImageUnscaled(result.FixedRightBitmap, leftInset + segmentPrimarySize, 0);
+        }
+
+        if (includeChrome && result.Direction == ScrollDirection.Horizontal && result.FixedBottomBitmap is not null)
+        {
+            graphics.DrawImage(result.FixedBottomBitmap, new Rectangle(leftInset, topInset + result.ZoneLayout.ScrollBand.Height, segmentPrimarySize, result.FixedBottomBitmap.Height));
+        }
+
+        if (includeChrome && result.Direction == ScrollDirection.Vertical && result.FixedLeftBitmap is not null)
+        {
+            graphics.DrawImage(result.FixedLeftBitmap, new Rectangle(0, topInset, result.FixedLeftBitmap.Width, segmentPrimarySize));
+        }
+
+        if (includeChrome && result.Direction == ScrollDirection.Vertical && result.FixedRightBitmap is not null)
+        {
+            graphics.DrawImage(result.FixedRightBitmap, new Rectangle(leftInset + result.ZoneLayout.ScrollBand.Width, topInset, result.FixedRightBitmap.Width, segmentPrimarySize));
         }
 
         return bitmap;
