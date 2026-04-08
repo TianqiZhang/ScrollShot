@@ -8,6 +8,7 @@ public sealed class ScrollSessionFactoryTests
     [Theory]
     [InlineData(StitchingProfiles.Current)]
     [InlineData(StitchingProfiles.SignalZoneExperiment)]
+    [InlineData(StitchingProfiles.SignalHybridExperiment)]
     public void CreateSession_KnownProfiles_ReturnsSession(string profileName)
     {
         var factory = new ScrollSessionFactory(profileName);

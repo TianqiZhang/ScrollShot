@@ -53,8 +53,10 @@ public sealed class DatasetReplayerTests : IDisposable
         File.Exists(Path.Combine(replayDirectory, "report.json")).Should().BeTrue();
     }
 
-    [Fact]
-    public void Replay_AcceptsExperimentalProfile()
+    [Theory]
+    [InlineData(StitchingProfiles.SignalZoneExperiment)]
+    [InlineData(StitchingProfiles.SignalHybridExperiment)]
+    public void Replay_AcceptsExperimentalProfile(string profileName)
     {
         var inputPath = Path.Combine(_tempDirectory, "groundtruth-experimental.png");
         using (var bitmap = CreateDistinctRowsBitmap(6, 11))
@@ -77,7 +79,7 @@ public sealed class DatasetReplayerTests : IDisposable
         {
             ManifestPath = Path.Combine(datasetDirectory, "manifest.json"),
             OutputDirectory = replayDirectory,
-            ProfileName = StitchingProfiles.SignalZoneExperiment,
+            ProfileName = profileName,
         });
 
         report.Succeeded.Should().BeTrue();

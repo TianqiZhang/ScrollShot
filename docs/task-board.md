@@ -12,6 +12,7 @@
 | Phase 7 | Completed | Live capture debug dump mode | Added opt-in raw frame dump capture, shared dataset schema, persisted manifests/reports, and app tests for dump output |
 | Phase 8 | Completed | Real-dump stitching stabilization pass 1 | Delayed zone initialization on unusable starter frames, retried zone detection on no-match pairs, and made overlap matching less sensitive to noisy side margins |
 | Phase 9 | Completed | Pluggable stitching profiles and first 1D zone experiment | Added profile-aware `ScrollSessionFactory`, wired replay to `--profile`, kept app on the default profile, and introduced a separate `signal-zone` detector for vertical-dump experiments |
+| Phase 10 | Completed | Hybrid overlap experiment profile | Added `signal-hybrid` with 1D signal-guided overlap candidate search plus pixel-level refinement/fallback, expanded tests, and replayed the two real dumps for comparison |
 
 ## Commits
 
@@ -26,7 +27,8 @@
 | Phase 6 | `505aed9` |
 | Phase 7 | `1b1d6c7` |
 | Phase 8 | `34699d1` |
-| Phase 9 | Current commit |
+| Phase 9 | `7a23b24` |
+| Phase 10 | Current commit |
 
 ## Notes
 
@@ -37,3 +39,5 @@
 - The first real-dump stabilization pass focused on correctness over aggressive appending: defer locking zones on unusable starter pairs, retry zone detection when overlap matching fails, and compare overlaps on a stable central crop to reduce edge-noise sensitivity.
 - The stitcher now has an explicit profile seam: app/runtime construction goes through `ScrollSessionFactory`, and tooling replay can switch between `current` and `signal-zone` without editing orchestrators.
 - The first experiment only changes zone detection. Early replay on the two real dumps showed one dump unchanged and one dump producing a different stitched height, which is enough to validate the experiment seam but not enough yet to declare the detector better.
+- The second experiment adds `signal-hybrid`, which keeps the 1D zone detector and replaces overlap search with a 1D coarse pass that ranks candidate overlaps before pixel-level refinement, with the existing matcher as a fallback.
+- Replay results are now easy to compare offline across profiles. On the current two real dumps, `signal-hybrid` changed stitched heights materially (`909x2479 -> 909x2284` and `1113x1406 -> 1113x1266`), so it is producing different overlap decisions, but it is still not validated as an improvement.
