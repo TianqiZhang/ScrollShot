@@ -1,0 +1,35 @@
+<Window x:Class="ScrollShot.Overlay.SelectionOverlayWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:controls="clr-namespace:ScrollShot.Overlay.Controls"
+        mc:Ignorable="d"
+        WindowStyle="None"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        ShowActivated="True"
+        AllowsTransparency="True"
+        Background="Transparent"
+        Topmost="True"
+        Cursor="Cross"
+        KeyDown="OnWindowKeyDown"
+        PreviewMouseLeftButtonDown="OnPreviewMouseLeftButtonDown"
+        PreviewMouseLeftButtonUp="OnPreviewMouseLeftButtonUp"
+        PreviewMouseMove="OnPreviewMouseMove"
+        PreviewMouseWheel="OnPreviewMouseWheel">
+    <Canvas x:Name="RootCanvas"
+            Background="Transparent">
+        <Rectangle x:Name="TopShade" Fill="#88000000" />
+        <Rectangle x:Name="LeftShade" Fill="#88000000" />
+        <Rectangle x:Name="RightShade" Fill="#88000000" />
+        <Rectangle x:Name="BottomShade" Fill="#88000000" />
+        <Border x:Name="SelectionBorder"
+                BorderBrush="#FF4DA3FF"
+                BorderThickness="2"
+                Background="#22000000"
+                Visibility="Collapsed" />
+        <controls:LivePreviewStrip x:Name="PreviewStrip"
+                                   Visibility="Collapsed" />
+    </Canvas>
+</Window>
