@@ -33,9 +33,8 @@ public sealed class CaptureOrchestrator
         _activeOverlay = overlay;
         ScrollSession? session = null;
         ScrollCaptureWorkflow? workflow = null;
+        ScrollCaptureSampler? sampler = null;
         var overlayClosed = false;
-        CancellationTokenSource? samplingCancellation = null;
-        Task? samplingTask = null;
 
         overlay.InstantCaptureRequested += (_, args) =>
         {
@@ -85,26 +84,16 @@ public sealed class CaptureOrchestrator
 
                 await workflow.StartAsync(args.Region, args.Direction ?? ScrollDirection.Vertical);
 
-                samplingCancellation = new CancellationTokenSource();
-                samplingTask = Task.Run(async () =>
-                {
-                    using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(120));
-                    try
+                sampler = new ScrollCaptureSampler(
+                    TimeSpan.FromMilliseconds(120),
+                    () =>
                     {
-                        while (await timer.WaitForNextTickAsync(samplingCancellation.Token))
-                        {
-                            if (workflow is null)
-                            {
-                                continue;
-                            }
-
-                            await workflow.CaptureStepAsync();
-                        }
-                    }
-                    catch (OperationCanceledException)
-                    {
-                    }
-                });
+                        var activeWorkflow = workflow;
+                        return activeWorkflow is null
+                            ? Task.CompletedTask
+                            : activeWorkflow.CaptureStepAsync();
+                    });
+                sampler.Start();
             }
         };
 
@@ -139,21 +128,18 @@ public sealed class CaptureOrchestrator
 
         overlay.Cancelled += (_, _) =>
         {
-            samplingCancellation?.Cancel();
             workflow?.Cancel();
             overlay.Close();
         };
         overlay.Closed += (_, _) =>
         {
             overlayClosed = true;
-            samplingCancellation?.Cancel();
             var workflowToClose = workflow;
             workflow = null;
             _ = workflowToClose?.CloseAsync();
-            _ = samplingTask?.ContinueWith(_ =>
-            {
-                samplingCancellation?.Dispose();
-            }, TaskScheduler.Default);
+            var samplerToStop = sampler;
+            sampler = null;
+            _ = samplerToStop?.StopAsync();
             _activeOverlay = null;
         };
 

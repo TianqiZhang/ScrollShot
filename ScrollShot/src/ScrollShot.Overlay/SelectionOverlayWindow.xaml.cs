@@ -34,8 +34,6 @@ public partial class SelectionOverlayWindow : Window
 
     public event EventHandler<OverlayCaptureRequestedEventArgs>? ScrollCaptureStarted;
 
-    public event EventHandler<OverlayCaptureRequestedEventArgs>? ScrollStepRequested;
-
     public event EventHandler? Cancelled;
 
     public event EventHandler? CaptureCompleted;
@@ -167,7 +165,6 @@ public partial class SelectionOverlayWindow : Window
         }
 
         ForwardWheelInput(e);
-        ScrollStepRequested?.Invoke(this, new OverlayCaptureRequestedEventArgs(SelectedRegion.Value, _captureDirection));
         e.Handled = true;
     }
 
