@@ -50,4 +50,39 @@ public sealed class OverlapMatcherTests
         result.OverlapPixels.Should().Be(0);
         result.IsIdentical.Should().BeFalse();
     }
+
+    [Fact]
+    public void FindOverlap_IgnoresNoisySideMarginsForVerticalScroll()
+    {
+        using var previousBitmap = TestBitmapFactory.CreateOverlapBand(240, 6, 10);
+        using var currentBitmap = TestBitmapFactory.CreateOverlapBand(240, 6, 11);
+        AddNoisySideMargins(previousBitmap, leftWidth: 10, rightWidth: 10, seed: 20);
+        AddNoisySideMargins(currentBitmap, leftWidth: 10, rightWidth: 10, seed: 140);
+        var previous = PixelBuffer.FromBitmap(previousBitmap);
+        var current = PixelBuffer.FromBitmap(currentBitmap);
+        var matcher = new OverlapMatcher();
+
+        var result = matcher.FindOverlap(previous.Pixels, current.Pixels, previous.Width, previous.Height, ScrollDirection.Vertical);
+
+        result.OverlapPixels.Should().Be(5);
+        result.Confidence.Should().BeGreaterThan(0.9);
+    }
+
+    private static void AddNoisySideMargins(System.Drawing.Bitmap bitmap, int leftWidth, int rightWidth, int seed)
+    {
+        for (var y = 0; y < bitmap.Height; y++)
+        {
+            for (var x = 0; x < leftWidth; x++)
+            {
+                var value = (seed + (x * 11) + (y * 17)) % 255;
+                bitmap.SetPixel(x, y, System.Drawing.Color.FromArgb(255, value, 255 - value, value / 2));
+            }
+
+            for (var x = bitmap.Width - rightWidth; x < bitmap.Width; x++)
+            {
+                var value = (seed + (x * 7) + (y * 13)) % 255;
+                bitmap.SetPixel(x, y, System.Drawing.Color.FromArgb(255, 255 - value, value, value / 3));
+            }
+        }
+    }
 }

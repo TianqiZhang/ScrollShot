@@ -69,17 +69,58 @@ public sealed class ScrollSession : IScrollSession
 
         if (_zoneLayout is null)
         {
-            _zoneLayout = _zoneDetector.DetectZones(_previousFrame, frame, _direction);
-            CaptureFixedRegions(_previousFrame.Bitmap, _zoneLayout.Value);
-            AppendInitialSegment(_previousFrame.Bitmap, _zoneLayout.Value);
-            ZonesDetected?.Invoke(_zoneLayout.Value);
-        }
-        else if (_frameCount % 10 == 0)
-        {
-            _zoneLayout = _zoneDetector.RefineZones(_zoneLayout.Value, _previousFrame, frame, _direction);
-        }
+            var detectedZone = _zoneDetector.DetectZones(_previousFrame, frame, _direction);
+            var initialPreviousBand = CreateBandSnapshot(_previousFrame.Bitmap, detectedZone.ScrollBand);
+            var initialOverlap = FindOverlap(initialPreviousBand, frame.Bitmap, detectedZone);
+            if (!initialOverlap.IsIdentical && initialOverlap.OverlapPixels <= 0)
+            {
+                _previousFrame.Dispose();
+                _previousFrame = CloneFrame(frame);
+                return;
+            }
 
-        AppendDelta(frame.Bitmap, _zoneLayout!.Value);
+            _zoneLayout = detectedZone;
+            CaptureFixedRegions(_previousFrame.Bitmap, detectedZone);
+            AppendInitialSegment(_previousFrame.Bitmap, detectedZone);
+            ZonesDetected?.Invoke(detectedZone);
+            AppendDelta(frame.Bitmap, detectedZone, initialOverlap);
+        }
+        else
+        {
+            var activeZone = _zoneLayout.Value;
+            if (_frameCount % 10 == 0)
+            {
+                var refinedZone = _zoneDetector.RefineZones(activeZone, _previousFrame, frame, _direction);
+                if (refinedZone != activeZone)
+                {
+                    activeZone = refinedZone;
+                    _zoneLayout = refinedZone;
+                    CaptureFixedRegions(_previousFrame.Bitmap, refinedZone);
+                    _previousBand = CreateBandSnapshot(_previousFrame.Bitmap, refinedZone.ScrollBand);
+                }
+            }
+
+            var overlap = FindOverlap(_previousBand ?? CreateBandSnapshot(_previousFrame.Bitmap, activeZone.ScrollBand), frame.Bitmap, activeZone);
+            if (!overlap.IsIdentical && overlap.OverlapPixels <= 0)
+            {
+                var detectedZone = _zoneDetector.DetectZones(_previousFrame, frame, _direction);
+                if (detectedZone != activeZone)
+                {
+                    var detectedPreviousBand = CreateBandSnapshot(_previousFrame.Bitmap, detectedZone.ScrollBand);
+                    var detectedOverlap = FindOverlap(detectedPreviousBand, frame.Bitmap, detectedZone);
+                    if (detectedOverlap.IsIdentical || detectedOverlap.OverlapPixels > 0)
+                    {
+                        activeZone = detectedZone;
+                        _zoneLayout = detectedZone;
+                        CaptureFixedRegions(_previousFrame.Bitmap, detectedZone);
+                        _previousBand = detectedPreviousBand;
+                        overlap = detectedOverlap;
+                    }
+                }
+            }
+
+            AppendDelta(frame.Bitmap, activeZone, overlap);
+        }
 
         _previousFrame.Dispose();
         _previousFrame = CloneFrame(frame);
@@ -142,7 +183,7 @@ public sealed class ScrollSession : IScrollSession
         RaisePreviewUpdated();
     }
 
-    private void AppendDelta(Bitmap currentBitmap, ZoneLayout zoneLayout)
+    private void AppendDelta(Bitmap currentBitmap, ZoneLayout zoneLayout, OverlapResult overlap)
     {
         var bandBitmap = ExtractBandBitmap(currentBitmap, zoneLayout.ScrollBand);
         var currentBand = PixelBuffer.FromBitmap(bandBitmap);
@@ -152,13 +193,6 @@ public sealed class ScrollSession : IScrollSession
             _previousBand = currentBand;
             return;
         }
-
-        var overlap = _overlapMatcher.FindOverlap(
-            _previousBand.Value.Pixels,
-            currentBand.Pixels,
-            currentBand.Width,
-            currentBand.Height,
-            _direction);
 
         if (overlap.IsIdentical)
         {
@@ -274,6 +308,24 @@ public sealed class ScrollSession : IScrollSession
     private Bitmap ExtractBandBitmap(Bitmap bitmap, ScreenRect band)
     {
         return bitmap.Clone(new Rectangle(band.X, band.Y, band.Width, band.Height), PixelFormat.Format32bppArgb);
+    }
+
+    private PixelBufferSnapshot CreateBandSnapshot(Bitmap bitmap, ScreenRect band)
+    {
+        using var bandBitmap = ExtractBandBitmap(bitmap, band);
+        return PixelBuffer.FromBitmap(bandBitmap);
+    }
+
+    private OverlapResult FindOverlap(PixelBufferSnapshot previousBand, Bitmap currentBitmap, ZoneLayout zoneLayout)
+    {
+        using var currentBandBitmap = ExtractBandBitmap(currentBitmap, zoneLayout.ScrollBand);
+        var currentBand = PixelBuffer.FromBitmap(currentBandBitmap);
+        return _overlapMatcher.FindOverlap(
+            previousBand.Pixels,
+            currentBand.Pixels,
+            currentBand.Width,
+            currentBand.Height,
+            _direction);
     }
 
     private CapturedFrame CloneFrame(CapturedFrame frame)

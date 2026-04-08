@@ -50,10 +50,9 @@ public sealed class ScrollSessionTests
     }
 
     [Fact]
-    public void NoOverlap_ConcatenatesFullBand()
+    public void InitialNoMatchPair_DoesNotProduceResult()
     {
         var detector = new FakeZoneDetector(new ZoneLayout(0, 0, 0, 0, new ScreenRect(0, 0, 3, 3)));
-        // First call returns NoMatch → full band is appended
         var matcher = new SequenceOverlapMatcher(OverlapResult.NoMatch);
         using var session = new ScrollSession(detector, matcher);
 
@@ -64,10 +63,8 @@ public sealed class ScrollSessionTests
         session.ProcessFrame(frameTwo);
         session.Finish();
 
-        var result = session.GetResult();
-        result.Segments.Should().HaveCount(2);
-        // Second segment should be the full band height (3) since no overlap was subtracted
-        result.Segments[1].Bitmap.Height.Should().Be(3);
+        var act = () => session.GetResult();
+        act.Should().Throw<InvalidOperationException>();
     }
 
     [Fact]
@@ -128,6 +125,61 @@ public sealed class ScrollSessionTests
     }
 
     [Fact]
+    public void InitialNoMatch_DelaysZoneInitializationUntilUsablePair()
+    {
+        var detector = new SequenceZoneDetector(
+            new ZoneLayout(0, 0, 0, 0, new ScreenRect(0, 0, 3, 3)),
+            new ZoneLayout(0, 1, 0, 0, new ScreenRect(0, 0, 3, 2)));
+        var matcher = new SequenceOverlapMatcher(
+            OverlapResult.NoMatch,
+            new OverlapResult(1, false, 1),
+            new OverlapResult(1, false, 1));
+        using var session = new ScrollSession(detector, matcher);
+
+        session.Start(new ScreenRect(0, 0, 3, 3), ScrollDirection.Vertical);
+        using var frameOne = CreateCapturedFrame(Color.Red, 3, 3);
+        using var frameTwo = CreateCapturedFrame(Color.Blue, 3, 3);
+        using var frameThree = CreateCapturedFrame(Color.Green, 3, 3);
+        session.ProcessFrame(frameOne);
+        session.ProcessFrame(frameTwo);
+        session.ProcessFrame(frameThree);
+        session.Finish();
+
+        var result = session.GetResult();
+        result.ZoneLayout.FixedBottom.Should().Be(1);
+        result.Segments.Should().HaveCount(2);
+        detector.DetectCount.Should().Be(2);
+    }
+
+    [Fact]
+    public void NoMatch_RetriesZoneDetectionBeforeAppending()
+    {
+        var detector = new SequenceZoneDetector(
+            new ZoneLayout(0, 0, 0, 0, new ScreenRect(0, 0, 3, 3)),
+            new ZoneLayout(0, 1, 0, 0, new ScreenRect(0, 0, 3, 2)));
+        var matcher = new SequenceOverlapMatcher(
+            OverlapResult.Identical(),
+            OverlapResult.NoMatch,
+            new OverlapResult(1, false, 1),
+            new OverlapResult(1, false, 1));
+        using var session = new ScrollSession(detector, matcher);
+
+        session.Start(new ScreenRect(0, 0, 3, 3), ScrollDirection.Vertical);
+        using var frameOne = CreateCapturedFrame(Color.Red, 3, 3);
+        using var frameTwo = CreateCapturedFrame(Color.Red, 3, 3);
+        using var frameThree = CreateCapturedFrame(Color.Blue, 3, 3);
+        session.ProcessFrame(frameOne);
+        session.ProcessFrame(frameTwo);
+        session.ProcessFrame(frameThree);
+        session.Finish();
+
+        var result = session.GetResult();
+        result.ZoneLayout.FixedBottom.Should().Be(1);
+        result.Segments.Should().HaveCount(2);
+        detector.DetectCount.Should().Be(2);
+    }
+
+    [Fact]
     public async Task CaptureController_CapturesAndFinishesWithResult()
     {
         var frames = new Queue<CapturedFrame?>(new[]
@@ -176,6 +228,29 @@ public sealed class ScrollSessionTests
         public ZoneLayout DetectZones(CapturedFrame previous, CapturedFrame current, ScrollDirection direction) => Layout;
 
         public ZoneLayout RefineZones(ZoneLayout existing, CapturedFrame previous, CapturedFrame current, ScrollDirection direction) => Layout;
+    }
+
+    private sealed class SequenceZoneDetector : IZoneDetector
+    {
+        private readonly Queue<ZoneLayout> _layouts;
+
+        public SequenceZoneDetector(params ZoneLayout[] layouts)
+        {
+            _layouts = new Queue<ZoneLayout>(layouts);
+        }
+
+        public int DetectCount { get; private set; }
+
+        public ZoneLayout DetectZones(CapturedFrame previous, CapturedFrame current, ScrollDirection direction)
+        {
+            DetectCount++;
+            return _layouts.Count > 0 ? _layouts.Dequeue() : throw new InvalidOperationException("No queued zone layout.");
+        }
+
+        public ZoneLayout RefineZones(ZoneLayout existing, CapturedFrame previous, CapturedFrame current, ScrollDirection direction)
+        {
+            return _layouts.Count > 0 ? _layouts.Dequeue() : existing;
+        }
     }
 
     private sealed class SequenceOverlapMatcher : IOverlapMatcher

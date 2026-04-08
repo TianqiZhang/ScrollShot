@@ -7,11 +7,19 @@ public sealed class OverlapMatcher : IOverlapMatcher
 {
     private readonly double _matchThreshold;
     private readonly double _excellentMatchThreshold;
+    private readonly double _crossAxisCropFraction;
+    private readonly int _maxCrossAxisCropPixels;
 
-    public OverlapMatcher(double matchThreshold = 0.04, double excellentMatchThreshold = 0.01)
+    public OverlapMatcher(
+        double matchThreshold = 0.04,
+        double excellentMatchThreshold = 0.01,
+        double crossAxisCropFraction = 0.05,
+        int maxCrossAxisCropPixels = 48)
     {
         _matchThreshold = matchThreshold;
         _excellentMatchThreshold = excellentMatchThreshold;
+        _crossAxisCropFraction = crossAxisCropFraction;
+        _maxCrossAxisCropPixels = maxCrossAxisCropPixels;
     }
 
     public OverlapResult FindOverlap(
@@ -29,6 +37,14 @@ public sealed class OverlapMatcher : IOverlapMatcher
         var stride = width * PixelBuffer.BytesPerPixel;
         var previous = new PixelBufferSnapshot(width, height, stride, previousBand.ToArray());
         var current = new PixelBufferSnapshot(width, height, stride, currentBand.ToArray());
+        var comparisonRectangle = GetComparisonRectangle(width, height, direction);
+        if (comparisonRectangle.Width != width || comparisonRectangle.Height != height)
+        {
+            previous = PixelBuffer.ExtractSubRectangle(previous, comparisonRectangle);
+            current = PixelBuffer.ExtractSubRectangle(current, comparisonRectangle);
+            width = previous.Width;
+            height = previous.Height;
+        }
 
         var primaryAxisLength = direction == ScrollDirection.Vertical ? height : width;
         var best = OverlapResult.NoMatch;
@@ -59,5 +75,19 @@ public sealed class OverlapMatcher : IOverlapMatcher
         }
 
         return best;
+    }
+
+    private Rectangle GetComparisonRectangle(int width, int height, ScrollDirection direction)
+    {
+        var crossAxisLength = direction == ScrollDirection.Vertical ? width : height;
+        var crop = Math.Min(_maxCrossAxisCropPixels, (int)Math.Floor(crossAxisLength * _crossAxisCropFraction));
+        if (crop <= 0 || crossAxisLength - (crop * 2) < 32)
+        {
+            return new Rectangle(0, 0, width, height);
+        }
+
+        return direction == ScrollDirection.Vertical
+            ? new Rectangle(crop, 0, width - (crop * 2), height)
+            : new Rectangle(0, crop, width, height - (crop * 2));
     }
 }
