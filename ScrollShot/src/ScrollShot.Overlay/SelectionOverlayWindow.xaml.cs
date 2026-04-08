@@ -20,6 +20,8 @@ public partial class SelectionOverlayWindow : Window
     private Point? _selectionStart;
     private Rect _selectionRect;
     private ScrollDirection? _captureDirection;
+    private IntPtr _windowHandle;
+    private bool _inputPassThroughEnabled;
 
     public SelectionOverlayWindow()
     {
@@ -50,7 +52,11 @@ public partial class SelectionOverlayWindow : Window
 
         using (previewBitmap)
         {
-            Dispatcher.Invoke(() => PreviewStrip.SetPreview(previewBitmap, _captureDirection.Value));
+            Dispatcher.Invoke(() =>
+            {
+                PreviewStrip.SetPreview(previewBitmap, _captureDirection.Value);
+                PositionPreviewStrip(_captureDirection.Value);
+            });
         }
     }
 
@@ -72,9 +78,9 @@ public partial class SelectionOverlayWindow : Window
             return;
         }
 
-        var windowHandle = source.Handle;
-        var style = WindowStyles.GetWindowLongPtr(windowHandle, WindowStyles.GwlExStyle);
-        WindowStyles.SetWindowLongPtr(windowHandle, WindowStyles.GwlExStyle, style | WindowStyles.WsExToolWindow);
+        _windowHandle = source.Handle;
+        var style = WindowStyles.GetWindowLongPtr(_windowHandle, WindowStyles.GwlExStyle);
+        WindowStyles.SetWindowLongPtr(_windowHandle, WindowStyles.GwlExStyle, style | WindowStyles.WsExToolWindow);
     }
 
     private void OnPreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -139,6 +145,7 @@ public partial class SelectionOverlayWindow : Window
             InstructionBorder.Visibility = Visibility.Collapsed;
             PreviewStrip.Visibility = Visibility.Visible;
             PositionPreviewStrip(_captureDirection.Value);
+            SetOverlayInputPassThrough(true);
             ScrollCaptureStarted?.Invoke(this, new OverlayCaptureRequestedEventArgs(SelectedRegion.Value, _captureDirection));
         }
 
@@ -213,15 +220,34 @@ public partial class SelectionOverlayWindow : Window
         }
 
         var margin = 12d;
+        var availableWidth = ActualWidth <= 0 ? Width : ActualWidth;
+        var availableHeight = ActualHeight <= 0 ? Height : ActualHeight;
+        var previewWidth = GetPreviewWidth(direction);
+        var previewHeight = GetPreviewHeight(direction);
+
         if (direction == ScrollDirection.Vertical)
         {
-            Canvas.SetLeft(PreviewStrip, Math.Min(ActualWidth - PreviewStrip.Width - margin, _selectionRect.Right + margin));
-            Canvas.SetTop(PreviewStrip, _selectionRect.Top);
+            var rightX = _selectionRect.Right + margin;
+            var leftX = _selectionRect.Left - previewWidth - margin;
+            var x = rightX + previewWidth <= availableWidth
+                ? rightX
+                : Math.Max(margin, leftX);
+            var y = Math.Clamp(_selectionRect.Top, margin, Math.Max(margin, availableHeight - previewHeight - margin));
+
+            Canvas.SetLeft(PreviewStrip, x);
+            Canvas.SetTop(PreviewStrip, y);
         }
         else
         {
-            Canvas.SetLeft(PreviewStrip, _selectionRect.Left);
-            Canvas.SetTop(PreviewStrip, Math.Min(ActualHeight - PreviewStrip.Height - margin, _selectionRect.Bottom + margin));
+            var belowY = _selectionRect.Bottom + margin;
+            var aboveY = _selectionRect.Top - previewHeight - margin;
+            var y = belowY + previewHeight <= availableHeight
+                ? belowY
+                : Math.Max(margin, aboveY);
+            var x = Math.Clamp(_selectionRect.Left, margin, Math.Max(margin, availableWidth - previewWidth - margin));
+
+            Canvas.SetLeft(PreviewStrip, x);
+            Canvas.SetTop(PreviewStrip, y);
         }
     }
 
@@ -240,5 +266,44 @@ public partial class SelectionOverlayWindow : Window
         var h = ActualHeight <= 0 ? Height : ActualHeight;
         Canvas.SetLeft(InstructionBorder, (w - InstructionBorder.ActualWidth) / 2);
         Canvas.SetTop(InstructionBorder, (h - InstructionBorder.ActualHeight) / 2);
+    }
+
+    private void SetOverlayInputPassThrough(bool enabled)
+    {
+        if (_windowHandle == IntPtr.Zero || _inputPassThroughEnabled == enabled)
+        {
+            return;
+        }
+
+        var style = WindowStyles.GetWindowLongPtr(_windowHandle, WindowStyles.GwlExStyle).ToInt64();
+        style = enabled
+            ? style | WindowStyles.WsExTransparent
+            : style & ~WindowStyles.WsExTransparent;
+
+        WindowStyles.SetWindowLongPtr(_windowHandle, WindowStyles.GwlExStyle, new IntPtr(style));
+        _inputPassThroughEnabled = enabled;
+        PreviewStrip.SetInputPassThroughMode(enabled);
+    }
+
+    private double GetPreviewWidth(ScrollDirection direction)
+    {
+        var width = PreviewStrip.ActualWidth > 0 ? PreviewStrip.ActualWidth : PreviewStrip.Width;
+        if (double.IsNaN(width) || width <= 0)
+        {
+            width = direction == ScrollDirection.Vertical ? 180d : 340d;
+        }
+
+        return width;
+    }
+
+    private double GetPreviewHeight(ScrollDirection direction)
+    {
+        var height = PreviewStrip.ActualHeight > 0 ? PreviewStrip.ActualHeight : PreviewStrip.Height;
+        if (double.IsNaN(height) || height <= 0)
+        {
+            height = direction == ScrollDirection.Vertical ? 300d : 150d;
+        }
+
+        return height;
     }
 }

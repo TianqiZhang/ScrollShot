@@ -12,11 +12,19 @@
             BorderThickness="1"
             Padding="8">
         <DockPanel>
+            <TextBlock x:Name="CompletionHintTextBlock"
+                       DockPanel.Dock="Bottom"
+                       Margin="0,8,0,0"
+                       FontSize="12"
+                       Foreground="#CCFFFFFF"
+                       Text="Press Enter to finish"
+                       TextAlignment="Center"
+                       Visibility="Collapsed" />
             <Button x:Name="DoneButton"
-                    DockPanel.Dock="Bottom"
-                    Margin="0,8,0,0"
-                    Padding="8,4"
-                    Content="Done ✓"
+                     DockPanel.Dock="Bottom"
+                     Margin="0,8,0,0"
+                     Padding="8,4"
+                     Content="Done ✓"
                     Click="OnDoneButtonClick" />
             <TextBlock x:Name="DirectionTextBlock"
                        DockPanel.Dock="Top"
