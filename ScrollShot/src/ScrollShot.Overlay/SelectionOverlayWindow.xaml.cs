@@ -84,6 +84,11 @@ public partial class SelectionOverlayWindow : Window
 
     private void OnPreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
+        if (_captureDirection is not null)
+        {
+            return;
+        }
+
         _selectionStart = e.GetPosition(RootCanvas);
         _selectionRect = Rect.Empty;
         _captureDirection = null;
@@ -94,6 +99,11 @@ public partial class SelectionOverlayWindow : Window
 
     private void OnPreviewMouseMove(object sender, MouseEventArgs e)
     {
+        if (_captureDirection is not null)
+        {
+            return;
+        }
+
         if (_selectionStart is null || e.LeftButton != MouseButtonState.Pressed)
         {
             return;
@@ -106,6 +116,11 @@ public partial class SelectionOverlayWindow : Window
 
     private void OnPreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
     {
+        if (_captureDirection is not null)
+        {
+            return;
+        }
+
         if (_selectionStart is null)
         {
             return;

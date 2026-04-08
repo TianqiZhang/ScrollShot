@@ -16,6 +16,7 @@ public sealed class CaptureOrchestrator
 {
     private readonly Func<AppSettings> _settingsProvider;
     private SelectionOverlayWindow? _activeOverlay;
+    private readonly object _captureQueueLock = new();
 
     public CaptureOrchestrator(Func<AppSettings> settingsProvider)
     {
@@ -33,6 +34,47 @@ public sealed class CaptureOrchestrator
         _activeOverlay = overlay;
         CaptureController? controller = null;
         ScrollSession? session = null;
+        var captureCancellation = new CancellationTokenSource();
+        var captureQueue = Task.CompletedTask;
+        var isCompleting = false;
+        var isClosing = false;
+
+        Task EnqueueCaptureAsync(Func<CaptureController, CancellationToken, Task> work)
+        {
+            lock (_captureQueueLock)
+            {
+                captureQueue = captureQueue.ContinueWith(
+                    async _ =>
+                    {
+                        if (captureCancellation.IsCancellationRequested)
+                        {
+                            return;
+                        }
+
+                        var activeController = controller;
+                        if (activeController is null)
+                        {
+                            return;
+                        }
+
+                        try
+                        {
+                            await work(activeController, captureCancellation.Token);
+                        }
+                        catch (OperationCanceledException) when (captureCancellation.IsCancellationRequested)
+                        {
+                        }
+                        catch (ObjectDisposedException) when (isClosing)
+                        {
+                        }
+                    },
+                    CancellationToken.None,
+                    TaskContinuationOptions.None,
+                    TaskScheduler.Default).Unwrap();
+
+                return captureQueue;
+            }
+        }
 
         overlay.InstantCaptureRequested += (_, args) =>
         {
@@ -49,55 +91,78 @@ public sealed class CaptureOrchestrator
 
         overlay.ScrollCaptureStarted += async (_, args) =>
         {
-            if (controller is null)
+            if (controller is null && !isClosing)
             {
                 session = new ScrollSession();
                 session.PreviewUpdated += overlay.UpdatePreview;
                 controller = new CaptureController(ScreenCapturerFactory.Create(args.Region), session);
                 controller.Start(args.Region, args.Direction ?? ScrollDirection.Vertical);
-                await controller.CaptureAsync();
+                await EnqueueCaptureAsync((activeController, cancellationToken) => activeController.CaptureAsync(cancellationToken));
             }
         };
 
-        overlay.ScrollStepRequested += async (_, _) =>
+        overlay.ScrollStepRequested += (_, _) =>
         {
-            if (controller is not null)
+            if (controller is not null && !isClosing && !isCompleting)
             {
-                await controller.CaptureAsync();
+                _ = EnqueueCaptureAsync((activeController, cancellationToken) => activeController.CaptureAsync(cancellationToken));
             }
         };
 
-        overlay.CaptureCompleted += async (_, _) =>
+        overlay.CaptureCompleted += (_, _) =>
         {
-            if (controller is not null)
+            if (controller is null || isClosing || isCompleting)
             {
-                await controller.CaptureAsync();
-
-                try
-                {
-                    var result = controller.Finish();
-                    ShowEditor(result);
-                    overlay.Close();
-                }
-                catch (InvalidOperationException exception)
-                {
-                    MessageBox.Show(
-                        exception.Message,
-                        "ScrollShot",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Warning);
-                }
-
                 return;
             }
 
-            overlay.Close();
+            isCompleting = true;
+            _ = EnqueueCaptureAsync(async (activeController, cancellationToken) =>
+            {
+                await activeController.CaptureAsync(cancellationToken);
+
+                try
+                {
+                    var result = activeController.Finish();
+                    await overlay.Dispatcher.InvokeAsync(() =>
+                    {
+                        ShowEditor(result);
+                        isClosing = true;
+                        overlay.Close();
+                    });
+                }
+                catch (InvalidOperationException exception)
+                {
+                    await overlay.Dispatcher.InvokeAsync(() =>
+                    {
+                        MessageBox.Show(
+                            exception.Message,
+                            "ScrollShot",
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Warning);
+                        isCompleting = false;
+                    });
+                }
+            });
         };
 
-        overlay.Cancelled += (_, _) => overlay.Close();
+        overlay.Cancelled += (_, _) =>
+        {
+            isClosing = true;
+            captureCancellation.Cancel();
+            overlay.Close();
+        };
         overlay.Closed += (_, _) =>
         {
-            controller?.Dispose();
+            isClosing = true;
+            captureCancellation.Cancel();
+            var controllerToDispose = controller;
+            controller = null;
+            _ = captureQueue.ContinueWith(_ =>
+            {
+                controllerToDispose?.Dispose();
+                captureCancellation.Dispose();
+            }, TaskScheduler.Default);
             _activeOverlay = null;
         };
 
