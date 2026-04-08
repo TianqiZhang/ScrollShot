@@ -1,0 +1,15 @@
+F:\bead\screenshot\ScrollShot\src\ScrollShot.Scroll\bin\Debug\net8.0-windows\ScrollShot.Scroll.deps.json
+F:\bead\screenshot\ScrollShot\src\ScrollShot.Scroll\bin\Debug\net8.0-windows\ScrollShot.Scroll.dll
+F:\bead\screenshot\ScrollShot\src\ScrollShot.Scroll\bin\Debug\net8.0-windows\ScrollShot.Scroll.pdb
+F:\bead\screenshot\ScrollShot\src\ScrollShot.Scroll\bin\Debug\net8.0-windows\ScrollShot.Capture.dll
+F:\bead\screenshot\ScrollShot\src\ScrollShot.Scroll\bin\Debug\net8.0-windows\ScrollShot.Capture.pdb
+F:\bead\screenshot\ScrollShot\src\ScrollShot.Scroll\obj\Debug\net8.0-windows\ScrollShot.Scroll.csproj.AssemblyReference.cache
+F:\bead\screenshot\ScrollShot\src\ScrollShot.Scroll\obj\Debug\net8.0-windows\ScrollShot.Scroll.GeneratedMSBuildEditorConfig.editorconfig
+F:\bead\screenshot\ScrollShot\src\ScrollShot.Scroll\obj\Debug\net8.0-windows\ScrollShot.Scroll.AssemblyInfoInputs.cache
+F:\bead\screenshot\ScrollShot\src\ScrollShot.Scroll\obj\Debug\net8.0-windows\ScrollShot.Scroll.AssemblyInfo.cs
+F:\bead\screenshot\ScrollShot\src\ScrollShot.Scroll\obj\Debug\net8.0-windows\ScrollShot.Scroll.csproj.CoreCompileInputs.cache
+F:\bead\screenshot\ScrollShot\src\ScrollShot.Scroll\obj\Debug\net8.0-windows\ScrollSh.198265EC.Up2Date
+F:\bead\screenshot\ScrollShot\src\ScrollShot.Scroll\obj\Debug\net8.0-windows\ScrollShot.Scroll.dll
+F:\bead\screenshot\ScrollShot\src\ScrollShot.Scroll\obj\Debug\net8.0-windows\refint\ScrollShot.Scroll.dll
+F:\bead\screenshot\ScrollShot\src\ScrollShot.Scroll\obj\Debug\net8.0-windows\ScrollShot.Scroll.pdb
+F:\bead\screenshot\ScrollShot\src\ScrollShot.Scroll\obj\Debug\net8.0-windows\ref\ScrollShot.Scroll.dll

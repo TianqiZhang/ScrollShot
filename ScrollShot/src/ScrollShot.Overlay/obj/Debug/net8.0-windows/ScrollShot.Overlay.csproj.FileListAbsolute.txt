@@ -1,0 +1,17 @@
+F:\bead\screenshot\ScrollShot\src\ScrollShot.Overlay\bin\Debug\net8.0-windows\ScrollShot.Overlay.deps.json
+F:\bead\screenshot\ScrollShot\src\ScrollShot.Overlay\bin\Debug\net8.0-windows\ScrollShot.Overlay.dll
+F:\bead\screenshot\ScrollShot\src\ScrollShot.Overlay\bin\Debug\net8.0-windows\ScrollShot.Overlay.pdb
+F:\bead\screenshot\ScrollShot\src\ScrollShot.Overlay\bin\Debug\net8.0-windows\ScrollShot.Capture.dll
+F:\bead\screenshot\ScrollShot\src\ScrollShot.Overlay\bin\Debug\net8.0-windows\ScrollShot.Scroll.dll
+F:\bead\screenshot\ScrollShot\src\ScrollShot.Overlay\bin\Debug\net8.0-windows\ScrollShot.Capture.pdb
+F:\bead\screenshot\ScrollShot\src\ScrollShot.Overlay\bin\Debug\net8.0-windows\ScrollShot.Scroll.pdb
+F:\bead\screenshot\ScrollShot\src\ScrollShot.Overlay\obj\Debug\net8.0-windows\ScrollShot.Overlay.csproj.AssemblyReference.cache
+F:\bead\screenshot\ScrollShot\src\ScrollShot.Overlay\obj\Debug\net8.0-windows\ScrollShot.Overlay.GeneratedMSBuildEditorConfig.editorconfig
+F:\bead\screenshot\ScrollShot\src\ScrollShot.Overlay\obj\Debug\net8.0-windows\ScrollShot.Overlay.AssemblyInfoInputs.cache
+F:\bead\screenshot\ScrollShot\src\ScrollShot.Overlay\obj\Debug\net8.0-windows\ScrollShot.Overlay.AssemblyInfo.cs
+F:\bead\screenshot\ScrollShot\src\ScrollShot.Overlay\obj\Debug\net8.0-windows\ScrollShot.Overlay.csproj.CoreCompileInputs.cache
+F:\bead\screenshot\ScrollShot\src\ScrollShot.Overlay\obj\Debug\net8.0-windows\ScrollSh.38487901.Up2Date
+F:\bead\screenshot\ScrollShot\src\ScrollShot.Overlay\obj\Debug\net8.0-windows\ScrollShot.Overlay.dll
+F:\bead\screenshot\ScrollShot\src\ScrollShot.Overlay\obj\Debug\net8.0-windows\refint\ScrollShot.Overlay.dll
+F:\bead\screenshot\ScrollShot\src\ScrollShot.Overlay\obj\Debug\net8.0-windows\ScrollShot.Overlay.pdb
+F:\bead\screenshot\ScrollShot\src\ScrollShot.Overlay\obj\Debug\net8.0-windows\ref\ScrollShot.Overlay.dll

@@ -1,0 +1,13 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ScrollShot.Capture\ScrollShot.Capture.csproj" />
+    <ProjectReference Include="..\ScrollShot.Scroll\ScrollShot.Scroll.csproj" />
+  </ItemGroup>
+
+</Project>

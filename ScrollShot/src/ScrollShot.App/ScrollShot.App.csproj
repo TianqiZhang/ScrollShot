@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Hardcodet.NotifyIcon.Wpf" Version="2.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ScrollShot.Overlay\ScrollShot.Overlay.csproj" />
+    <ProjectReference Include="..\ScrollShot.Editor\ScrollShot.Editor.csproj" />
+    <ProjectReference Include="..\ScrollShot.Capture\ScrollShot.Capture.csproj" />
+    <ProjectReference Include="..\ScrollShot.Scroll\ScrollShot.Scroll.csproj" />
+  </ItemGroup>
+
+</Project>
