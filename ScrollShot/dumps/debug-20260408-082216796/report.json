@@ -1,0 +1,12 @@
+{
+  "Succeeded": true,
+  "ErrorMessage": null,
+  "FrameCount": 7,
+  "SegmentCount": 6,
+  "OutputWidth": 1113,
+  "OutputHeight": 2808,
+  "OutputImageRelativePath": "stitched.png",
+  "NormalizedDifferenceToGroundTruth": null,
+  "GroundTruthDimensionsMatch": null,
+  "Direction": "Vertical"
+}

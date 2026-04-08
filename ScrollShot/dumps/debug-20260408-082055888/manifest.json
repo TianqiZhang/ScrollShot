@@ -1,0 +1,111 @@
+{
+  "Version": 1,
+  "Name": "debug-20260408-082055888",
+  "Source": "live-capture",
+  "Direction": "Vertical",
+  "ViewportWidth": 909,
+  "ViewportHeight": 422,
+  "StepPixels": 0,
+  "CaptureRegion": {
+    "X": 4745,
+    "Y": 1240,
+    "Width": 909,
+    "Height": 422
+  },
+  "SamplingIntervalMilliseconds": 120,
+  "CreatedAtUtc": "2026-04-08T08:20:55.8881089+00:00",
+  "CompletedAtUtc": "2026-04-08T08:21:07.5346172+00:00",
+  "CompletionReason": "completed",
+  "FailureMessage": null,
+  "Truth": null,
+  "Frames": [
+    {
+      "Index": 0,
+      "RelativePath": "frames\\frame_0000.png",
+      "OffsetPixels": null,
+      "ExpectedOverlapWithPreviousPixels": null,
+      "CapturedAtUtc": "2026-04-08T08:20:56.75084+00:00",
+      "ElapsedMilliseconds": 863,
+      "Width": 909,
+      "Height": 422,
+      "Trace": "frame-captured dpi=1.00"
+    },
+    {
+      "Index": 1,
+      "RelativePath": "frames\\frame_0001.png",
+      "OffsetPixels": null,
+      "ExpectedOverlapWithPreviousPixels": null,
+      "CapturedAtUtc": "2026-04-08T08:20:57.5011276+00:00",
+      "ElapsedMilliseconds": 1613,
+      "Width": 909,
+      "Height": 422,
+      "Trace": "frame-captured dpi=1.00"
+    },
+    {
+      "Index": 2,
+      "RelativePath": "frames\\frame_0002.png",
+      "OffsetPixels": null,
+      "ExpectedOverlapWithPreviousPixels": null,
+      "CapturedAtUtc": "2026-04-08T08:20:57.6229211+00:00",
+      "ElapsedMilliseconds": 1735,
+      "Width": 909,
+      "Height": 422,
+      "Trace": "frame-captured dpi=1.00"
+    },
+    {
+      "Index": 3,
+      "RelativePath": "frames\\frame_0003.png",
+      "OffsetPixels": null,
+      "ExpectedOverlapWithPreviousPixels": null,
+      "CapturedAtUtc": "2026-04-08T08:20:59.6762716+00:00",
+      "ElapsedMilliseconds": 3788,
+      "Width": 909,
+      "Height": 422,
+      "Trace": "frame-captured dpi=1.00"
+    },
+    {
+      "Index": 4,
+      "RelativePath": "frames\\frame_0004.png",
+      "OffsetPixels": null,
+      "ExpectedOverlapWithPreviousPixels": null,
+      "CapturedAtUtc": "2026-04-08T08:21:01.5727832+00:00",
+      "ElapsedMilliseconds": 5685,
+      "Width": 909,
+      "Height": 422,
+      "Trace": "frame-captured dpi=1.00"
+    },
+    {
+      "Index": 5,
+      "RelativePath": "frames\\frame_0005.png",
+      "OffsetPixels": null,
+      "ExpectedOverlapWithPreviousPixels": null,
+      "CapturedAtUtc": "2026-04-08T08:21:03.4658722+00:00",
+      "ElapsedMilliseconds": 7578,
+      "Width": 909,
+      "Height": 422,
+      "Trace": "frame-captured dpi=1.00"
+    },
+    {
+      "Index": 6,
+      "RelativePath": "frames\\frame_0006.png",
+      "OffsetPixels": null,
+      "ExpectedOverlapWithPreviousPixels": null,
+      "CapturedAtUtc": "2026-04-08T08:21:05.3722509+00:00",
+      "ElapsedMilliseconds": 9484,
+      "Width": 909,
+      "Height": 422,
+      "Trace": "frame-captured dpi=1.00"
+    },
+    {
+      "Index": 7,
+      "RelativePath": "frames\\frame_0007.png",
+      "OffsetPixels": null,
+      "ExpectedOverlapWithPreviousPixels": null,
+      "CapturedAtUtc": "2026-04-08T08:21:07.3311284+00:00",
+      "ElapsedMilliseconds": 11443,
+      "Width": 909,
+      "Height": 422,
+      "Trace": "frame-captured dpi=1.00"
+    }
+  ]
+}
