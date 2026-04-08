@@ -85,37 +85,26 @@ public sealed class CaptureOrchestrator
 
                 await workflow.StartAsync(args.Region, args.Direction ?? ScrollDirection.Vertical);
 
-                if (shouldSuspendOverlayDuringCapture)
+                samplingCancellation = new CancellationTokenSource();
+                samplingTask = Task.Run(async () =>
                 {
-                    samplingCancellation = new CancellationTokenSource();
-                    samplingTask = Task.Run(async () =>
+                    using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(120));
+                    try
                     {
-                        using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(120));
-                        try
+                        while (await timer.WaitForNextTickAsync(samplingCancellation.Token))
                         {
-                            while (await timer.WaitForNextTickAsync(samplingCancellation.Token))
+                            if (workflow is null)
                             {
-                                if (workflow is null)
-                                {
-                                    continue;
-                                }
-
-                                await workflow.CaptureStepAsync();
+                                continue;
                             }
-                        }
-                        catch (OperationCanceledException)
-                        {
-                        }
-                    });
-                }
-            }
-        };
 
-        overlay.ScrollStepRequested += (_, _) =>
-        {
-            if (workflow is not null && overlay.IsExcludedFromCapture)
-            {
-                _ = workflow.CaptureStepAsync();
+                            await workflow.CaptureStepAsync();
+                        }
+                    }
+                    catch (OperationCanceledException)
+                    {
+                    }
+                });
             }
         };
 
