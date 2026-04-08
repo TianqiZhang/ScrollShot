@@ -25,6 +25,37 @@ public sealed class ZoneDetectorTests
     }
 
     [Fact]
+    public void DetectZones_IdenticalFrames_ReturnsFullFrameAsScrollBand()
+    {
+        using var bitmap = TestBitmapFactory.CreateVerticalScrollFrame(width: 4, height: 6, topFixed: 0, bottomFixed: 0, scrollOffset: 0);
+        using var previous = new CapturedFrame((Bitmap)bitmap.Clone(), new ScreenRect(0, 0, 4, 6), DateTimeOffset.UtcNow);
+        using var current = new CapturedFrame((Bitmap)bitmap.Clone(), new ScreenRect(0, 0, 4, 6), DateTimeOffset.UtcNow);
+        var detector = new ZoneDetector();
+
+        var result = detector.DetectZones(previous, current, ScrollDirection.Vertical);
+
+        // When frames are identical, everything is "fixed" — the guard returns full frame as scroll band
+        result.ScrollBand.Width.Should().Be(4);
+        result.ScrollBand.Height.Should().Be(6);
+    }
+
+    [Fact]
+    public void DetectZones_CompletelyDifferentFrames_ReturnsNoFixedRegions()
+    {
+        using var previous = TestBitmapFactory.CreateSolidBitmap(4, 6, Color.Red);
+        using var current = TestBitmapFactory.CreateSolidBitmap(4, 6, Color.Blue);
+        using var prevFrame = new CapturedFrame(previous, new ScreenRect(0, 0, 4, 6), DateTimeOffset.UtcNow);
+        using var currFrame = new CapturedFrame(current, new ScreenRect(0, 0, 4, 6), DateTimeOffset.UtcNow);
+        var detector = new ZoneDetector();
+
+        var result = detector.DetectZones(prevFrame, currFrame, ScrollDirection.Vertical);
+
+        result.FixedTop.Should().Be(0);
+        result.FixedBottom.Should().Be(0);
+        result.ScrollBand.Should().Be(new ScreenRect(0, 0, 4, 6));
+    }
+
+    [Fact]
     public void RefineZones_PreservesExistingLayout_WhenDifferenceIsWithinTolerance()
     {
         using var previousBitmap = TestBitmapFactory.CreateVerticalScrollFrame(width: 6, height: 8, topFixed: 2, bottomFixed: 1, scrollOffset: 0);
@@ -75,6 +106,14 @@ internal static class TestBitmapFactory
             }
         }
 
+        return bitmap;
+    }
+
+    public static Bitmap CreateSolidBitmap(int width, int height, Color color)
+    {
+        var bitmap = new Bitmap(width, height);
+        using var graphics = Graphics.FromImage(bitmap);
+        graphics.Clear(color);
         return bitmap;
     }
 }

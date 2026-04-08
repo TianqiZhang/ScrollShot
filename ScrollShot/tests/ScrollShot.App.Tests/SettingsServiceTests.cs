@@ -43,6 +43,18 @@ public sealed class SettingsServiceTests : IDisposable
         actual.StartWithWindows.Should().BeTrue();
     }
 
+    [Fact]
+    public void Load_ReturnsDefaults_WhenFileIsCorrupted()
+    {
+        File.WriteAllText(_settingsPath, "NOT VALID JSON {{{");
+        var service = new SettingsService(_settingsPath);
+
+        var settings = service.Load();
+
+        settings.HotkeyModifiers.Should().Be(ModifierKeys.Control | ModifierKeys.Shift);
+        settings.HotkeyKey.Should().Be(Key.S);
+    }
+
     public void Dispose()
     {
         if (File.Exists(_settingsPath))

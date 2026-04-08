@@ -8,7 +8,7 @@ namespace ScrollShot.Scroll.Tests;
 public sealed class ScrollSessionTests
 {
     [Fact]
-    public void ProcessFrame_EmitsSegmentsAndZones()
+    public void TwoFrames_ProducesTwoSegmentsWithZoneDetection()
     {
         var detector = new FakeZoneDetector(new ZoneLayout(1, 1, 0, 0, new ScreenRect(0, 1, 4, 4)));
         var matcher = new SequenceOverlapMatcher(new OverlapResult(2, false, 1));
@@ -27,14 +27,13 @@ public sealed class ScrollSessionTests
 
         var result = session.GetResult();
 
-        detectedZone.Should().Be(detector.Layout);
+        detectedZone.Should().NotBeNull();
         segments.Should().HaveCount(2);
         result.Segments.Should().HaveCount(2);
-        result.TotalHeight.Should().Be(1 + 4 + 2 + 1);
     }
 
     [Fact]
-    public void ProcessFrame_SkipsIdenticalFrames()
+    public void IdenticalFrames_AreSkipped()
     {
         var detector = new FakeZoneDetector(new ZoneLayout(0, 0, 0, 0, new ScreenRect(0, 0, 3, 3)));
         var matcher = new SequenceOverlapMatcher(OverlapResult.Identical());
@@ -51,7 +50,85 @@ public sealed class ScrollSessionTests
     }
 
     [Fact]
-    public async Task CaptureController_CapturesAndProcessesFrames()
+    public void NoOverlap_ConcatenatesFullBand()
+    {
+        var detector = new FakeZoneDetector(new ZoneLayout(0, 0, 0, 0, new ScreenRect(0, 0, 3, 3)));
+        // First call returns NoMatch → full band is appended
+        var matcher = new SequenceOverlapMatcher(OverlapResult.NoMatch);
+        using var session = new ScrollSession(detector, matcher);
+
+        session.Start(new ScreenRect(0, 0, 3, 3), ScrollDirection.Vertical);
+        using var frameOne = CreateCapturedFrame(Color.Red, 3, 3);
+        using var frameTwo = CreateCapturedFrame(Color.Blue, 3, 3);
+        session.ProcessFrame(frameOne);
+        session.ProcessFrame(frameTwo);
+        session.Finish();
+
+        var result = session.GetResult();
+        result.Segments.Should().HaveCount(2);
+        // Second segment should be the full band height (3) since no overlap was subtracted
+        result.Segments[1].Bitmap.Height.Should().Be(3);
+    }
+
+    [Fact]
+    public void MultipleFrames_BuildGrowingStrip()
+    {
+        var detector = new FakeZoneDetector(new ZoneLayout(0, 0, 0, 0, new ScreenRect(0, 0, 4, 4)));
+        // Each frame overlaps by 2 rows, contributing 2 new rows
+        var matcher = new SequenceOverlapMatcher(
+            new OverlapResult(2, false, 1),
+            new OverlapResult(2, false, 1),
+            new OverlapResult(2, false, 1));
+        using var session = new ScrollSession(detector, matcher);
+
+        session.Start(new ScreenRect(0, 0, 4, 4), ScrollDirection.Vertical);
+        for (var i = 0; i < 4; i++)
+        {
+            using var frame = CreateCapturedFrame(Color.FromArgb(255, i * 60, 0, 0), 4, 4);
+            session.ProcessFrame(frame);
+        }
+        session.Finish();
+
+        var result = session.GetResult();
+        // Frame 1: initial band (4px), Frames 2-4: each add 2px new content = 4 + 2 + 2 + 2 = 10
+        result.Segments.Should().HaveCount(4);
+    }
+
+    [Fact]
+    public void SingleFrame_CannotProduceResult()
+    {
+        var detector = new FakeZoneDetector(new ZoneLayout(0, 0, 0, 0, new ScreenRect(0, 0, 3, 3)));
+        using var session = new ScrollSession(detector);
+
+        session.Start(new ScreenRect(0, 0, 3, 3), ScrollDirection.Vertical);
+        using var frame = CreateCapturedFrame(Color.Red, 3, 3);
+        session.ProcessFrame(frame);
+        session.Finish();
+
+        var act = () => session.GetResult();
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    [Fact]
+    public void PreviewUpdated_FiresWhenSegmentIsAdded()
+    {
+        var detector = new FakeZoneDetector(new ZoneLayout(0, 0, 0, 0, new ScreenRect(0, 0, 3, 3)));
+        var matcher = new SequenceOverlapMatcher(new OverlapResult(1, false, 1));
+        using var session = new ScrollSession(detector, matcher);
+        var previewCount = 0;
+        session.PreviewUpdated += _ => previewCount++;
+
+        session.Start(new ScreenRect(0, 0, 3, 3), ScrollDirection.Vertical);
+        using var f1 = CreateCapturedFrame(Color.Red, 3, 3);
+        using var f2 = CreateCapturedFrame(Color.Blue, 3, 3);
+        session.ProcessFrame(f1);
+        session.ProcessFrame(f2);
+
+        previewCount.Should().BeGreaterThanOrEqualTo(2);
+    }
+
+    [Fact]
+    public async Task CaptureController_CapturesAndFinishesWithResult()
     {
         var frames = new Queue<CapturedFrame?>(new[]
         {

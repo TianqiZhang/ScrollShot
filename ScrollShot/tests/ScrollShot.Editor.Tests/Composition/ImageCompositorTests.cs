@@ -9,8 +9,10 @@ namespace ScrollShot.Editor.Tests.Composition;
 
 public sealed class ImageCompositorTests
 {
+    private readonly ImageCompositor _compositor = new();
+
     [Fact]
-    public void Compose_StacksSegmentsAndChromeForVerticalCapture()
+    public void Compose_VerticalCapture_IncludesSegmentsAndChrome()
     {
         using var fixedTop = CreateSolidBitmap(4, 2, Color.Blue);
         using var fixedBottom = CreateSolidBitmap(4, 1, Color.Green);
@@ -30,26 +32,67 @@ public sealed class ImageCompositorTests
             fixedTopBitmap: (Bitmap)fixedTop.Clone(),
             fixedBottomBitmap: (Bitmap)fixedBottom.Clone());
 
-        var compositor = new ImageCompositor();
-        using var composed = compositor.Compose(result, EditState.Default);
+        using var composed = _compositor.Compose(result, EditState.Default);
 
         composed.Width.Should().Be(4);
-        composed.Height.Should().Be(8);
+        composed.Height.Should().Be(8); // 2 top + 3 seg1 + 2 seg2 + 1 bottom
     }
 
     [Fact]
-    public void Compose_AppliesTrimAndCutRanges()
+    public void Compose_ChromeToggleOff_ExcludesFixedRegions()
     {
-        using var segment = CreateSolidBitmap(3, 10, Color.Red);
+        using var fixedTop = CreateSolidBitmap(4, 2, Color.Blue);
+        using var fixedBottom = CreateSolidBitmap(4, 1, Color.Green);
+        using var segment = CreateSolidBitmap(4, 5, Color.Red);
+
         var result = new CaptureResult(
             new[] { new ScrollSegment((Bitmap)segment.Clone(), 0) },
-            new ZoneLayout(0, 0, 0, 0, new ScreenRect(0, 0, 3, 10)),
+            new ZoneLayout(2, 1, 0, 0, new ScreenRect(0, 2, 4, 5)),
             ScrollDirection.Vertical,
-            3,
-            10);
+            4,
+            8,
+            fixedTopBitmap: (Bitmap)fixedTop.Clone(),
+            fixedBottomBitmap: (Bitmap)fixedBottom.Clone());
 
-        var compositor = new ImageCompositor();
-        using var composed = compositor.Compose(
+        using var composed = _compositor.Compose(result, EditState.Default with { IncludeChrome = false });
+
+        composed.Width.Should().Be(4);
+        composed.Height.Should().Be(5); // only the segment, no chrome
+    }
+
+    [Fact]
+    public void Compose_TrimRemovesHeadAndTail()
+    {
+        using var segment = CreateSolidBitmap(3, 10, Color.Red);
+        var result = CreateSingleSegmentResult(segment, 3, 10);
+
+        using var composed = _compositor.Compose(
+            result,
+            EditState.Default with { TrimRange = new TrimRange(3, 2) });
+
+        composed.Height.Should().Be(5); // 10 - 3 head - 2 tail
+    }
+
+    [Fact]
+    public void Compose_CutRemovesMiddleSection()
+    {
+        using var segment = CreateSolidBitmap(3, 10, Color.Red);
+        var result = CreateSingleSegmentResult(segment, 3, 10);
+
+        using var composed = _compositor.Compose(
+            result,
+            EditState.Default with { CutRanges = new[] { new CutRange(3, 7) } });
+
+        composed.Height.Should().Be(6); // 10 - 4 cut
+    }
+
+    [Fact]
+    public void Compose_TrimAndCutCombine()
+    {
+        using var segment = CreateSolidBitmap(3, 10, Color.Red);
+        var result = CreateSingleSegmentResult(segment, 3, 10);
+
+        using var composed = _compositor.Compose(
             result,
             EditState.Default with
             {
@@ -57,7 +100,47 @@ public sealed class ImageCompositorTests
                 CutRanges = new[] { new CutRange(4, 6) },
             });
 
-        composed.Height.Should().Be(5);
+        composed.Height.Should().Be(5); // 10 - 2 head - 1 tail - 2 cut
+    }
+
+    [Fact]
+    public void Compose_AdjacentCutsAreMerged()
+    {
+        using var segment = CreateSolidBitmap(3, 20, Color.Red);
+        var result = CreateSingleSegmentResult(segment, 3, 20);
+
+        using var composed = _compositor.Compose(
+            result,
+            EditState.Default with
+            {
+                CutRanges = new[] { new CutRange(5, 10), new CutRange(10, 15) },
+            });
+
+        composed.Height.Should().Be(10); // 20 - 10 merged cut
+    }
+
+    [Fact]
+    public void Compose_CropReducesToSpecifiedRectangle()
+    {
+        using var segment = CreateSolidBitmap(10, 10, Color.Red);
+        var result = CreateSingleSegmentResult(segment, 10, 10);
+
+        using var composed = _compositor.Compose(
+            result,
+            EditState.Default with { CropRect = new CropRect(1, 2, 5, 4) });
+
+        composed.Width.Should().Be(5);
+        composed.Height.Should().Be(4);
+    }
+
+    private static CaptureResult CreateSingleSegmentResult(Bitmap segment, int width, int height)
+    {
+        return new CaptureResult(
+            new[] { new ScrollSegment((Bitmap)segment.Clone(), 0) },
+            new ZoneLayout(0, 0, 0, 0, new ScreenRect(0, 0, width, height)),
+            ScrollDirection.Vertical,
+            width,
+            height);
     }
 
     private static Bitmap CreateSolidBitmap(int width, int height, Color color)

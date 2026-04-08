@@ -48,6 +48,60 @@ public sealed class PreviewEditorViewModelTests
         closeRequested.Should().BeFalse();
     }
 
+    [Fact]
+    public void DiscardCommand_SkipsConfirmation_WhenNoChanges()
+    {
+        var confirmation = new FakeConfirmationService(confirmDiscard: false);
+        var viewModel = CreateViewModel(confirmationService: confirmation);
+        var closeRequested = false;
+        viewModel.CloseRequested += (_, _) => closeRequested = true;
+
+        viewModel.DiscardCommand.Execute(null);
+
+        // No edits were made, so discard should close immediately without asking
+        closeRequested.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Save_ClearsHasUnsavedChanges()
+    {
+        var viewModel = CreateViewModel(imageFileService: new FakeImageFileService());
+        viewModel.ApplyTrim(new TrimRange(1, 0));
+
+        viewModel.HasUnsavedChanges.Should().BeTrue();
+
+        viewModel.SaveCommand.Execute(null);
+
+        viewModel.HasUnsavedChanges.Should().BeFalse();
+    }
+
+    [Fact]
+    public void EditAfterSave_SetsHasUnsavedChangesAgain()
+    {
+        var viewModel = CreateViewModel(imageFileService: new FakeImageFileService());
+        viewModel.ApplyTrim(new TrimRange(1, 0));
+        viewModel.SaveCommand.Execute(null);
+        viewModel.HasUnsavedChanges.Should().BeFalse();
+
+        viewModel.AddCut(new CutRange(3, 5));
+
+        viewModel.HasUnsavedChanges.Should().BeTrue();
+    }
+
+    [Fact]
+    public void UndoBackToSavedState_ClearsHasUnsavedChanges()
+    {
+        var viewModel = CreateViewModel(imageFileService: new FakeImageFileService());
+        viewModel.ApplyTrim(new TrimRange(1, 0));
+        viewModel.SaveCommand.Execute(null);
+
+        viewModel.AddCut(new CutRange(3, 5));
+        viewModel.HasUnsavedChanges.Should().BeTrue();
+
+        viewModel.UndoCommand.Execute(null);
+        viewModel.HasUnsavedChanges.Should().BeFalse();
+    }
+
     private static PreviewEditorViewModel CreateViewModel(
         IClipboardService? clipboardService = null,
         IImageFileService? imageFileService = null,
