@@ -1,0 +1,163 @@
+<h2>Section 4: Preview Editor — Timeline-Style Image Editing</h2>
+<p class="subtitle">The post-capture experience: verify, trim, cut, and save</p>
+
+<div class="section">
+  <h3>Editor Layout</h3>
+  <div class="mockup">
+    <div class="mockup-header">Preview Editor Window</div>
+    <div class="mockup-body" style="padding:0; overflow:hidden;">
+
+      <!-- Toolbar -->
+      <div style="background:#1a1a2e; padding:8px 16px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #333;">
+        <div style="display:flex; gap:12px; align-items:center;">
+          <div style="background:#333; border-radius:4px; padding:4px 10px; font-size:12px; color:#ccc; cursor:pointer;">✂️ Trim</div>
+          <div style="background:#333; border-radius:4px; padding:4px 10px; font-size:12px; color:#ccc; cursor:pointer;">🔲 Crop</div>
+          <div style="background:#333; border-radius:4px; padding:4px 10px; font-size:12px; color:#ccc; cursor:pointer;">🔒 Chrome: On</div>
+          <div style="color:#555; font-size:18px;">|</div>
+          <div style="background:#333; border-radius:4px; padding:4px 10px; font-size:12px; color:#ccc; cursor:pointer;">🔍 Fit</div>
+          <div style="background:#333; border-radius:4px; padding:4px 10px; font-size:12px; color:#ccc; cursor:pointer;">1:1</div>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <div style="background:#e74c3c; border-radius:4px; padding:4px 14px; font-size:12px; color:#fff; cursor:pointer;">Discard</div>
+          <div style="background:#555; border-radius:4px; padding:4px 14px; font-size:12px; color:#fff; cursor:pointer;">📋 Copy</div>
+          <div style="background:#4a9eff; border-radius:4px; padding:4px 14px; font-size:12px; color:#fff; cursor:pointer;">💾 Save</div>
+        </div>
+      </div>
+
+      <!-- Main content area -->
+      <div style="display:flex; height:350px;">
+
+        <!-- Image viewport -->
+        <div style="flex:1; background:#0a0a15; display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden;">
+          <div style="width:180px; border:1px solid #333; border-radius:4px; overflow:hidden;">
+            <div style="background:#2a2a4a; padding:6px 10px; font-size:10px; color:#888; border-bottom:1px solid #333;">🔒 Fixed chrome (toolbar)</div>
+            <div style="background:#0d0d2a; padding:12px 10px; font-size:10px; color:#4a9eff;">Content line 1...</div>
+            <div style="background:#0d0d2a; padding:12px 10px; font-size:10px; color:#4a9eff; border-top:1px solid #1a1a3a;">Content line 2...</div>
+            <div style="background:#111130; padding:12px 10px; font-size:10px; color:#aaa; border-top:1px solid #1a1a3a;">
+              <span style="text-decoration:line-through; color:#e74c3c;">Cut section</span>
+            </div>
+            <div style="background:#0d0d2a; padding:12px 10px; font-size:10px; color:#4a9eff; border-top:1px solid #1a1a3a;">Content line 3...</div>
+            <div style="background:#0d0d2a; padding:12px 10px; font-size:10px; color:#4a9eff; border-top:1px solid #1a1a3a;">Content line 4...</div>
+            <div style="background:#2a2a4a; padding:6px 10px; font-size:10px; color:#888; border-top:1px solid #333;">🔒 Fixed chrome (status)</div>
+          </div>
+          <div style="position:absolute; bottom:10px; right:10px; background:#222; border-radius:4px; padding:4px 8px; font-size:10px; color:#666;">
+            2400 × 8200 px
+          </div>
+        </div>
+
+        <!-- Timeline strip (right side) -->
+        <div style="width:120px; background:#111128; border-left:1px solid #333; padding:10px; display:flex; flex-direction:column;">
+          <div style="font-size:10px; color:#888; margin-bottom:8px; text-align:center;">TIMELINE</div>
+
+          <!-- Trim handle top -->
+          <div style="height:4px; background:#f5a623; border-radius:2px; cursor:ns-resize; margin-bottom:2px;" title="Drag to trim top"></div>
+
+          <!-- Segments -->
+          <div style="flex:1; display:flex; flex-direction:column; gap:1px; overflow-y:auto;">
+            <div style="background:#1a3a1a; border-radius:2px; padding:4px; font-size:9px; color:#7ed321; text-align:center; flex-shrink:0;">Chrome ↑</div>
+            <div style="background:#1a1a3a; border-radius:2px; padding:8px 4px; font-size:9px; color:#4a9eff; text-align:center; flex-shrink:0;">Seg 1</div>
+            <div style="background:#1a1a3a; border-radius:2px; padding:8px 4px; font-size:9px; color:#4a9eff; text-align:center; flex-shrink:0;">Seg 2</div>
+            <div style="background:#3a1a1a; border-radius:2px; padding:8px 4px; font-size:9px; color:#e74c3c; text-align:center; flex-shrink:0; text-decoration:line-through; opacity:0.5;">Seg 3 ✂️</div>
+            <div style="background:#1a1a3a; border-radius:2px; padding:8px 4px; font-size:9px; color:#4a9eff; text-align:center; flex-shrink:0;">Seg 4</div>
+            <div style="background:#1a1a3a; border-radius:2px; padding:8px 4px; font-size:9px; color:#4a9eff; text-align:center; flex-shrink:0;">Seg 5</div>
+            <div style="background:#1a1a3a; border-radius:2px; padding:8px 4px; font-size:9px; color:#4a9eff; text-align:center; flex-shrink:0;">Seg 6</div>
+            <div style="background:#1a3a1a; border-radius:2px; padding:4px; font-size:9px; color:#7ed321; text-align:center; flex-shrink:0;">Chrome ↓</div>
+          </div>
+
+          <!-- Trim handle bottom -->
+          <div style="height:4px; background:#f5a623; border-radius:2px; cursor:ns-resize; margin-top:2px;" title="Drag to trim bottom"></div>
+
+          <div style="font-size:9px; color:#555; margin-top:8px; text-align:center;">
+            Click segment to select<br>
+            Del to cut selection<br>
+            Drag edges to trim
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Timeline Strip Interactions</h3>
+  <div class="mockup">
+    <div class="mockup-header">How Users Edit the Long Screenshot</div>
+    <div class="mockup-body" style="padding:25px;">
+      <table style="width:100%; border-collapse:collapse; font-size:14px;">
+        <tr style="border-bottom:1px solid #333;">
+          <td style="padding:12px; font-weight:600; color:#f5a623; width:25%;">Trim Head/Tail</td>
+          <td style="padding:12px; color:#ccc;">
+            Drag the orange handles at the top/bottom of the timeline strip to trim the beginning or end. The main viewport updates live to show the new boundary. Like trimming a video clip.
+          </td>
+        </tr>
+        <tr style="border-bottom:1px solid #333;">
+          <td style="padding:12px; font-weight:600; color:#e74c3c;">Cut Middle</td>
+          <td style="padding:12px; color:#ccc;">
+            Click a segment in the timeline to select it (highlighted). Press <strong>Delete</strong> to cut it. Cut segments are shown struck-through with reduced opacity — they can be restored with <strong>Ctrl+Z</strong>. Multiple segments can be selected (Shift+click for range, Ctrl+click for multi) and cut at once.
+          </td>
+        </tr>
+        <tr style="border-bottom:1px solid #333;">
+          <td style="padding:12px; font-weight:600; color:#7ed321;">Chrome Toggle</td>
+          <td style="padding:12px; color:#ccc;">
+            The "Chrome: On/Off" toolbar button toggles whether fixed top/bottom/left/right regions are included in the output. Useful when you only want the scrolling content.
+          </td>
+        </tr>
+        <tr style="border-bottom:1px solid #333;">
+          <td style="padding:12px; font-weight:600; color:#4a9eff;">Viewport Navigation</td>
+          <td style="padding:12px; color:#ccc;">
+            Scroll wheel to zoom. Click-drag to pan. "Fit" button fits entire image in view. "1:1" shows actual pixels. Clicking a segment in the timeline scrolls the viewport to that section.
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:12px; font-weight:600; color:#9b59b6;">Undo/Redo</td>
+          <td style="padding:12px; color:#ccc;">
+            <strong>Ctrl+Z / Ctrl+Y</strong> for undo/redo. All trim and cut operations are reversible. No destructive edits until the user clicks Save.
+          </td>
+        </tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Output Actions</h3>
+  <div class="mockup">
+    <div class="mockup-header">What Happens When You're Done Editing</div>
+    <div class="mockup-body" style="padding:25px;">
+      <div style="display:flex; gap:20px; justify-content:center;">
+
+        <div style="border:1px solid #4a9eff; border-radius:8px; padding:20px; text-align:center; flex:1; max-width:180px;">
+          <div style="font-size:28px; margin-bottom:8px;">💾</div>
+          <div style="font-weight:600; color:#4a9eff; margin-bottom:4px;">Save</div>
+          <div style="font-size:12px; color:#aaa;">
+            Composites final image (chrome + included segments).<br>
+            Saves as PNG to configured folder.<br>
+            Auto-names: <code>ScrollShot_YYYYMMDD_HHmmss.png</code>
+          </div>
+        </div>
+
+        <div style="border:1px solid #888; border-radius:8px; padding:20px; text-align:center; flex:1; max-width:180px;">
+          <div style="font-size:28px; margin-bottom:8px;">📋</div>
+          <div style="font-weight:600; color:#ccc; margin-bottom:4px;">Copy</div>
+          <div style="font-size:12px; color:#aaa;">
+            Composites final image and places on clipboard.<br>
+            Ready to paste into any app.<br>
+            Toast confirms success.
+          </div>
+        </div>
+
+        <div style="border:1px solid #e74c3c; border-radius:8px; padding:20px; text-align:center; flex:1; max-width:180px;">
+          <div style="font-size:28px; margin-bottom:8px;">🗑️</div>
+          <div style="font-weight:600; color:#e74c3c; margin-bottom:4px;">Discard</div>
+          <div style="font-size:12px; color:#aaa;">
+            Throws away the capture.<br>
+            Confirmation prompt if edits were made.<br>
+            Returns to idle state.
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>

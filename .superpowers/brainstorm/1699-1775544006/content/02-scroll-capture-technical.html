@@ -1,0 +1,123 @@
+<h2>Section 2: Scroll Capture — Technical Design</h2>
+<p class="subtitle">How frames are captured, compared, and stitched into a long image</p>
+
+<div class="section">
+  <h3>Frame Capture Pipeline</h3>
+  <div class="mockup">
+    <div class="mockup-header">How It Works Under the Hood</div>
+    <div class="mockup-body" style="padding:25px;">
+      <div style="display:flex; flex-direction:column; gap:20px;">
+
+        <div style="display:flex; gap:20px; align-items:flex-start;">
+          <div style="background:#4a9eff; color:#fff; border-radius:8px; padding:8px 14px; font-weight:700; flex-shrink:0;">CAPTURE</div>
+          <div>
+            <div style="font-weight:600;">DXGI Desktop Duplication API</div>
+            <div style="color:#aaa; font-size:13px; margin-top:4px;">
+              Uses GPU-accelerated screen capture (IDXGIOutputDuplication).<br>
+              Captures only the selected rectangle, not the full screen.<br>
+              Runs on a background thread, triggered by scroll events.<br>
+              <strong>Capture rate:</strong> On each scroll delta change — not a fixed timer. This ensures we capture every intermediate state.
+            </div>
+          </div>
+        </div>
+
+        <div style="border-top:1px solid #333; padding-top:20px; display:flex; gap:20px; align-items:flex-start;">
+          <div style="background:#f5a623; color:#fff; border-radius:8px; padding:8px 14px; font-weight:700; flex-shrink:0;">DETECT</div>
+          <div>
+            <div style="font-weight:600;">Overlap Detection via Column/Row Matching</div>
+            <div style="color:#aaa; font-size:13px; margin-top:4px;">
+              For <strong>vertical scroll</strong>: compare bottom rows of previous frame to top rows of new frame.<br>
+              For <strong>horizontal scroll</strong>: compare right columns of previous frame to left columns of new frame.<br>
+              <strong>Algorithm:</strong> Compute a hash (or pixel-sum signature) for each row/column. Slide the new frame against the old to find best overlap match. Use Sum of Absolute Differences (SAD) on candidate rows to confirm alignment.<br>
+              <strong>No overlap found?</strong> Concatenate directly — "don't miss content" is the priority.
+            </div>
+          </div>
+        </div>
+
+        <div style="border-top:1px solid #333; padding-top:20px; display:flex; gap:20px; align-items:flex-start;">
+          <div style="background:#7ed321; color:#fff; border-radius:8px; padding:8px 14px; font-weight:700; flex-shrink:0;">STITCH</div>
+          <div>
+            <div style="font-weight:600;">Incremental Strip Building</div>
+            <div style="color:#aaa; font-size:13px; margin-top:4px;">
+              Once overlap is detected, append only the <strong>new (non-overlapping) portion</strong> to a growing bitmap strip.<br>
+              The strip is stored in memory as a list of frame segments, not one massive bitmap — final composition happens at save time.<br>
+              A downscaled thumbnail of the strip is rendered in real-time for the live preview panel.
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Scroll Direction Handling</h3>
+  <div class="mockup">
+    <div class="mockup-header">Vertical vs Horizontal Scrolling</div>
+    <div class="mockup-body" style="padding:25px;">
+      <div class="split" style="display:flex; gap:30px;">
+
+        <div style="flex:1; border:1px solid #444; border-radius:8px; padding:20px;">
+          <div style="font-weight:700; color:#4a9eff; margin-bottom:10px;">↕ Vertical Scroll</div>
+          <div style="background:#1a1a2e; border-radius:6px; padding:15px; margin-bottom:10px;">
+            <div style="border:2px dashed #4a9eff; height:60px; display:flex; align-items:center; justify-content:center; color:#4a9eff; font-size:12px; margin-bottom:4px;">Frame 1</div>
+            <div style="border:2px dashed #f5a623; height:60px; display:flex; align-items:center; justify-content:center; margin-top:-15px; background:rgba(245,166,35,0.1); color:#f5a623; font-size:12px; margin-bottom:4px;">
+              Frame 2 (overlaps ↑)
+            </div>
+            <div style="border:2px dashed #7ed321; height:60px; display:flex; align-items:center; justify-content:center; margin-top:-15px; background:rgba(126,211,33,0.1); color:#7ed321; font-size:12px;">
+              Frame 3 (overlaps ↑)
+            </div>
+          </div>
+          <div style="color:#aaa; font-size:12px;">
+            Compare <strong>bottom rows</strong> of prev frame with <strong>top rows</strong> of next frame. Preview strip grows downward on the right side.
+          </div>
+        </div>
+
+        <div style="flex:1; border:1px solid #444; border-radius:8px; padding:20px;">
+          <div style="font-weight:700; color:#4a9eff; margin-bottom:10px;">↔ Horizontal Scroll</div>
+          <div style="background:#1a1a2e; border-radius:6px; padding:15px; margin-bottom:10px; display:flex;">
+            <div style="border:2px dashed #4a9eff; width:80px; height:80px; display:flex; align-items:center; justify-content:center; color:#4a9eff; font-size:12px; flex-shrink:0;">F1</div>
+            <div style="border:2px dashed #f5a623; width:80px; height:80px; display:flex; align-items:center; justify-content:center; margin-left:-20px; background:rgba(245,166,35,0.1); color:#f5a623; font-size:12px; flex-shrink:0;">F2</div>
+            <div style="border:2px dashed #7ed321; width:80px; height:80px; display:flex; align-items:center; justify-content:center; margin-left:-20px; background:rgba(126,211,33,0.1); color:#7ed321; font-size:12px; flex-shrink:0;">F3</div>
+          </div>
+          <div style="color:#aaa; font-size:12px;">
+            Compare <strong>right columns</strong> of prev frame with <strong>left columns</strong> of next frame. Preview strip grows rightward below the selection.
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Key Technical Decisions</h3>
+  <div class="mockup">
+    <div class="mockup-header">Design Choices</div>
+    <div class="mockup-body" style="padding:25px;">
+      <table style="width:100%; border-collapse:collapse; font-size:14px;">
+        <tr style="border-bottom:1px solid #333;">
+          <td style="padding:10px; font-weight:600; color:#4a9eff; width:30%;">Screen Capture API</td>
+          <td style="padding:10px; color:#ccc;">DXGI Desktop Duplication — GPU-accelerated, captures at display refresh rate, minimal CPU overhead. Falls back to BitBlt (GDI) for compatibility with older systems.</td>
+        </tr>
+        <tr style="border-bottom:1px solid #333;">
+          <td style="padding:10px; font-weight:600; color:#4a9eff;">Direction Detection</td>
+          <td style="padding:10px; color:#ccc;">Determined by the first scroll input. Mouse wheel delta Y → vertical. Shift+wheel or horizontal trackpad → horizontal. Locked after first scroll event to prevent confusion.</td>
+        </tr>
+        <tr style="border-bottom:1px solid #333;">
+          <td style="padding:10px; font-weight:600; color:#4a9eff;">Frame Storage</td>
+          <td style="padding:10px; color:#ccc;">Each unique strip segment stored as a separate bitmap in a list. Only composited into one large image at save time. This keeps memory bounded — we store only the non-overlapping deltas.</td>
+        </tr>
+        <tr style="border-bottom:1px solid #333;">
+          <td style="padding:10px; font-weight:600; color:#4a9eff;">Duplicate Detection</td>
+          <td style="padding:10px; color:#ccc;">If a new frame is identical (or near-identical) to the previous frame, skip it. This handles pauses in scrolling without wasting memory.</td>
+        </tr>
+        <tr>
+          <td style="padding:10px; font-weight:600; color:#4a9eff;">Overlay Window</td>
+          <td style="padding:10px; color:#ccc;">Transparent, topmost WPF window covering all monitors. Click-through except in the selection area. Uses WS_EX_TRANSPARENT + WS_EX_TOOLWINDOW to avoid capturing itself.</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+</div>

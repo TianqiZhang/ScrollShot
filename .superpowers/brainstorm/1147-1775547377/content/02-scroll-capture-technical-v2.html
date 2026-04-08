@@ -1,0 +1,186 @@
+<h2>Section 2 (Updated): Scroll Capture — Technical Design</h2>
+<p class="subtitle">How frames are captured, compared, and stitched — with fixed-region awareness</p>
+
+<div class="section">
+  <h3>The Core Challenge: Mixed Fixed + Scrolling Regions</h3>
+  <div class="mockup">
+    <div class="mockup-header">Selected Area Often Contains Fixed Chrome</div>
+    <div class="mockup-body" style="padding:25px;">
+      <div style="display:flex; gap:30px; justify-content:center; align-items:flex-start;">
+
+        <div style="flex:0 0 220px;">
+          <div style="font-weight:600; text-align:center; margin-bottom:10px; color:#f5a623;">User's Selection</div>
+          <div style="border:2px solid #f5a623; border-radius:6px; overflow:hidden;">
+            <div style="background:#2a2a4a; padding:8px 12px; font-size:12px; color:#888; border-bottom:1px solid #444;">
+              ← → 🔄 &nbsp; https://example.com
+            </div>
+            <div style="background:#1e1e3a; padding:6px 12px; font-size:11px; color:#666; border-bottom:1px solid #333;">
+              Tab 1 &nbsp;|&nbsp; Tab 2 &nbsp;|&nbsp; Tab 3
+            </div>
+            <div style="background:#0d0d1a; padding:30px 12px; font-size:13px; color:#4a9eff; text-align:center;">
+              ↕ Scrolling<br>Content Area
+            </div>
+            <div style="background:#2a2a4a; padding:6px 12px; font-size:11px; color:#666; border-top:1px solid #444;">
+              Status bar — fixed
+            </div>
+          </div>
+        </div>
+
+        <div style="flex:0 0 30px; display:flex; align-items:center; font-size:24px; color:#666;">→</div>
+
+        <div style="flex:0 0 220px;">
+          <div style="font-weight:600; text-align:center; margin-bottom:10px; color:#7ed321;">Detected Zones</div>
+          <div style="border:2px solid #7ed321; border-radius:6px; overflow:hidden;">
+            <div style="background:#2a2a4a; padding:8px 12px; font-size:12px; color:#f5a623; border-bottom:1px solid #f5a623; border-left:3px solid #f5a623;">
+              🔒 Fixed top zone (toolbar)
+            </div>
+            <div style="background:#1e1e3a; padding:6px 12px; font-size:11px; color:#f5a623; border-bottom:1px solid #f5a623; border-left:3px solid #f5a623;">
+              🔒 Fixed top zone (tabs)
+            </div>
+            <div style="background:#0d0d1a; padding:30px 12px; font-size:13px; color:#7ed321; text-align:center; border-left:3px solid #7ed321;">
+              ✂️ Scrolling zone<br><span style="font-size:11px; color:#888;">This part gets stitched</span>
+            </div>
+            <div style="background:#2a2a4a; padding:6px 12px; font-size:11px; color:#f5a623; border-top:1px solid #f5a623; border-left:3px solid #f5a623;">
+              🔒 Fixed bottom zone
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Frame Capture & Zone Detection Pipeline</h3>
+  <div class="mockup">
+    <div class="mockup-header">Step-by-Step Processing</div>
+    <div class="mockup-body" style="padding:25px;">
+      <div style="display:flex; flex-direction:column; gap:20px;">
+
+        <div style="display:flex; gap:20px; align-items:flex-start;">
+          <div style="background:#4a9eff; color:#fff; border-radius:8px; padding:8px 14px; font-weight:700; flex-shrink:0; font-size:13px;">1. CAPTURE</div>
+          <div>
+            <div style="font-weight:600;">DXGI Desktop Duplication</div>
+            <div style="color:#aaa; font-size:13px; margin-top:4px;">
+              GPU-accelerated screen capture of the selected rectangle.<br>
+              Triggered on each scroll event. Background thread.<br>
+              Falls back to BitBlt (GDI) on older systems.
+            </div>
+          </div>
+        </div>
+
+        <div style="border-top:1px solid #333; padding-top:20px; display:flex; gap:20px; align-items:flex-start;">
+          <div style="background:#f5a623; color:#fff; border-radius:8px; padding:8px 14px; font-weight:700; flex-shrink:0; font-size:13px;">2. ZONE SPLIT</div>
+          <div>
+            <div style="font-weight:600;">Detect Fixed vs Scrolling Regions</div>
+            <div style="color:#aaa; font-size:13px; margin-top:4px;">
+              Compare Frame N with Frame N-1 row-by-row (vertical) or column-by-column (horizontal).<br>
+              <strong>Fixed rows/cols:</strong> pixel difference below threshold → part of the chrome.<br>
+              <strong>Scrolling band:</strong> contiguous region where content has shifted.<br>
+              Runs once on the first two frames to establish zones, then re-verified periodically.<br>
+              Output: <code>fixedTop</code>, <code>scrollBand</code>, <code>fixedBottom</code> (or left/right for horizontal).
+            </div>
+          </div>
+        </div>
+
+        <div style="border-top:1px solid #333; padding-top:20px; display:flex; gap:20px; align-items:flex-start;">
+          <div style="background:#7ed321; color:#fff; border-radius:8px; padding:8px 14px; font-weight:700; flex-shrink:0; font-size:13px;">3. OVERLAP</div>
+          <div>
+            <div style="font-weight:600;">Match Within the Scrolling Band Only</div>
+            <div style="color:#aaa; font-size:13px; margin-top:4px;">
+              Extract the scrolling band from both frames.<br>
+              Compute row/column hash signatures within the band.<br>
+              Slide new frame's band against previous to find best overlap (minimize SAD).<br>
+              <strong>No match found?</strong> Concatenate directly — never miss content.<br>
+              <strong>100% match?</strong> Skip frame (content hasn't moved yet).
+            </div>
+          </div>
+        </div>
+
+        <div style="border-top:1px solid #333; padding-top:20px; display:flex; gap:20px; align-items:flex-start;">
+          <div style="background:#9b59b6; color:#fff; border-radius:8px; padding:8px 14px; font-weight:700; flex-shrink:0; font-size:13px;">4. STITCH</div>
+          <div>
+            <div style="font-weight:600;">Append Non-Overlapping Delta</div>
+            <div style="color:#aaa; font-size:13px; margin-top:4px;">
+              Append only the new (non-overlapping) portion of the scrolling band to the segment list.<br>
+              Fixed chrome is captured once and stored separately.<br>
+              <strong>Final composition:</strong> fixedTop + all stitched scroll segments + fixedBottom.<br>
+              Thumbnail of growing strip rendered for live preview panel.
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Final Image Composition</h3>
+  <div class="mockup">
+    <div class="mockup-header">How the Long Screenshot is Assembled</div>
+    <div class="mockup-body" style="padding:25px;">
+      <div style="display:flex; justify-content:center;">
+        <div style="width:200px;">
+          <div style="background:#2a2a4a; border:1px solid #f5a623; border-radius:6px 6px 0 0; padding:10px; text-align:center; font-size:12px; color:#f5a623;">
+            🔒 Fixed Top Chrome<br><span style="font-size:10px; color:#888;">(captured once)</span>
+          </div>
+          <div style="border-left:1px solid #7ed321; border-right:1px solid #7ed321; padding:6px; text-align:center; font-size:11px; color:#7ed321; background:#0d0d1a;">
+            Scroll segment 1
+          </div>
+          <div style="border-left:1px solid #7ed321; border-right:1px solid #7ed321; padding:6px; text-align:center; font-size:11px; color:#7ed321; background:#111128;">
+            Scroll segment 2
+          </div>
+          <div style="border-left:1px solid #7ed321; border-right:1px solid #7ed321; padding:6px; text-align:center; font-size:11px; color:#7ed321; background:#0d0d1a;">
+            Scroll segment 3
+          </div>
+          <div style="border-left:1px solid #7ed321; border-right:1px solid #7ed321; padding:6px; text-align:center; font-size:11px; color:#888; background:#111128;">
+            ⋮ (more segments)
+          </div>
+          <div style="border-left:1px solid #7ed321; border-right:1px solid #7ed321; padding:6px; text-align:center; font-size:11px; color:#7ed321; background:#0d0d1a;">
+            Scroll segment N
+          </div>
+          <div style="background:#2a2a4a; border:1px solid #f5a623; border-radius:0 0 6px 6px; padding:10px; text-align:center; font-size:12px; color:#f5a623;">
+            🔒 Fixed Bottom Chrome<br><span style="font-size:10px; color:#888;">(captured once)</span>
+          </div>
+        </div>
+      </div>
+      <div style="text-align:center; margin-top:15px; color:#aaa; font-size:13px;">
+        User can optionally <strong>exclude fixed chrome</strong> in the preview editor<br>
+        if they only want the scrolling content.
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Key Technical Decisions</h3>
+  <div class="mockup">
+    <div class="mockup-header">Design Choices</div>
+    <div class="mockup-body" style="padding:25px;">
+      <table style="width:100%; border-collapse:collapse; font-size:14px;">
+        <tr style="border-bottom:1px solid #333;">
+          <td style="padding:10px; font-weight:600; color:#4a9eff; width:30%;">Screen Capture API</td>
+          <td style="padding:10px; color:#ccc;">DXGI Desktop Duplication (primary), BitBlt/GDI (fallback). GPU-accelerated, captures at display refresh rate.</td>
+        </tr>
+        <tr style="border-bottom:1px solid #333;">
+          <td style="padding:10px; font-weight:600; color:#4a9eff;">Zone Detection</td>
+          <td style="padding:10px; color:#ccc;">Row/column diff between first two frames. Rows below a pixel-difference threshold are "fixed". Contiguous changed rows form the "scrolling band". Re-verified every ~10 frames to handle dynamic chrome.</td>
+        </tr>
+        <tr style="border-bottom:1px solid #333;">
+          <td style="padding:10px; font-weight:600; color:#4a9eff;">Direction Lock</td>
+          <td style="padding:10px; color:#ccc;">Determined by first scroll input. Wheel delta Y → vertical. Shift+wheel or trackpad X → horizontal. Locked for the session.</td>
+        </tr>
+        <tr style="border-bottom:1px solid #333;">
+          <td style="padding:10px; font-weight:600; color:#4a9eff;">Frame Storage</td>
+          <td style="padding:10px; color:#ccc;">List of non-overlapping delta segments. Only composited at save time. Memory-bounded — we never store duplicate pixels.</td>
+        </tr>
+        <tr>
+          <td style="padding:10px; font-weight:600; color:#4a9eff;">Overlay Window</td>
+          <td style="padding:10px; color:#ccc;">Transparent, topmost WPF window. Click-through except for the Done button. Uses WS_EX_TRANSPARENT + WS_EX_TOOLWINDOW to avoid capturing itself.</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+</div>
