@@ -17,11 +17,13 @@ public sealed class CaptureOrchestrator
 {
     private static readonly TimeSpan ScrollCaptureSamplingInterval = TimeSpan.FromMilliseconds(120);
     private readonly Func<AppSettings> _settingsProvider;
+    private readonly IScrollSessionFactory _scrollSessionFactory;
     private SelectionOverlayWindow? _activeOverlay;
 
-    public CaptureOrchestrator(Func<AppSettings> settingsProvider)
+    public CaptureOrchestrator(Func<AppSettings> settingsProvider, IScrollSessionFactory? scrollSessionFactory = null)
     {
         _settingsProvider = settingsProvider;
+        _scrollSessionFactory = scrollSessionFactory ?? new ScrollSessionFactory();
     }
 
     public Task BeginCaptureAsync()
@@ -33,7 +35,7 @@ public sealed class CaptureOrchestrator
 
         var overlay = new SelectionOverlayWindow();
         _activeOverlay = overlay;
-        ScrollSession? session = null;
+        IScrollSession? session = null;
         ScrollCaptureWorkflow? workflow = null;
         ScrollCaptureSampler? sampler = null;
         ScrollCaptureDebugDumpSession? debugDumpSession = null;
@@ -75,7 +77,7 @@ public sealed class CaptureOrchestrator
             if (workflow is null)
             {
                 var direction = args.Direction ?? ScrollDirection.Vertical;
-                session = new ScrollSession();
+                session = _scrollSessionFactory.CreateSession();
                 session.PreviewUpdated += overlay.UpdatePreview;
                 debugDumpSession = TryCreateDebugDumpSession(_settingsProvider(), args.Region, direction);
                 var shouldSuspendOverlayDuringCapture = !overlay.IsExcludedFromCapture;

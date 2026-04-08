@@ -1,6 +1,7 @@
 using System.Drawing;
 using System.Drawing.Imaging;
 using FluentAssertions;
+using ScrollShot.Scroll;
 using ScrollShot.StitchingData.Models;
 using ScrollShot.Tooling.Models;
 using ScrollShot.Tooling.Services;
@@ -50,6 +51,37 @@ public sealed class DatasetReplayerTests : IDisposable
         report.NormalizedDifferenceToGroundTruth.Should().Be(0);
         File.Exists(Path.Combine(replayDirectory, "stitched.png")).Should().BeTrue();
         File.Exists(Path.Combine(replayDirectory, "report.json")).Should().BeTrue();
+    }
+
+    [Fact]
+    public void Replay_AcceptsExperimentalProfile()
+    {
+        var inputPath = Path.Combine(_tempDirectory, "groundtruth-experimental.png");
+        using (var bitmap = CreateDistinctRowsBitmap(6, 11))
+        {
+            bitmap.Save(inputPath, ImageFormat.Png);
+        }
+
+        var datasetDirectory = Path.Combine(_tempDirectory, "dataset-experimental");
+        new LongScreenshotSlicer().Slice(new SliceCommandOptions
+        {
+            InputImagePath = inputPath,
+            OutputDirectory = datasetDirectory,
+            ViewportHeight = 5,
+            StepPixels = 3,
+            DatasetName = "ideal-experimental",
+        });
+
+        var replayDirectory = Path.Combine(_tempDirectory, "replay-experimental");
+        var report = new DatasetReplayer().Replay(new ReplayCommandOptions
+        {
+            ManifestPath = Path.Combine(datasetDirectory, "manifest.json"),
+            OutputDirectory = replayDirectory,
+            ProfileName = StitchingProfiles.SignalZoneExperiment,
+        });
+
+        report.Succeeded.Should().BeTrue();
+        report.OutputHeight.Should().Be(11);
     }
 
     public void Dispose()

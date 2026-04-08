@@ -1,3 +1,4 @@
+using ScrollShot.Scroll;
 using ScrollShot.Tooling.Models;
 using ScrollShot.Tooling.Services;
 
@@ -68,6 +69,7 @@ public static class ToolCli
         {
             ManifestPath = GetRequired(options, "manifest"),
             OutputDirectory = GetRequired(options, "output"),
+            ProfileName = GetOptional(options, "profile") ?? StitchingProfiles.Current,
         });
 
         if (!report.Succeeded)
@@ -154,7 +156,7 @@ public static class ToolCli
 
             Commands:
               slice  --input <image> --output <dir> --viewport-height <px> [--viewport-width <px>] [--step <px> | --overlap <px>] [--crop-x <px>] [--name <dataset>]
-              replay --manifest <manifest.json> --output <dir>
+              replay --manifest <manifest.json> --output <dir> [--profile <current|signal-zone>]
             """);
     }
 }

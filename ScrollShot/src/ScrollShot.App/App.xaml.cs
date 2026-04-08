@@ -1,6 +1,7 @@
-﻿using System.Windows;
+using System.Windows;
 using ScrollShot.App.Models;
 using ScrollShot.App.Services;
+using ScrollShot.Scroll;
 
 namespace ScrollShot.App;
 
@@ -32,7 +33,7 @@ public partial class App : Application
         _startupRegistrationService = new StartupRegistrationService();
         _currentSettings = _settingsService.Load();
 
-        _captureOrchestrator = new CaptureOrchestrator(() => _currentSettings);
+        _captureOrchestrator = new CaptureOrchestrator(() => _currentSettings, new ScrollSessionFactory());
         _trayIconManager = new TrayIconManager();
         _hotkeyService = new GlobalHotkeyService();
         _mainWindow = new MainWindow(_captureOrchestrator, _settingsService, _startupRegistrationService, ApplySettings, _currentSettings);

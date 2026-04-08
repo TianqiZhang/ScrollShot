@@ -22,7 +22,7 @@ public sealed class DatasetReplayer
                                 ?? throw new InvalidOperationException("The manifest path must include a directory.");
         Directory.CreateDirectory(options.OutputDirectory);
 
-        using var session = new ScrollSession();
+        using var session = new ScrollSessionFactory(options.ProfileName).CreateSession();
         var region = new ScreenRect(0, 0, manifest.ViewportWidth, manifest.ViewportHeight);
         session.Start(region, manifest.Direction);
 
