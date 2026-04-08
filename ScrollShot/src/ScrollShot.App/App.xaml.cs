@@ -18,6 +18,15 @@ public partial class App : Application
     {
         base.OnStartup(e);
         ShutdownMode = ShutdownMode.OnExplicitShutdown;
+        DispatcherUnhandledException += (_, args) =>
+        {
+            MessageBox.Show(
+                $"An unexpected error occurred:\n\n{args.Exception.Message}",
+                "ScrollShot Error",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+            args.Handled = true;
+        };
 
         _settingsService = new SettingsService();
         _startupRegistrationService = new StartupRegistrationService();

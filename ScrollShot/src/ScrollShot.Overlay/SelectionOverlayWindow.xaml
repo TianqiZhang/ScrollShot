@@ -24,6 +24,17 @@
         <Rectangle x:Name="LeftShade" Fill="#88000000" />
         <Rectangle x:Name="RightShade" Fill="#88000000" />
         <Rectangle x:Name="BottomShade" Fill="#88000000" />
+        <Border x:Name="InstructionBorder"
+                Background="#CC1A1A1A"
+                CornerRadius="8"
+                Padding="16,10"
+                IsHitTestVisible="False">
+            <TextBlock x:Name="InstructionText"
+                       Foreground="White"
+                       FontSize="14"
+                       TextAlignment="Center"
+                       Text="Click and drag to select a region&#x0a;Esc to cancel" />
+        </Border>
         <Border x:Name="SelectionBorder"
                 BorderBrush="#FF4DA3FF"
                 BorderThickness="2"

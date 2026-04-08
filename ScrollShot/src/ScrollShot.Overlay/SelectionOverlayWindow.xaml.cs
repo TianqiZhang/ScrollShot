@@ -62,6 +62,7 @@ public partial class SelectionOverlayWindow : Window
         Width = virtualBounds.Width;
         Height = virtualBounds.Height;
         UpdateShadeRegions();
+        CenterInstruction();
     }
 
     private void OnSourceInitialized(object? sender, EventArgs e)
@@ -82,6 +83,7 @@ public partial class SelectionOverlayWindow : Window
         _selectionRect = Rect.Empty;
         _captureDirection = null;
         PreviewStrip.Visibility = Visibility.Collapsed;
+        InstructionBorder.Visibility = Visibility.Collapsed;
         CaptureMouse();
     }
 
@@ -116,6 +118,9 @@ public partial class SelectionOverlayWindow : Window
         }
 
         SelectedRegion = ScreenHelper.ToPhysicalScreenRect(_selectionRect, this);
+        InstructionBorder.Visibility = Visibility.Visible;
+        InstructionText.Text = "Enter → instant screenshot\nScroll → scrolling capture\nEsc → cancel";
+        CenterInstruction();
     }
 
     private void OnPreviewMouseWheel(object sender, MouseWheelEventArgs e)
@@ -131,6 +136,7 @@ public partial class SelectionOverlayWindow : Window
                 ? ScrollDirection.Horizontal
                 : ScrollDirection.Vertical;
 
+            InstructionBorder.Visibility = Visibility.Collapsed;
             PreviewStrip.Visibility = Visibility.Visible;
             PositionPreviewStrip(_captureDirection.Value);
             ScrollCaptureStarted?.Invoke(this, new OverlayCaptureRequestedEventArgs(SelectedRegion.Value, _captureDirection));
@@ -225,5 +231,14 @@ public partial class SelectionOverlayWindow : Window
         Canvas.SetTop(rectangle, Math.Max(0, y));
         rectangle.Width = Math.Max(0, width);
         rectangle.Height = Math.Max(0, height);
+    }
+
+    private void CenterInstruction()
+    {
+        InstructionBorder.UpdateLayout();
+        var w = ActualWidth <= 0 ? Width : ActualWidth;
+        var h = ActualHeight <= 0 ? Height : ActualHeight;
+        Canvas.SetLeft(InstructionBorder, (w - InstructionBorder.ActualWidth) / 2);
+        Canvas.SetTop(InstructionBorder, (h - InstructionBorder.ActualHeight) / 2);
     }
 }
