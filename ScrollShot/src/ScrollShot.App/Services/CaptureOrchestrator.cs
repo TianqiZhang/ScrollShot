@@ -36,10 +36,12 @@ public sealed class CaptureOrchestrator
 
         overlay.InstantCaptureRequested += (_, args) =>
         {
+            overlay.Hide();
             using var capturer = ScreenCapturerFactory.Create(args.Region);
             using var frame = capturer.CaptureFrame();
             if (frame is null)
             {
+                overlay.Close();
                 return;
             }
 

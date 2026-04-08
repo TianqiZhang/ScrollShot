@@ -157,6 +157,7 @@ public partial class SelectionOverlayWindow : Window
                 : ScrollDirection.Vertical;
 
             InstructionBorder.Visibility = Visibility.Collapsed;
+            SelectionBorder.Visibility = Visibility.Collapsed;
             PreviewStrip.Visibility = Visibility.Visible;
             PositionPreviewStrip(_captureDirection.Value);
             ScrollCaptureStarted?.Invoke(this, new OverlayCaptureRequestedEventArgs(SelectedRegion.Value, _captureDirection));
