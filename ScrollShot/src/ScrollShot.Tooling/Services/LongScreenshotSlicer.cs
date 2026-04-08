@@ -18,6 +18,14 @@ public sealed class LongScreenshotSlicer
         }
 
         using var source = new Bitmap(options.InputImagePath);
+        return Slice(source, options);
+    }
+
+    public StitchDatasetManifest Slice(Bitmap source, SliceCommandOptions options)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+        ArgumentNullException.ThrowIfNull(options);
+
         var viewportWidth = options.ViewportWidth ?? (source.Width - options.CropX);
         if (viewportWidth <= 0 || viewportWidth > source.Width)
         {
@@ -103,7 +111,7 @@ public sealed class LongScreenshotSlicer
         return manifest;
     }
 
-    private static int ResolveStepPixels(int viewportHeight, int? stepPixels, int? overlapPixels)
+    internal static int ResolveStepPixels(int viewportHeight, int? stepPixels, int? overlapPixels)
     {
         if (stepPixels.HasValue && overlapPixels.HasValue)
         {
@@ -119,7 +127,7 @@ public sealed class LongScreenshotSlicer
         return resolvedStep;
     }
 
-    private static List<int> BuildOffsets(int totalHeight, int viewportHeight, int stepPixels)
+    internal static List<int> BuildOffsets(int totalHeight, int viewportHeight, int stepPixels)
     {
         var offsets = new List<int> { 0 };
         if (totalHeight == viewportHeight)

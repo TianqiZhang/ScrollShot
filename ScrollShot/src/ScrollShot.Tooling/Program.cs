@@ -24,6 +24,9 @@ public static class ToolCli
                 case "slice":
                     RunSlice(options);
                     return Task.FromResult(0);
+                case "synthesize":
+                    RunSynthesize(options);
+                    return Task.FromResult(0);
                 case "replay":
                     RunReplay(options);
                     return Task.FromResult(0);
@@ -60,6 +63,25 @@ public static class ToolCli
         });
 
         Console.WriteLine($"Dataset '{manifest.Name}' written with {manifest.Frames.Count} frames.");
+    }
+
+    private static void RunSynthesize(IReadOnlyDictionary<string, string> options)
+    {
+        var generator = new SyntheticDatasetGenerator();
+        var manifest = generator.Generate(new SyntheticCommandOptions
+        {
+            OutputDirectory = GetRequired(options, "output"),
+            DatasetName = GetOptional(options, "name"),
+            Width = GetOptionalInt(options, "width") ?? 480,
+            TotalHeight = GetOptionalInt(options, "total-height") ?? 2200,
+            ViewportHeight = GetRequiredInt(options, "viewport-height"),
+            StepPixels = GetOptionalInt(options, "step"),
+            OverlapPixels = GetOptionalInt(options, "overlap"),
+            FixedTop = GetOptionalInt(options, "fixed-top") ?? 48,
+            FixedBottom = GetOptionalInt(options, "fixed-bottom") ?? 32,
+        });
+
+        Console.WriteLine($"Synthetic dataset '{manifest.Name}' written with {manifest.Frames.Count} frames.");
     }
 
     private static void RunReplay(IReadOnlyDictionary<string, string> options)
@@ -156,6 +178,7 @@ public static class ToolCli
 
             Commands:
               slice  --input <image> --output <dir> --viewport-height <px> [--viewport-width <px>] [--step <px> | --overlap <px>] [--crop-x <px>] [--name <dataset>]
+              synthesize --output <dir> --viewport-height <px> [--width <px>] [--total-height <px>] [--step <px> | --overlap <px>] [--fixed-top <px>] [--fixed-bottom <px>] [--name <dataset>]
               replay --manifest <manifest.json> --output <dir> [--profile <current|signal-zone|signal-hybrid>]
             """);
     }

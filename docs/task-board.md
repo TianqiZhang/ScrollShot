@@ -14,6 +14,7 @@
 | Phase 9 | Completed | Pluggable stitching profiles and first 1D zone experiment | Added profile-aware `ScrollSessionFactory`, wired replay to `--profile`, kept app on the default profile, and introduced a separate `signal-zone` detector for vertical-dump experiments |
 | Phase 10 | Completed | Hybrid overlap experiment profile | Added `signal-hybrid` with 1D signal-guided overlap candidate search plus pixel-level refinement/fallback, expanded tests, and replayed the two real dumps for comparison |
 | Phase 11 | Completed | Compositor DPI-safe export fix | Replaced DPI-sensitive bitmap drawing with pixel-exact composition, added a non-default-DPI regression test, and regenerated replay outputs so stitched images no longer contain transparent blank areas from export |
+| Phase 12 | Completed | Synthetic fixture generator and baseline tests | Added a `synthesize` tooling command for deterministic fixed-header/footer scroll fixtures, added behavior tests for zone detection / overlap / replay, and verified the current profile is nearly lossless on a basic synthetic dataset |
 
 ## Commits
 
@@ -30,7 +31,8 @@
 | Phase 8 | `34699d1` |
 | Phase 9 | `7a23b24` |
 | Phase 10 | `7a33005` |
-| Phase 11 | Current commit |
+| Phase 11 | `9989e47` |
+| Phase 12 | Current commit |
 
 ## Notes
 
@@ -45,3 +47,5 @@
 - Replay results are now easy to compare offline across profiles. On the current two real dumps, `signal-hybrid` changed stitched heights materially (`909x2479 -> 909x2284` and `1113x1406 -> 1113x1266`), so it is producing different overlap decisions, but it is still not validated as an improvement.
 - A separate export bug was uncovered while inspecting replay images: `ImageCompositor` used `Graphics.DrawImageUnscaled`, which respects source bitmap DPI metadata and could shrink drawn content, leaving large transparent areas even when the stitched segments themselves were correct.
 - The compositor now draws with explicit pixel rectangles instead of DPI-sensitive unscaled drawing. After regenerating the replay outputs, every stitched image once again fills its full canvas (`content == size` for all replay folders).
+- The tooling now includes a dedicated synthetic dataset generator instead of relying only on sliced long images. It renders fixed header/footer chrome and a deterministic scrollable body, then emits ground truth plus per-frame captures where only the scroll band moves.
+- The new synthetic baseline tests validate three things on generated data: fixed-zone detection, overlap detection, and end-to-end replay. On the baseline synthetic fixture, the current algorithm replayed with a normalized difference of about `0.000041` to ground truth, which is close enough to treat the basic path as working while leaving room for future stricter metrics.
