@@ -133,6 +133,20 @@ public sealed class ImageCompositorTests
         composed.Height.Should().Be(4);
     }
 
+    [Fact]
+    public void Compose_PreservesPixelWidth_WhenSourceBitmapHasNonDefaultDpi()
+    {
+        using var segment = CreateSolidBitmap(10, 4, Color.Red);
+        segment.SetResolution(168, 168);
+        var result = CreateSingleSegmentResult(segment, 10, 4);
+
+        using var composed = _compositor.Compose(result, EditState.Default);
+
+        composed.Width.Should().Be(10);
+        composed.Height.Should().Be(4);
+        composed.GetPixel(9, 2).ToArgb().Should().Be(Color.Red.ToArgb());
+    }
+
     private static CaptureResult CreateSingleSegmentResult(Bitmap segment, int width, int height)
     {
         return new CaptureResult(

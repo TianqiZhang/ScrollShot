@@ -43,12 +43,12 @@ public sealed class ImageCompositor : IImageCompositor
 
         if (includeChrome && result.Direction == ScrollDirection.Vertical && result.FixedTopBitmap is not null)
         {
-            graphics.DrawImageUnscaled(result.FixedTopBitmap, 0, 0);
+            DrawBitmapPixelExact(graphics, result.FixedTopBitmap, 0, 0);
         }
 
         if (includeChrome && result.Direction == ScrollDirection.Horizontal && result.FixedLeftBitmap is not null)
         {
-            graphics.DrawImageUnscaled(result.FixedLeftBitmap, 0, 0);
+            DrawBitmapPixelExact(graphics, result.FixedLeftBitmap, 0, 0);
         }
 
         if (includeChrome && result.Direction == ScrollDirection.Horizontal && result.FixedTopBitmap is not null)
@@ -58,7 +58,7 @@ public sealed class ImageCompositor : IImageCompositor
 
         foreach (var segment in result.Segments.OrderBy(segment => segment.Offset))
         {
-            graphics.DrawImageUnscaled(segment.Bitmap, offsetX, offsetY);
+            DrawBitmapPixelExact(graphics, segment.Bitmap, offsetX, offsetY);
 
             if (result.Direction == ScrollDirection.Vertical)
             {
@@ -72,12 +72,12 @@ public sealed class ImageCompositor : IImageCompositor
 
         if (includeChrome && result.Direction == ScrollDirection.Vertical && result.FixedBottomBitmap is not null)
         {
-            graphics.DrawImageUnscaled(result.FixedBottomBitmap, 0, topInset + segmentPrimarySize);
+            DrawBitmapPixelExact(graphics, result.FixedBottomBitmap, 0, topInset + segmentPrimarySize);
         }
 
         if (includeChrome && result.Direction == ScrollDirection.Horizontal && result.FixedRightBitmap is not null)
         {
-            graphics.DrawImageUnscaled(result.FixedRightBitmap, leftInset + segmentPrimarySize, 0);
+            DrawBitmapPixelExact(graphics, result.FixedRightBitmap, leftInset + segmentPrimarySize, 0);
         }
 
         if (includeChrome && result.Direction == ScrollDirection.Horizontal && result.FixedBottomBitmap is not null)
@@ -96,6 +96,15 @@ public sealed class ImageCompositor : IImageCompositor
         }
 
         return bitmap;
+    }
+
+    private static void DrawBitmapPixelExact(Graphics graphics, Bitmap bitmap, int x, int y)
+    {
+        graphics.DrawImage(
+            bitmap,
+            new Rectangle(x, y, bitmap.Width, bitmap.Height),
+            new Rectangle(0, 0, bitmap.Width, bitmap.Height),
+            GraphicsUnit.Pixel);
     }
 
     private static Bitmap ApplyPrimaryAxisEdits(Bitmap source, ScrollDirection direction, TrimRange trimRange, IReadOnlyList<CutRange> cuts)
