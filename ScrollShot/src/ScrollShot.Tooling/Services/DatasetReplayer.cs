@@ -5,6 +5,8 @@ using ScrollShot.Editor.Composition;
 using ScrollShot.Editor.Models;
 using ScrollShot.Scroll;
 using ScrollShot.Scroll.Algorithms;
+using ScrollShot.StitchingData.Models;
+using ScrollShot.StitchingData.Services;
 using ScrollShot.Tooling.Models;
 
 namespace ScrollShot.Tooling.Services;

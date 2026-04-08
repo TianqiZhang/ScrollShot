@@ -1,4 +1,5 @@
 using System.Drawing;
+using System.IO;
 using System.Windows;
 using ScrollShot.App.Models;
 using ScrollShot.Capture;
@@ -14,6 +15,7 @@ namespace ScrollShot.App.Services;
 
 public sealed class CaptureOrchestrator
 {
+    private static readonly TimeSpan ScrollCaptureSamplingInterval = TimeSpan.FromMilliseconds(120);
     private readonly Func<AppSettings> _settingsProvider;
     private SelectionOverlayWindow? _activeOverlay;
 
@@ -34,7 +36,24 @@ public sealed class CaptureOrchestrator
         ScrollSession? session = null;
         ScrollCaptureWorkflow? workflow = null;
         ScrollCaptureSampler? sampler = null;
+        ScrollCaptureDebugDumpSession? debugDumpSession = null;
+        var debugDumpWarningShown = false;
         var overlayClosed = false;
+
+        void ShowDebugDumpWarningIfNeeded()
+        {
+            if (debugDumpWarningShown || string.IsNullOrWhiteSpace(debugDumpSession?.FailureMessage))
+            {
+                return;
+            }
+
+            debugDumpWarningShown = true;
+            MessageBox.Show(
+                debugDumpSession.FailureMessage,
+                "ScrollShot Debug Dump",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+        }
 
         overlay.InstantCaptureRequested += (_, args) =>
         {
@@ -55,13 +74,15 @@ public sealed class CaptureOrchestrator
         {
             if (workflow is null)
             {
+                var direction = args.Direction ?? ScrollDirection.Vertical;
                 session = new ScrollSession();
                 session.PreviewUpdated += overlay.UpdatePreview;
+                debugDumpSession = TryCreateDebugDumpSession(_settingsProvider(), args.Region, direction);
                 var shouldSuspendOverlayDuringCapture = !overlay.IsExcludedFromCapture;
                 workflow = new ScrollCaptureWorkflow(
                     new ScrollCaptureControllerAdapter(
                         new CaptureController(
-                            ScreenCapturerFactory.Create(args.Region),
+                            CreateScrollCapturer(args.Region, debugDumpSession),
                             session),
                         shouldSuspendOverlayDuringCapture
                             ? () => overlay.Dispatcher.InvokeAsync(() =>
@@ -78,14 +99,14 @@ public sealed class CaptureOrchestrator
                                 if (!overlayClosed && !overlay.IsVisible)
                                 {
                                     overlay.Show();
-                                }
-                            }).Task
-                            : null));
+                                 }
+                             }).Task
+                             : null));
 
-                await workflow.StartAsync(args.Region, args.Direction ?? ScrollDirection.Vertical);
+                await workflow.StartAsync(args.Region, direction);
 
                 sampler = new ScrollCaptureSampler(
-                    TimeSpan.FromMilliseconds(120),
+                    ScrollCaptureSamplingInterval,
                     () =>
                     {
                         var activeWorkflow = workflow;
@@ -109,6 +130,8 @@ public sealed class CaptureOrchestrator
                 {
                     return overlay.Dispatcher.InvokeAsync(() =>
                     {
+                        debugDumpSession?.Complete(result);
+                        ShowDebugDumpWarningIfNeeded();
                         ShowEditor(result);
                         overlay.Close();
                     }).Task;
@@ -117,6 +140,7 @@ public sealed class CaptureOrchestrator
                 {
                     return overlay.Dispatcher.InvokeAsync(() =>
                     {
+                        ShowDebugDumpWarningIfNeeded();
                         MessageBox.Show(
                             exception.Message,
                             "ScrollShot",
@@ -129,6 +153,8 @@ public sealed class CaptureOrchestrator
         overlay.Cancelled += (_, _) =>
         {
             workflow?.Cancel();
+            debugDumpSession?.Cancel("cancelled");
+            ShowDebugDumpWarningIfNeeded();
             overlay.Close();
         };
         overlay.Closed += (_, _) =>
@@ -140,6 +166,9 @@ public sealed class CaptureOrchestrator
             var samplerToStop = sampler;
             sampler = null;
             _ = samplerToStop?.StopAsync();
+            debugDumpSession?.Dispose();
+            ShowDebugDumpWarningIfNeeded();
+            debugDumpSession = null;
             _activeOverlay = null;
         };
 
@@ -166,5 +195,40 @@ public sealed class CaptureOrchestrator
             frame.Region.Width,
             frame.Region.Height,
             isScrollingCapture: false);
+    }
+
+    private static IScreenCapturer CreateScrollCapturer(ScreenRect region, ScrollCaptureDebugDumpSession? debugDumpSession)
+    {
+        var capturer = ScreenCapturerFactory.Create(region);
+        return debugDumpSession is null ? capturer : new RecordingScreenCapturer(capturer, debugDumpSession);
+    }
+
+    private static ScrollCaptureDebugDumpSession? TryCreateDebugDumpSession(
+        AppSettings settings,
+        ScreenRect region,
+        ScrollDirection direction)
+    {
+        if (!settings.ScrollCaptureDebugDumpEnabled)
+        {
+            return null;
+        }
+
+        try
+        {
+            return ScrollCaptureDebugDumpSession.Create(
+                settings.DebugDumpFolder,
+                region,
+                direction,
+                ScrollCaptureSamplingInterval);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or ArgumentException)
+        {
+            MessageBox.Show(
+                $"Scroll capture debug dump could not be started.\n\n{exception.Message}",
+                "ScrollShot Debug Dump",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+            return null;
+        }
     }
 }

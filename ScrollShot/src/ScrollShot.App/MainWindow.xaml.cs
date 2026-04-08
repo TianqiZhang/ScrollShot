@@ -42,6 +42,8 @@ public partial class MainWindow : Window
         HotkeyModifiersTextBox.Text = settings.HotkeyModifiers.ToString();
         HotkeyKeyTextBox.Text = settings.HotkeyKey.ToString();
         StartWithWindowsCheckBox.IsChecked = settings.StartWithWindows;
+        ScrollCaptureDebugDumpEnabledCheckBox.IsChecked = settings.ScrollCaptureDebugDumpEnabled;
+        DebugDumpFolderTextBox.Text = settings.DebugDumpFolder;
         StatusTextBlock.Text = $"Hotkey: {settings.HotkeyModifiers}+{settings.HotkeyKey}";
     }
 
@@ -85,6 +87,8 @@ public partial class MainWindow : Window
             HotkeyKey = hotkeyKey,
             SaveFolder = string.IsNullOrWhiteSpace(SaveFolderTextBox.Text) ? _currentSettings.SaveFolder : SaveFolderTextBox.Text.Trim(),
             StartWithWindows = StartWithWindowsCheckBox.IsChecked ?? false,
+            ScrollCaptureDebugDumpEnabled = ScrollCaptureDebugDumpEnabledCheckBox.IsChecked ?? false,
+            DebugDumpFolder = string.IsNullOrWhiteSpace(DebugDumpFolderTextBox.Text) ? _currentSettings.DebugDumpFolder : DebugDumpFolderTextBox.Text.Trim(),
         };
 
         _settingsService.Save(settings);

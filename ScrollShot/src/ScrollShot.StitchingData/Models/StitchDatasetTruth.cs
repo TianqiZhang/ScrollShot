@@ -1,4 +1,4 @@
-namespace ScrollShot.Tooling.Models;
+namespace ScrollShot.StitchingData.Models;
 
 public sealed class StitchDatasetTruth
 {

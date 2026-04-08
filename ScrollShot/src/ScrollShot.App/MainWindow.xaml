@@ -5,10 +5,12 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
         Title="ScrollShot"
-        Height="340"
+        Height="430"
         Width="460">
     <Grid Margin="16">
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
@@ -60,13 +62,29 @@
                  Margin="0,0,0,8" />
 
         <CheckBox x:Name="StartWithWindowsCheckBox"
-                  Grid.Row="4"
-                  Grid.ColumnSpan="2"
-                  Margin="0,0,0,16"
-                  Content="Start with Windows" />
+                   Grid.Row="4"
+                   Grid.ColumnSpan="2"
+                   Margin="0,0,0,8"
+                   Content="Start with Windows" />
 
-        <StackPanel Grid.Row="5"
-                    Grid.ColumnSpan="2">
+        <CheckBox x:Name="ScrollCaptureDebugDumpEnabledCheckBox"
+                  Grid.Row="5"
+                  Grid.ColumnSpan="2"
+                  Margin="0,0,0,8"
+                  Content="Enable scroll capture debug dump" />
+
+        <TextBlock Grid.Row="6"
+                   Grid.Column="0"
+                   VerticalAlignment="Center"
+                   Margin="0,0,12,16"
+                   Text="Debug dump folder:" />
+        <TextBox x:Name="DebugDumpFolderTextBox"
+                 Grid.Row="6"
+                 Grid.Column="1"
+                 Margin="0,0,0,16" />
+
+        <StackPanel Grid.Row="7"
+                     Grid.ColumnSpan="2">
             <Button Width="120"
                     Padding="10,6"
                     HorizontalAlignment="Left"

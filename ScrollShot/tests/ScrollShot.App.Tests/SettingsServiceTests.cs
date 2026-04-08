@@ -20,6 +20,8 @@ public sealed class SettingsServiceTests : IDisposable
         settings.HotkeyModifiers.Should().Be(ModifierKeys.Control | ModifierKeys.Shift);
         settings.HotkeyKey.Should().Be(Key.S);
         settings.StartWithWindows.Should().BeFalse();
+        settings.ScrollCaptureDebugDumpEnabled.Should().BeFalse();
+        settings.DebugDumpFolder.Should().NotBeNullOrWhiteSpace();
     }
 
     [Fact]
@@ -32,6 +34,8 @@ public sealed class SettingsServiceTests : IDisposable
             HotkeyKey = Key.A,
             SaveFolder = @"C:\captures",
             StartWithWindows = true,
+            ScrollCaptureDebugDumpEnabled = true,
+            DebugDumpFolder = @"C:\captures\debug-dumps",
         };
 
         service.Save(expected);
@@ -41,6 +45,8 @@ public sealed class SettingsServiceTests : IDisposable
         actual.HotkeyKey.Should().Be(expected.HotkeyKey);
         actual.SaveFolder.Should().Be(expected.SaveFolder);
         actual.StartWithWindows.Should().BeTrue();
+        actual.ScrollCaptureDebugDumpEnabled.Should().BeTrue();
+        actual.DebugDumpFolder.Should().Be(expected.DebugDumpFolder);
     }
 
     [Fact]

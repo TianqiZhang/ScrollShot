@@ -1,6 +1,7 @@
 using System.Drawing;
 using System.Drawing.Imaging;
 using FluentAssertions;
+using ScrollShot.StitchingData.Models;
 using ScrollShot.Tooling.Models;
 using ScrollShot.Tooling.Services;
 

@@ -19,6 +19,7 @@
     <ProjectReference Include="..\ScrollShot.Editor\ScrollShot.Editor.csproj" />
     <ProjectReference Include="..\ScrollShot.Capture\ScrollShot.Capture.csproj" />
     <ProjectReference Include="..\ScrollShot.Scroll\ScrollShot.Scroll.csproj" />
+    <ProjectReference Include="..\ScrollShot.StitchingData\ScrollShot.StitchingData.csproj" />
   </ItemGroup>
 
 </Project>

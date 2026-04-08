@@ -1,6 +1,6 @@
 using ScrollShot.Scroll.Models;
 
-namespace ScrollShot.Tooling.Models;
+namespace ScrollShot.StitchingData.Models;
 
 public sealed record ReplayReport
 {

@@ -1,5 +1,7 @@
 using System.Drawing;
 using System.Drawing.Imaging;
+using ScrollShot.StitchingData.Models;
+using ScrollShot.StitchingData.Services;
 using ScrollShot.Tooling.Models;
 
 namespace ScrollShot.Tooling.Services;
@@ -68,15 +70,26 @@ public sealed class LongScreenshotSlicer
                 RelativePath = frameRelativePath,
                 OffsetPixels = offset,
                 ExpectedOverlapWithPreviousPixels = index == 0 ? null : options.ViewportHeight - (offset - offsets[index - 1]),
+                Width = frameBitmap.Width,
+                Height = frameBitmap.Height,
             });
         }
 
         var manifest = new StitchDatasetManifest
         {
             Name = datasetName,
+            Source = "synthetic",
             ViewportWidth = viewportWidth,
             ViewportHeight = options.ViewportHeight,
             StepPixels = stepPixels,
+            CaptureRegion = new StitchCaptureRegion
+            {
+                X = options.CropX,
+                Y = 0,
+                Width = viewportWidth,
+                Height = options.ViewportHeight,
+            },
+            CompletionReason = "generated",
             Truth = new StitchDatasetTruth
             {
                 GroundTruthRelativePath = groundTruthRelativePath,

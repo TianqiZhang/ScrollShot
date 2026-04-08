@@ -9,6 +9,7 @@
 | Phase 4 | Completed | Preview editor UI and view model | The editor now has viewport/timeline controls, a compositing view model, and save/copy/discard workflows |
 | Phase 5 | Completed | App shell, hotkey, settings, orchestration | Tray app, settings persistence, hotkey registration, and capture-to-editor orchestration are in place |
 | Phase 6 | Completed | Offline stitching tooling foundation | Added dataset manifest/report schema, `slice`/`replay` CLI commands, and tooling tests for deterministic replay |
+| Phase 7 | Completed | Live capture debug dump mode | Added opt-in raw frame dump capture, shared dataset schema, persisted manifests/reports, and app tests for dump output |
 
 ## Commits
 
@@ -19,11 +20,13 @@
 | Phase 2 | `690060e` |
 | Phase 3 | `1387765` |
 | Phase 4 | `961c8de` |
-| Phase 5 | Current commit |
-| Phase 6 | Current commit |
+| Phase 5 | `0caae89` |
+| Phase 6 | `505aed9` |
+| Phase 7 | Current commit |
 
 ## Notes
 
 - The implementation follows `docs\design.md` and the current stitching plan in `docs\implementation-plan.md`.
 - Each phase ends with build/test verification before commit.
 - The current algorithm-improvement loop now has an offline path: generate overlapping datasets from a ground-truth image, replay them through `ScrollSession`, and compare against the expected final image.
+- Real scroll captures can now emit opt-in debug datasets from the app itself, including raw frames, manifest metadata, and a stitched output/report snapshot for offline analysis.

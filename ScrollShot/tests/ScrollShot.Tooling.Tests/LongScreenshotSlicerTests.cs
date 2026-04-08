@@ -1,6 +1,7 @@
 using System.Drawing;
 using System.Drawing.Imaging;
 using FluentAssertions;
+using ScrollShot.StitchingData.Models;
 using ScrollShot.Tooling.Models;
 using ScrollShot.Tooling.Services;
 
@@ -37,6 +38,7 @@ public sealed class LongScreenshotSlicerTests : IDisposable
         });
 
         manifest.Name.Should().Be("baseline");
+        manifest.Source.Should().Be("synthetic");
         manifest.Frames.Select(frame => frame.OffsetPixels).Should().Equal(0, 3, 6);
         manifest.Frames.Select(frame => frame.ExpectedOverlapWithPreviousPixels).Should().Equal(null, 2, 2);
         File.Exists(Path.Combine(outputDirectory, "manifest.json")).Should().BeTrue();

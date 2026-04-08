@@ -1,8 +1,8 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using ScrollShot.Tooling.Models;
+using ScrollShot.StitchingData.Models;
 
-namespace ScrollShot.Tooling.Services;
+namespace ScrollShot.StitchingData.Services;
 
 public static class ManifestStore
 {

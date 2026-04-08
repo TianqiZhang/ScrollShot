@@ -13,6 +13,10 @@ public sealed class AppSettings
 
     public bool StartWithWindows { get; init; }
 
+    public bool ScrollCaptureDebugDumpEnabled { get; init; }
+
+    public string DebugDumpFolder { get; init; } = string.Empty;
+
     public static AppSettings CreateDefault()
     {
         return new AppSettings
@@ -21,6 +25,11 @@ public sealed class AppSettings
             HotkeyKey = Key.S,
             SaveFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyPictures), "Screenshots"),
             StartWithWindows = false,
+            ScrollCaptureDebugDumpEnabled = false,
+            DebugDumpFolder = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "ScrollShot",
+                "DebugDumps"),
         };
     }
 }
