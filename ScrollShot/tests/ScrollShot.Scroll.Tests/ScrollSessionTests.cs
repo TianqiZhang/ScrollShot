@@ -149,6 +149,7 @@ public sealed class ScrollSessionTests
         result.ZoneLayout.FixedBottom.Should().Be(1);
         result.Segments.Should().HaveCount(2);
         detector.DetectCount.Should().Be(2);
+        detector.RefineCount.Should().Be(0);
     }
 
     [Fact]
@@ -156,6 +157,7 @@ public sealed class ScrollSessionTests
     {
         var detector = new SequenceZoneDetector(
             new ZoneLayout(0, 0, 0, 0, new ScreenRect(0, 0, 3, 3)),
+            new ZoneLayout(0, 1, 0, 0, new ScreenRect(0, 0, 3, 2)),
             new ZoneLayout(0, 1, 0, 0, new ScreenRect(0, 0, 3, 2)));
         var matcher = new SequenceOverlapMatcher(
             OverlapResult.Identical(),
@@ -177,6 +179,81 @@ public sealed class ScrollSessionTests
         result.ZoneLayout.FixedBottom.Should().Be(1);
         result.Segments.Should().HaveCount(2);
         detector.DetectCount.Should().Be(2);
+        detector.RefineCount.Should().Be(1);
+    }
+
+    [Fact]
+    public void LaterValidRefinement_ReplacesEarlierZoneLayout()
+    {
+        var initialZone = new ZoneLayout(1, 3, 0, 0, new ScreenRect(0, 1, 3, 2));
+        var refinedZone = new ZoneLayout(0, 2, 0, 0, new ScreenRect(0, 0, 3, 4));
+        var detector = new SequenceZoneDetector(initialZone, refinedZone);
+        var matcher = new SequenceOverlapMatcher(
+            new OverlapResult(2, false, 1),
+            new OverlapResult(2, false, 0.8),
+            new OverlapResult(2, false, 0.9));
+        using var session = new ScrollSession(detector, matcher);
+
+        session.Start(new ScreenRect(0, 0, 3, 6), ScrollDirection.Vertical);
+        using var frameOne = CreateCapturedFrame(Color.Red, 3, 6);
+        using var frameTwo = CreateCapturedFrame(Color.Blue, 3, 6);
+        using var frameThree = CreateCapturedFrame(Color.Green, 3, 6);
+        session.ProcessFrame(frameOne);
+        session.ProcessFrame(frameTwo);
+        session.ProcessFrame(frameThree);
+        session.Finish();
+
+        var result = session.GetResult();
+        result.ZoneLayout.Should().Be(refinedZone);
+    }
+
+    [Fact]
+    public void Refinement_DoesNotExpandLockedFixedRegions()
+    {
+        var initialZone = new ZoneLayout(0, 3, 0, 0, new ScreenRect(0, 0, 3, 3));
+        var expandedZone = new ZoneLayout(0, 4, 0, 0, new ScreenRect(0, 0, 3, 2));
+        var detector = new SequenceZoneDetector(initialZone, expandedZone);
+        var matcher = new SequenceOverlapMatcher(
+            new OverlapResult(2, false, 1),
+            new OverlapResult(2, false, 0.8));
+        using var session = new ScrollSession(detector, matcher);
+
+        session.Start(new ScreenRect(0, 0, 3, 6), ScrollDirection.Vertical);
+        using var frameOne = CreateCapturedFrame(Color.Red, 3, 6);
+        using var frameTwo = CreateCapturedFrame(Color.Blue, 3, 6);
+        using var frameThree = CreateCapturedFrame(Color.Green, 3, 6);
+        session.ProcessFrame(frameOne);
+        session.ProcessFrame(frameTwo);
+        session.ProcessFrame(frameThree);
+        session.Finish();
+
+        var result = session.GetResult();
+        result.ZoneLayout.Should().Be(initialZone);
+    }
+
+    [Fact]
+    public void IdenticalTrailingFrame_DoesNotClearExistingZoneLayout()
+    {
+        var initialZone = new ZoneLayout(0, 3, 0, 0, new ScreenRect(0, 0, 3, 3));
+        var refinedZone = new ZoneLayout(0, 0, 0, 0, new ScreenRect(0, 0, 3, 6));
+        var detector = new SequenceZoneDetector(initialZone, refinedZone);
+        var matcher = new SequenceOverlapMatcher(
+            new OverlapResult(2, false, 1),
+            OverlapResult.Identical(),
+            OverlapResult.Identical());
+        using var session = new ScrollSession(detector, matcher);
+
+        session.Start(new ScreenRect(0, 0, 3, 6), ScrollDirection.Vertical);
+        using var frameOne = CreateCapturedFrame(Color.Red, 3, 6);
+        using var frameTwo = CreateCapturedFrame(Color.Blue, 3, 6);
+        using var frameThree = CreateCapturedFrame(Color.Blue, 3, 6);
+        session.ProcessFrame(frameOne);
+        session.ProcessFrame(frameTwo);
+        session.ProcessFrame(frameThree);
+        session.Finish();
+
+        var result = session.GetResult();
+        result.ZoneLayout.Should().Be(initialZone);
     }
 
     [Fact]
@@ -240,6 +317,7 @@ public sealed class ScrollSessionTests
         }
 
         public int DetectCount { get; private set; }
+        public int RefineCount { get; private set; }
 
         public ZoneLayout DetectZones(CapturedFrame previous, CapturedFrame current, ScrollDirection direction)
         {
@@ -249,6 +327,7 @@ public sealed class ScrollSessionTests
 
         public ZoneLayout RefineZones(ZoneLayout existing, CapturedFrame previous, CapturedFrame current, ScrollDirection direction)
         {
+            RefineCount++;
             return _layouts.Count > 0 ? _layouts.Dequeue() : existing;
         }
     }

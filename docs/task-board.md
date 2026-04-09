@@ -16,6 +16,7 @@
 | Phase 11 | Completed | Compositor DPI-safe export fix | Replaced DPI-sensitive bitmap drawing with pixel-exact composition, added a non-default-DPI regression test, and regenerated replay outputs so stitched images no longer contain transparent blank areas from export |
 | Phase 12 | Completed | Synthetic fixture generator and baseline tests | Added a `synthesize` tooling command for deterministic fixed-header/footer scroll fixtures, added behavior tests for zone detection / overlap / replay, and verified the current profile is nearly lossless on a basic synthetic dataset |
 | Phase 13 | Completed | Direction-aware fixed-zone hardening | Made the default `ZoneDetector` respect known scroll direction so vertical captures only infer top/bottom fixed zones, added regressions for stable dark side margins and footer-only synthetic captures, and replayed the two real dumps to confirm the spurious left/right fixed zones disappeared |
+| Phase 14 | Completed | Conservative zone refinement after lock | Updated `ScrollSession` so later zone refinements are only adopted when they still produce a valid overlap and only shrink already-locked fixed regions, preventing late noisy frames from expanding fixed zones while still allowing false fixed edges to be corrected |
 
 ## Commits
 
@@ -34,7 +35,8 @@
 | Phase 10 | `7a33005` |
 | Phase 11 | `9989e47` |
 | Phase 12 | `d496370` |
-| Phase 13 | Current commit |
+| Phase 13 | `eeef2db` |
+| Phase 14 | Current commit |
 
 ## Notes
 
@@ -52,3 +54,4 @@
 - The tooling now includes a dedicated synthetic dataset generator instead of relying only on sliced long images. It renders fixed header/footer chrome and a deterministic scrollable body, then emits ground truth plus per-frame captures where only the scroll band moves.
 - The new synthetic baseline tests validate three things on generated data: fixed-zone detection, overlap detection, and end-to-end replay. On the baseline synthetic fixture, the current algorithm replayed with a normalized difference of about `0.000041` to ground truth, which is close enough to treat the basic path as working while leaving room for future stricter metrics.
 - The latest hardening pass keeps the default detector aligned with the known scroll direction: vertical captures now only scan for fixed top/bottom zones, which removed the false left/right fixed margins on both real vertical dumps. The footer-only dump still produces a small false top zone (`top=9`), so the next detector iteration should focus on multi-frame confidence or minor-edge suppression rather than side-edge noise.
+- The next pass moved the remaining correction into `ScrollSession`: once a zone is locked, later frames may only refine it if the refined band still produces a valid overlap, and the accepted refinement is conservative (it can shrink fixed edges but not expand them from single-frame noise). That keeps the synthetic baseline exact again while improving the footer-only real dump from `top=9,bottom=120` to `top=0,bottom=120`.

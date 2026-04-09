@@ -88,19 +88,24 @@ public sealed class ScrollSession : IScrollSession
         else
         {
             var activeZone = _zoneLayout.Value;
-            if (_frameCount % 10 == 0)
+            var activePreviousBand = _previousBand ?? CreateBandSnapshot(_previousFrame.Bitmap, activeZone.ScrollBand);
+            var overlap = FindOverlap(activePreviousBand, frame.Bitmap, activeZone);
+            var refinedZone = _zoneDetector.RefineZones(activeZone, _previousFrame, frame, _direction);
+            var mergedZone = MergeConservativeZone(activeZone, refinedZone);
+            if (mergedZone != activeZone)
             {
-                var refinedZone = _zoneDetector.RefineZones(activeZone, _previousFrame, frame, _direction);
-                if (refinedZone != activeZone)
+                var mergedPreviousBand = CreateBandSnapshot(_previousFrame.Bitmap, mergedZone.ScrollBand);
+                var mergedOverlap = FindOverlap(mergedPreviousBand, frame.Bitmap, mergedZone);
+                if (mergedOverlap.OverlapPixels > 0)
                 {
-                    activeZone = refinedZone;
-                    _zoneLayout = refinedZone;
-                    CaptureFixedRegions(_previousFrame.Bitmap, refinedZone);
-                    _previousBand = CreateBandSnapshot(_previousFrame.Bitmap, refinedZone.ScrollBand);
+                    activeZone = mergedZone;
+                    _zoneLayout = mergedZone;
+                    CaptureFixedRegions(_previousFrame.Bitmap, mergedZone);
+                    _previousBand = mergedPreviousBand;
+                    overlap = mergedOverlap;
                 }
             }
 
-            var overlap = FindOverlap(_previousBand ?? CreateBandSnapshot(_previousFrame.Bitmap, activeZone.ScrollBand), frame.Bitmap, activeZone);
             if (!overlap.IsIdentical && overlap.OverlapPixels <= 0)
             {
                 var detectedZone = _zoneDetector.DetectZones(_previousFrame, frame, _direction);
@@ -314,6 +319,30 @@ public sealed class ScrollSession : IScrollSession
     {
         using var bandBitmap = ExtractBandBitmap(bitmap, band);
         return PixelBuffer.FromBitmap(bandBitmap);
+    }
+
+    private ZoneLayout MergeConservativeZone(ZoneLayout activeZone, ZoneLayout detectedZone)
+    {
+        if (_direction == ScrollDirection.Vertical)
+        {
+            var fixedTop = Math.Min(activeZone.FixedTop, detectedZone.FixedTop);
+            var fixedBottom = Math.Min(activeZone.FixedBottom, detectedZone.FixedBottom);
+            return new ZoneLayout(
+                fixedTop,
+                fixedBottom,
+                0,
+                0,
+                new ScreenRect(0, fixedTop, _region.Width, _region.Height - fixedTop - fixedBottom));
+        }
+
+        var fixedLeft = Math.Min(activeZone.FixedLeft, detectedZone.FixedLeft);
+        var fixedRight = Math.Min(activeZone.FixedRight, detectedZone.FixedRight);
+        return new ZoneLayout(
+            0,
+            0,
+            fixedLeft,
+            fixedRight,
+            new ScreenRect(fixedLeft, 0, _region.Width - fixedLeft - fixedRight, _region.Height));
     }
 
     private OverlapResult FindOverlap(PixelBufferSnapshot previousBand, Bitmap currentBitmap, ZoneLayout zoneLayout)
