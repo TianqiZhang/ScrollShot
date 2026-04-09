@@ -9,18 +9,15 @@ public sealed class SignalZoneDetector : IZoneDetector
     private readonly double _fixedThreshold;
     private readonly int _transitionRunLength;
     private readonly int _smoothingRadius;
-    private readonly int _refinementTolerancePixels;
 
     public SignalZoneDetector(
         double fixedThreshold = 0.02,
         int transitionRunLength = 2,
-        int smoothingRadius = 0,
-        int refinementTolerancePixels = 2)
+        int smoothingRadius = 0)
     {
         _fixedThreshold = fixedThreshold;
         _transitionRunLength = transitionRunLength;
         _smoothingRadius = smoothingRadius;
-        _refinementTolerancePixels = refinementTolerancePixels;
     }
 
     public ZoneLayout DetectZones(CapturedFrame previous, CapturedFrame current, ScrollDirection direction)
@@ -38,12 +35,6 @@ public sealed class SignalZoneDetector : IZoneDetector
         return direction == ScrollDirection.Vertical
             ? DetectVertical(previousBuffer, currentBuffer)
             : DetectHorizontal(previousBuffer, currentBuffer);
-    }
-
-    public ZoneLayout RefineZones(ZoneLayout existing, CapturedFrame previous, CapturedFrame current, ScrollDirection direction)
-    {
-        var detected = DetectZones(previous, current, direction);
-        return AreLayoutsEquivalent(existing, detected) ? existing : detected;
     }
 
     private ZoneLayout DetectVertical(PixelBufferSnapshot previous, PixelBufferSnapshot current)
@@ -108,18 +99,6 @@ public sealed class SignalZoneDetector : IZoneDetector
                 fixedTop,
                 scrollBandWidth,
                 previous.Height - fixedTop - fixedBottom));
-    }
-
-    private bool AreLayoutsEquivalent(ZoneLayout existing, ZoneLayout detected)
-    {
-        return Math.Abs(existing.FixedTop - detected.FixedTop) <= _refinementTolerancePixels &&
-               Math.Abs(existing.FixedBottom - detected.FixedBottom) <= _refinementTolerancePixels &&
-               Math.Abs(existing.FixedLeft - detected.FixedLeft) <= _refinementTolerancePixels &&
-               Math.Abs(existing.FixedRight - detected.FixedRight) <= _refinementTolerancePixels &&
-               Math.Abs(existing.ScrollBand.X - detected.ScrollBand.X) <= _refinementTolerancePixels &&
-               Math.Abs(existing.ScrollBand.Y - detected.ScrollBand.Y) <= _refinementTolerancePixels &&
-               Math.Abs(existing.ScrollBand.Width - detected.ScrollBand.Width) <= _refinementTolerancePixels &&
-               Math.Abs(existing.ScrollBand.Height - detected.ScrollBand.Height) <= _refinementTolerancePixels;
     }
 
     private double[] ComputeRowSignal(PixelBufferSnapshot previous, PixelBufferSnapshot current, int startColumn, int columnCount)

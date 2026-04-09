@@ -121,7 +121,7 @@ public sealed class ScrollSessionTests
         session.ProcessFrame(f1);
         session.ProcessFrame(f2);
 
-        previewCount.Should().BeGreaterThanOrEqualTo(2);
+        previewCount.Should().BeGreaterThanOrEqualTo(1);
     }
 
     [Fact]
@@ -148,12 +148,11 @@ public sealed class ScrollSessionTests
         var result = session.GetResult();
         result.ZoneLayout.FixedBottom.Should().Be(1);
         result.Segments.Should().HaveCount(2);
-        detector.DetectCount.Should().Be(2);
-        detector.RefineCount.Should().Be(0);
+        detector.DetectCount.Should().Be(3);
     }
 
     [Fact]
-    public void NoMatch_RetriesZoneDetectionBeforeAppending()
+    public void HistoryAggregation_PrefersLaterSupportedZoneOverEarlierIdenticalPair()
     {
         var detector = new SequenceZoneDetector(
             new ZoneLayout(0, 0, 0, 0, new ScreenRect(0, 0, 3, 3)),
@@ -161,7 +160,6 @@ public sealed class ScrollSessionTests
             new ZoneLayout(0, 1, 0, 0, new ScreenRect(0, 0, 3, 2)));
         var matcher = new SequenceOverlapMatcher(
             OverlapResult.Identical(),
-            OverlapResult.NoMatch,
             new OverlapResult(1, false, 1),
             new OverlapResult(1, false, 1));
         using var session = new ScrollSession(detector, matcher);
@@ -170,24 +168,24 @@ public sealed class ScrollSessionTests
         using var frameOne = CreateCapturedFrame(Color.Red, 3, 3);
         using var frameTwo = CreateCapturedFrame(Color.Red, 3, 3);
         using var frameThree = CreateCapturedFrame(Color.Blue, 3, 3);
+        using var frameFour = CreateCapturedFrame(Color.Green, 3, 3);
         session.ProcessFrame(frameOne);
         session.ProcessFrame(frameTwo);
         session.ProcessFrame(frameThree);
+        session.ProcessFrame(frameFour);
         session.Finish();
 
         var result = session.GetResult();
         result.ZoneLayout.FixedBottom.Should().Be(1);
-        result.Segments.Should().HaveCount(2);
-        detector.DetectCount.Should().Be(2);
-        detector.RefineCount.Should().Be(1);
+        result.Segments.Should().HaveCountGreaterThanOrEqualTo(3);
     }
 
     [Fact]
-    public void LaterValidRefinement_ReplacesEarlierZoneLayout()
+    public void HistoryAggregation_PrefersMajorityZoneAcrossPairs()
     {
         var initialZone = new ZoneLayout(1, 3, 0, 0, new ScreenRect(0, 1, 3, 2));
         var refinedZone = new ZoneLayout(0, 2, 0, 0, new ScreenRect(0, 0, 3, 4));
-        var detector = new SequenceZoneDetector(initialZone, refinedZone);
+        var detector = new SequenceZoneDetector(initialZone, refinedZone, refinedZone);
         var matcher = new SequenceOverlapMatcher(
             new OverlapResult(2, false, 1),
             new OverlapResult(2, false, 0.8),
@@ -198,9 +196,11 @@ public sealed class ScrollSessionTests
         using var frameOne = CreateCapturedFrame(Color.Red, 3, 6);
         using var frameTwo = CreateCapturedFrame(Color.Blue, 3, 6);
         using var frameThree = CreateCapturedFrame(Color.Green, 3, 6);
+        using var frameFour = CreateCapturedFrame(Color.Yellow, 3, 6);
         session.ProcessFrame(frameOne);
         session.ProcessFrame(frameTwo);
         session.ProcessFrame(frameThree);
+        session.ProcessFrame(frameFour);
         session.Finish();
 
         var result = session.GetResult();
@@ -208,13 +208,14 @@ public sealed class ScrollSessionTests
     }
 
     [Fact]
-    public void Refinement_DoesNotExpandLockedFixedRegions()
+    public void HistoryAggregation_DoesNotExpandFromSingleOutlierPair()
     {
         var initialZone = new ZoneLayout(0, 3, 0, 0, new ScreenRect(0, 0, 3, 3));
         var expandedZone = new ZoneLayout(0, 4, 0, 0, new ScreenRect(0, 0, 3, 2));
-        var detector = new SequenceZoneDetector(initialZone, expandedZone);
+        var detector = new SequenceZoneDetector(initialZone, expandedZone, initialZone);
         var matcher = new SequenceOverlapMatcher(
             new OverlapResult(2, false, 1),
+            new OverlapResult(2, false, 0.8),
             new OverlapResult(2, false, 0.8));
         using var session = new ScrollSession(detector, matcher);
 
@@ -222,9 +223,11 @@ public sealed class ScrollSessionTests
         using var frameOne = CreateCapturedFrame(Color.Red, 3, 6);
         using var frameTwo = CreateCapturedFrame(Color.Blue, 3, 6);
         using var frameThree = CreateCapturedFrame(Color.Green, 3, 6);
+        using var frameFour = CreateCapturedFrame(Color.Yellow, 3, 6);
         session.ProcessFrame(frameOne);
         session.ProcessFrame(frameTwo);
         session.ProcessFrame(frameThree);
+        session.ProcessFrame(frameFour);
         session.Finish();
 
         var result = session.GetResult();
@@ -232,12 +235,13 @@ public sealed class ScrollSessionTests
     }
 
     [Fact]
-    public void IdenticalTrailingFrame_DoesNotClearExistingZoneLayout()
+    public void HistoryAggregation_DoesNotLetSingleIdenticalTrailingPairClearZone()
     {
         var initialZone = new ZoneLayout(0, 3, 0, 0, new ScreenRect(0, 0, 3, 3));
         var refinedZone = new ZoneLayout(0, 0, 0, 0, new ScreenRect(0, 0, 3, 6));
-        var detector = new SequenceZoneDetector(initialZone, refinedZone);
+        var detector = new SequenceZoneDetector(initialZone, initialZone, refinedZone);
         var matcher = new SequenceOverlapMatcher(
+            new OverlapResult(2, false, 1),
             new OverlapResult(2, false, 1),
             OverlapResult.Identical(),
             OverlapResult.Identical());
@@ -246,10 +250,12 @@ public sealed class ScrollSessionTests
         session.Start(new ScreenRect(0, 0, 3, 6), ScrollDirection.Vertical);
         using var frameOne = CreateCapturedFrame(Color.Red, 3, 6);
         using var frameTwo = CreateCapturedFrame(Color.Blue, 3, 6);
-        using var frameThree = CreateCapturedFrame(Color.Blue, 3, 6);
+        using var frameThree = CreateCapturedFrame(Color.Green, 3, 6);
+        using var frameFour = CreateCapturedFrame(Color.Green, 3, 6);
         session.ProcessFrame(frameOne);
         session.ProcessFrame(frameTwo);
         session.ProcessFrame(frameThree);
+        session.ProcessFrame(frameFour);
         session.Finish();
 
         var result = session.GetResult();
@@ -303,13 +309,12 @@ public sealed class ScrollSessionTests
         public ZoneLayout Layout { get; }
 
         public ZoneLayout DetectZones(CapturedFrame previous, CapturedFrame current, ScrollDirection direction) => Layout;
-
-        public ZoneLayout RefineZones(ZoneLayout existing, CapturedFrame previous, CapturedFrame current, ScrollDirection direction) => Layout;
     }
 
     private sealed class SequenceZoneDetector : IZoneDetector
     {
         private readonly Queue<ZoneLayout> _layouts;
+        private readonly Dictionary<string, ZoneLayout> _memoizedLayouts = new();
 
         public SequenceZoneDetector(params ZoneLayout[] layouts)
         {
@@ -317,24 +322,38 @@ public sealed class ScrollSessionTests
         }
 
         public int DetectCount { get; private set; }
-        public int RefineCount { get; private set; }
 
         public ZoneLayout DetectZones(CapturedFrame previous, CapturedFrame current, ScrollDirection direction)
         {
             DetectCount++;
-            return _layouts.Count > 0 ? _layouts.Dequeue() : throw new InvalidOperationException("No queued zone layout.");
+            var key = CreatePairKey(previous, current);
+            if (_memoizedLayouts.TryGetValue(key, out var existing))
+            {
+                return existing;
+            }
+
+            var next = _layouts.Count > 0 ? _layouts.Dequeue() : _memoizedLayouts.Values.LastOrDefault();
+            _memoizedLayouts[key] = next;
+            return next;
         }
 
-        public ZoneLayout RefineZones(ZoneLayout existing, CapturedFrame previous, CapturedFrame current, ScrollDirection direction)
+        private static string CreatePairKey(CapturedFrame previous, CapturedFrame current)
         {
-            RefineCount++;
-            return _layouts.Count > 0 ? _layouts.Dequeue() : existing;
+            return $"{CreateFrameKey(previous)}->{CreateFrameKey(current)}";
+        }
+
+        private static string CreateFrameKey(CapturedFrame frame)
+        {
+            var topLeft = frame.Bitmap.GetPixel(0, 0).ToArgb();
+            var bottomRight = frame.Bitmap.GetPixel(frame.Bitmap.Width - 1, frame.Bitmap.Height - 1).ToArgb();
+            return $"{frame.Bitmap.Width}x{frame.Bitmap.Height}:{topLeft}:{bottomRight}";
         }
     }
 
     private sealed class SequenceOverlapMatcher : IOverlapMatcher
     {
         private readonly Queue<OverlapResult> _results;
+        private readonly Dictionary<string, OverlapResult> _memoizedResults = new();
 
         public SequenceOverlapMatcher(params OverlapResult[] results)
         {
@@ -343,7 +362,34 @@ public sealed class ScrollSessionTests
 
         public OverlapResult FindOverlap(ReadOnlySpan<byte> previousBand, ReadOnlySpan<byte> currentBand, int width, int height, ScrollDirection direction)
         {
-            return _results.Count > 0 ? _results.Dequeue() : OverlapResult.NoMatch;
+            var key = CreateBandKey(previousBand, currentBand, width, height, direction);
+            if (_memoizedResults.TryGetValue(key, out var existing))
+            {
+                return existing;
+            }
+
+            var next = _results.Count > 0 ? _results.Dequeue() : _memoizedResults.Values.LastOrDefault();
+            _memoizedResults[key] = next;
+            return next;
+        }
+
+        private static string CreateBandKey(ReadOnlySpan<byte> previousBand, ReadOnlySpan<byte> currentBand, int width, int height, ScrollDirection direction)
+        {
+            return $"{direction}:{width}x{height}:{ComputeFingerprint(previousBand)}:{ComputeFingerprint(currentBand)}";
+        }
+
+        private static ulong ComputeFingerprint(ReadOnlySpan<byte> pixels)
+        {
+            const ulong offset = 14695981039346656037UL;
+            const ulong prime = 1099511628211UL;
+            var hash = offset;
+            foreach (var value in pixels)
+            {
+                hash ^= value;
+                hash *= prime;
+            }
+
+            return hash;
         }
     }
 

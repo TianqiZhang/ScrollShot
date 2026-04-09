@@ -7,12 +7,12 @@ namespace ScrollShot.Scroll.Algorithms;
 public sealed class ZoneDetector : IZoneDetector
 {
     private readonly double _fixedThreshold;
-    private readonly int _refinementTolerancePixels;
+    private readonly double _edgeRichnessThreshold;
 
-    public ZoneDetector(double fixedThreshold = 0.02, int refinementTolerancePixels = 2)
+    public ZoneDetector(double fixedThreshold = 0.02, double edgeRichnessThreshold = 0.01)
     {
         _fixedThreshold = fixedThreshold;
-        _refinementTolerancePixels = refinementTolerancePixels;
+        _edgeRichnessThreshold = edgeRichnessThreshold;
     }
 
     public ZoneLayout DetectZones(CapturedFrame previous, CapturedFrame current, ScrollDirection direction)
@@ -28,62 +28,43 @@ public sealed class ZoneDetector : IZoneDetector
             throw new ArgumentException("Frames must have the same dimensions.");
         }
 
-        if (direction == ScrollDirection.Vertical)
-        {
-            var fixedTop = ScanTop(previousBuffer, currentBuffer);
-            var fixedBottom = ScanBottom(previousBuffer, currentBuffer);
-            if (fixedTop + fixedBottom >= previousBuffer.Height)
-            {
-                return new ZoneLayout(0, 0, 0, 0, new ScreenRect(0, 0, previousBuffer.Width, previousBuffer.Height));
-            }
-
-            return new ZoneLayout(
-                fixedTop,
-                fixedBottom,
-                0,
-                0,
-                new ScreenRect(
-                    0,
-                    fixedTop,
-                    previousBuffer.Width,
-                    previousBuffer.Height - fixedTop - fixedBottom));
-        }
-
-        var fixedLeft = ScanLeft(previousBuffer, currentBuffer, 0, previousBuffer.Height);
-        var fixedRight = ScanRight(previousBuffer, currentBuffer, 0, previousBuffer.Height);
-        if (fixedLeft + fixedRight >= previousBuffer.Width)
+        var fixedTop = ScanTop(previousBuffer, currentBuffer);
+        var fixedBottom = ScanBottom(previousBuffer, currentBuffer);
+        if (fixedTop + fixedBottom >= previousBuffer.Height)
         {
             return new ZoneLayout(0, 0, 0, 0, new ScreenRect(0, 0, previousBuffer.Width, previousBuffer.Height));
         }
 
+        var scrollBandTop = fixedTop;
+        var scrollBandHeight = previousBuffer.Height - fixedTop - fixedBottom;
+        var fixedLeft = ScanLeft(previousBuffer, currentBuffer, scrollBandTop, scrollBandHeight);
+        var fixedRight = ScanRight(previousBuffer, currentBuffer, scrollBandTop, scrollBandHeight);
+
+        if (fixedLeft > 0 && !HasRichVerticalContent(previousBuffer, 0, fixedLeft, scrollBandTop, scrollBandHeight))
+        {
+            fixedLeft = 0;
+        }
+
+        if (fixedRight > 0 && !HasRichVerticalContent(previousBuffer, previousBuffer.Width - fixedRight, fixedRight, scrollBandTop, scrollBandHeight))
+        {
+            fixedRight = 0;
+        }
+
+        if (fixedLeft + fixedRight >= previousBuffer.Width)
+        {
+            return new ZoneLayout(fixedTop, fixedBottom, 0, 0, new ScreenRect(0, fixedTop, previousBuffer.Width, scrollBandHeight));
+        }
+
         return new ZoneLayout(
-            0,
-            0,
+            fixedTop,
+            fixedBottom,
             fixedLeft,
             fixedRight,
             new ScreenRect(
                 fixedLeft,
-                0,
+                fixedTop,
                 previousBuffer.Width - fixedLeft - fixedRight,
-                previousBuffer.Height));
-    }
-
-    public ZoneLayout RefineZones(ZoneLayout existing, CapturedFrame previous, CapturedFrame current, ScrollDirection direction)
-    {
-        var detected = DetectZones(previous, current, direction);
-        return AreLayoutsEquivalent(existing, detected) ? existing : detected;
-    }
-
-    private bool AreLayoutsEquivalent(ZoneLayout existing, ZoneLayout detected)
-    {
-        return Math.Abs(existing.FixedTop - detected.FixedTop) <= _refinementTolerancePixels &&
-               Math.Abs(existing.FixedBottom - detected.FixedBottom) <= _refinementTolerancePixels &&
-               Math.Abs(existing.FixedLeft - detected.FixedLeft) <= _refinementTolerancePixels &&
-               Math.Abs(existing.FixedRight - detected.FixedRight) <= _refinementTolerancePixels &&
-               Math.Abs(existing.ScrollBand.X - detected.ScrollBand.X) <= _refinementTolerancePixels &&
-               Math.Abs(existing.ScrollBand.Y - detected.ScrollBand.Y) <= _refinementTolerancePixels &&
-               Math.Abs(existing.ScrollBand.Width - detected.ScrollBand.Width) <= _refinementTolerancePixels &&
-               Math.Abs(existing.ScrollBand.Height - detected.ScrollBand.Height) <= _refinementTolerancePixels;
+                scrollBandHeight));
     }
 
     private int ScanTop(PixelBufferSnapshot previous, PixelBufferSnapshot current)
@@ -148,5 +129,37 @@ public sealed class ZoneDetector : IZoneDetector
         }
 
         return fixedRight;
+    }
+
+    private bool HasRichVerticalContent(PixelBufferSnapshot snapshot, int startColumn, int columnCount, int startRow, int rowCount)
+    {
+        if (columnCount <= 0 || rowCount <= 1)
+        {
+            return false;
+        }
+
+        long totalDifference = 0;
+        var comparisons = 0;
+
+        for (var y = startRow + 1; y < startRow + rowCount; y++)
+        {
+            for (var x = startColumn; x < startColumn + columnCount; x++)
+            {
+                var currentIndex = ((y * snapshot.Width) + x) * 4;
+                var previousIndex = ((((y - 1) * snapshot.Width) + x) * 4);
+                totalDifference += Math.Abs(snapshot.Pixels[currentIndex] - snapshot.Pixels[previousIndex]);
+                totalDifference += Math.Abs(snapshot.Pixels[currentIndex + 1] - snapshot.Pixels[previousIndex + 1]);
+                totalDifference += Math.Abs(snapshot.Pixels[currentIndex + 2] - snapshot.Pixels[previousIndex + 2]);
+                comparisons += 3;
+            }
+        }
+
+        if (comparisons == 0)
+        {
+            return false;
+        }
+
+        var averageDifference = totalDifference / (comparisons * 255d);
+        return averageDifference >= _edgeRichnessThreshold;
     }
 }

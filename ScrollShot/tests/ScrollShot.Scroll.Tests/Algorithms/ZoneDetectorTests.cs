@@ -56,21 +56,6 @@ public sealed class ZoneDetectorTests
     }
 
     [Fact]
-    public void RefineZones_PreservesExistingLayout_WhenDifferenceIsWithinTolerance()
-    {
-        using var previousBitmap = TestBitmapFactory.CreateVerticalScrollFrame(width: 6, height: 8, topFixed: 2, bottomFixed: 1, scrollOffset: 0);
-        using var currentBitmap = TestBitmapFactory.CreateVerticalScrollFrame(width: 6, height: 8, topFixed: 3, bottomFixed: 1, scrollOffset: 1);
-        using var previous = new CapturedFrame(previousBitmap, new ScreenRect(0, 0, 6, 8), DateTimeOffset.UtcNow);
-        using var current = new CapturedFrame(currentBitmap, new ScreenRect(0, 0, 6, 8), DateTimeOffset.UtcNow);
-        var detector = new ZoneDetector(refinementTolerancePixels: 2);
-        var existing = new ZoneLayout(2, 1, 0, 0, new ScreenRect(0, 2, 6, 5));
-
-        var refined = detector.RefineZones(existing, previous, current, ScrollDirection.Vertical);
-
-        refined.Should().Be(existing);
-    }
-
-    [Fact]
     public void DetectZones_VerticalScroll_IgnoresStableSideMarginsThatBelongToScrollableContent()
     {
         using var previousBitmap = TestBitmapFactory.CreateVerticalScrollFrameWithStableSideMargins(width: 12, height: 10, sideMargin: 3, scrollOffset: 0);
@@ -102,6 +87,22 @@ public sealed class ZoneDetectorTests
         result.FixedLeft.Should().Be(0);
         result.FixedRight.Should().Be(0);
         result.ScrollBand.Should().Be(new ScreenRect(0, 0, 8, 8));
+    }
+
+    [Fact]
+    public void DetectZones_VerticalScroll_CanFindFixedSidePanels()
+    {
+        using var previousBitmap = TestBitmapFactory.CreateVerticalScrollFrameWithFixedSidePanels(width: 12, height: 10, leftFixed: 2, rightFixed: 1, scrollOffset: 0);
+        using var currentBitmap = TestBitmapFactory.CreateVerticalScrollFrameWithFixedSidePanels(width: 12, height: 10, leftFixed: 2, rightFixed: 1, scrollOffset: 1);
+        using var previous = new CapturedFrame(previousBitmap, new ScreenRect(0, 0, 12, 10), DateTimeOffset.UtcNow);
+        using var current = new CapturedFrame(currentBitmap, new ScreenRect(0, 0, 12, 10), DateTimeOffset.UtcNow);
+        var detector = new ZoneDetector();
+
+        var result = detector.DetectZones(previous, current, ScrollDirection.Vertical);
+
+        result.FixedLeft.Should().Be(2);
+        result.FixedRight.Should().Be(1);
+        result.ScrollBand.Should().Be(new ScreenRect(2, 0, 9, 10));
     }
 }
 
@@ -162,6 +163,35 @@ internal static class TestBitmapFactory
                 var color = x < sideMargin || x >= width - sideMargin
                     ? Color.Black
                     : Color.FromArgb(255, ((y + scrollOffset) * 31) % 255, (x * 19) % 255, ((y + scrollOffset) * 13 + x * 7) % 255);
+
+                bitmap.SetPixel(x, y, color);
+            }
+        }
+
+        return bitmap;
+    }
+
+    public static Bitmap CreateVerticalScrollFrameWithFixedSidePanels(int width, int height, int leftFixed, int rightFixed, int scrollOffset)
+    {
+        var bitmap = new Bitmap(width, height);
+
+        for (var y = 0; y < height; y++)
+        {
+            for (var x = 0; x < width; x++)
+            {
+                Color color;
+                if (x < leftFixed)
+                {
+                    color = Color.FromArgb(255, 40 + (y * 15) % 180, 80, 140 + (y * 9) % 100);
+                }
+                else if (x >= width - rightFixed)
+                {
+                    color = Color.FromArgb(255, 90, 30 + (y * 17) % 170, 180 - (y * 11) % 120);
+                }
+                else
+                {
+                    color = Color.FromArgb(255, (x * 20) % 255, ((y + scrollOffset) * 30) % 255, 80);
+                }
 
                 bitmap.SetPixel(x, y, color);
             }
