@@ -1,0 +1,424 @@
+using System.Drawing;
+using System.Drawing.Imaging;
+using ScrollShot.Capture.Models;
+using ScrollShot.Scroll.Algorithms;
+using ScrollShot.Scroll.Models;
+
+namespace ScrollShot.Scroll;
+
+public sealed class BidirectionalScrollSession : IScrollSession
+{
+    private readonly IZoneDetector _zoneDetector;
+    private readonly IBidirectionalOverlapMatcher _overlapMatcher;
+    private readonly List<ScrollSegment> _segments = new();
+    private readonly List<CapturedFrame> _frameHistory = new();
+    private ZoneLayout? _zoneLayout;
+    private Bitmap? _fixedTopBitmap;
+    private Bitmap? _fixedBottomBitmap;
+    private Bitmap? _fixedLeftBitmap;
+    private Bitmap? _fixedRightBitmap;
+    private ScreenRect _region;
+    private ScrollDirection _direction;
+    private int _primaryAxisExtent;
+    private bool _started;
+    private bool _finished;
+
+    public BidirectionalScrollSession(IZoneDetector? zoneDetector = null, IBidirectionalOverlapMatcher? overlapMatcher = null)
+    {
+        _zoneDetector = zoneDetector ?? new ZoneDetector();
+        _overlapMatcher = overlapMatcher ?? new BidirectionalOverlapMatcher();
+    }
+
+    public event Action<ScrollSegment>? SegmentAdded;
+
+    public event Action<ZoneLayout>? ZonesDetected;
+
+    public event Action<Bitmap>? PreviewUpdated;
+
+    public void Start(ScreenRect region, ScrollDirection direction)
+    {
+        Reset();
+        _region = region;
+        _direction = direction;
+        _started = true;
+    }
+
+    public void ProcessFrame(CapturedFrame frame)
+    {
+        ArgumentNullException.ThrowIfNull(frame);
+
+        if (!_started)
+        {
+            throw new InvalidOperationException("The session must be started before processing frames.");
+        }
+
+        if (_finished)
+        {
+            throw new InvalidOperationException("The session has already been finished.");
+        }
+
+        _frameHistory.Add(CloneFrame(frame));
+        if (_frameHistory.Count < 2 || !TryEstimateZoneFromHistory(out var estimatedZone, out var startFrameIndex))
+        {
+            return;
+        }
+
+        var previousZone = _zoneLayout;
+        var previousSegmentCount = _segments.Count;
+        RebuildFromHistory(estimatedZone, startFrameIndex);
+
+        if (previousZone != estimatedZone)
+        {
+            ZonesDetected?.Invoke(estimatedZone);
+        }
+
+        if (SegmentAdded is not null && _segments.Count > previousSegmentCount)
+        {
+            foreach (var segment in _segments.Skip(previousSegmentCount))
+            {
+                SegmentAdded(segment);
+            }
+        }
+
+        RaisePreviewUpdated();
+    }
+
+    public void Finish()
+    {
+        if (!_started)
+        {
+            throw new InvalidOperationException("The session must be started before it can be finished.");
+        }
+
+        _finished = true;
+    }
+
+    public CaptureResult GetResult()
+    {
+        if (!_finished)
+        {
+            throw new InvalidOperationException("Finish must be called before retrieving the result.");
+        }
+
+        if (_zoneLayout is null || _segments.Count == 0)
+        {
+            throw new InvalidOperationException("At least two frames are required to build a scroll result.");
+        }
+
+        var totalWidth = _direction == ScrollDirection.Vertical
+            ? _zoneLayout.Value.FixedLeft + _zoneLayout.Value.ScrollBand.Width + _zoneLayout.Value.FixedRight
+            : _zoneLayout.Value.FixedLeft + _primaryAxisExtent + _zoneLayout.Value.FixedRight;
+        var totalHeight = _direction == ScrollDirection.Vertical
+            ? _zoneLayout.Value.FixedTop + _primaryAxisExtent + _zoneLayout.Value.FixedBottom
+            : _zoneLayout.Value.FixedTop + _zoneLayout.Value.ScrollBand.Height + _zoneLayout.Value.FixedBottom;
+
+        return new CaptureResult(
+            _segments.Select(segment => new ScrollSegment((Bitmap)segment.Bitmap.Clone(), segment.Offset, segment.TemporaryFilePath)).ToArray(),
+            _zoneLayout.Value,
+            _direction,
+            totalWidth,
+            totalHeight,
+            fixedTopBitmap: _fixedTopBitmap is null ? null : (Bitmap)_fixedTopBitmap.Clone(),
+            fixedBottomBitmap: _fixedBottomBitmap is null ? null : (Bitmap)_fixedBottomBitmap.Clone(),
+            fixedLeftBitmap: _fixedLeftBitmap is null ? null : (Bitmap)_fixedLeftBitmap.Clone(),
+            fixedRightBitmap: _fixedRightBitmap is null ? null : (Bitmap)_fixedRightBitmap.Clone());
+    }
+
+    public void Dispose()
+    {
+        Reset();
+    }
+
+    private bool TryEstimateZoneFromHistory(out ZoneLayout zoneLayout, out int startFrameIndex)
+    {
+        var candidates = new List<(int StartIndex, ZoneLayout Zone)>();
+        for (var index = 1; index < _frameHistory.Count; index++)
+        {
+            var previous = _frameHistory[index - 1];
+            var current = _frameHistory[index];
+            var detectedZone = _zoneDetector.DetectZones(previous, current, _direction);
+            using var previousBand = ExtractBandBitmap(previous.Bitmap, detectedZone.ScrollBand);
+            var previousBandSnapshot = PixelBuffer.FromBitmap(previousBand);
+            var overlap = FindOverlap(previousBandSnapshot, current.Bitmap, detectedZone);
+            if (overlap.HasMatch)
+            {
+                candidates.Add((index - 1, detectedZone));
+            }
+        }
+
+        if (candidates.Count == 0)
+        {
+            zoneLayout = default;
+            startFrameIndex = 0;
+            return false;
+        }
+
+        startFrameIndex = candidates.Min(candidate => candidate.StartIndex);
+        zoneLayout = AggregateZones(candidates.Select(candidate => candidate.Zone));
+        return true;
+    }
+
+    private ZoneLayout AggregateZones(IEnumerable<ZoneLayout> zones)
+    {
+        var zoneList = zones.ToList();
+        var fixedTop = Median(zoneList.Select(zone => zone.FixedTop));
+        var fixedBottom = Median(zoneList.Select(zone => zone.FixedBottom));
+        var fixedLeft = Median(zoneList.Select(zone => zone.FixedLeft));
+        var fixedRight = Median(zoneList.Select(zone => zone.FixedRight));
+
+        if (fixedTop + fixedBottom >= _region.Height)
+        {
+            fixedTop = 0;
+            fixedBottom = 0;
+        }
+
+        if (fixedLeft + fixedRight >= _region.Width)
+        {
+            fixedLeft = 0;
+            fixedRight = 0;
+        }
+
+        return new ZoneLayout(
+            fixedTop,
+            fixedBottom,
+            fixedLeft,
+            fixedRight,
+            new ScreenRect(
+                fixedLeft,
+                fixedTop,
+                _region.Width - fixedLeft - fixedRight,
+                _region.Height - fixedTop - fixedBottom));
+    }
+
+    private static int Median(IEnumerable<int> values)
+    {
+        var ordered = values.OrderBy(value => value).ToArray();
+        if (ordered.Length == 0)
+        {
+            return 0;
+        }
+
+        return ordered[ordered.Length / 2];
+    }
+
+    private void RebuildFromHistory(ZoneLayout zoneLayout, int startFrameIndex)
+    {
+        ClearComposition();
+        _zoneLayout = zoneLayout;
+        CaptureFixedRegions(_frameHistory[startFrameIndex].Bitmap, zoneLayout);
+
+        using var startBandBitmap = ExtractBandBitmap(_frameHistory[startFrameIndex].Bitmap, zoneLayout.ScrollBand);
+        var placements = new List<PlacedBand>
+        {
+            new((Bitmap)startBandBitmap.Clone(), 0),
+        };
+
+        var previousSnapshot = PixelBuffer.FromBitmap(startBandBitmap);
+        var previousPlacementStart = 0;
+        var previousPrimarySize = GetPrimaryAxisSize(startBandBitmap);
+
+        for (var index = startFrameIndex + 1; index < _frameHistory.Count; index++)
+        {
+            var currentFrame = _frameHistory[index];
+            using var currentBandBitmap = ExtractBandBitmap(currentFrame.Bitmap, zoneLayout.ScrollBand);
+            var overlap = FindOverlap(previousSnapshot, currentFrame.Bitmap, zoneLayout);
+            if (!overlap.HasMatch)
+            {
+                continue;
+            }
+
+            var currentSnapshot = PixelBuffer.FromBitmap(currentBandBitmap);
+            if (overlap.IsIdentical)
+            {
+                previousSnapshot = currentSnapshot;
+                previousPrimarySize = GetPrimaryAxisSize(currentBandBitmap);
+                continue;
+            }
+
+            var currentPrimarySize = GetPrimaryAxisSize(currentBandBitmap);
+            var currentPlacementStart = overlap.Placement == ScrollPlacement.AppendAfter
+                ? previousPlacementStart + previousPrimarySize - overlap.OverlapPixels
+                : previousPlacementStart - (currentPrimarySize - overlap.OverlapPixels);
+
+            placements.Add(new PlacedBand((Bitmap)currentBandBitmap.Clone(), currentPlacementStart));
+            previousSnapshot = currentSnapshot;
+            previousPlacementStart = currentPlacementStart;
+            previousPrimarySize = currentPrimarySize;
+        }
+
+        NormalizePlacementsIntoSegments(placements);
+    }
+
+    private void NormalizePlacementsIntoSegments(IEnumerable<PlacedBand> placements)
+    {
+        var placementList = placements.ToList();
+        if (placementList.Count == 0)
+        {
+            _primaryAxisExtent = 0;
+            return;
+        }
+
+        var minOffset = placementList.Min(placement => placement.Offset);
+        var normalizedPlacements = placementList
+            .Select(placement => new PlacedBand(placement.Bitmap, placement.Offset - minOffset))
+            .OrderBy(placement => placement.Offset)
+            .ToList();
+
+        foreach (var placement in normalizedPlacements)
+        {
+            _segments.Add(new ScrollSegment(placement.Bitmap, placement.Offset));
+        }
+
+        _primaryAxisExtent = normalizedPlacements.Max(placement => placement.Offset + GetPrimaryAxisSize(placement.Bitmap));
+    }
+
+    private void CaptureFixedRegions(Bitmap bitmap, ZoneLayout zoneLayout)
+    {
+        DisposeFixedRegions();
+
+        if (zoneLayout.FixedTop > 0)
+        {
+            _fixedTopBitmap = bitmap.Clone(new Rectangle(0, 0, bitmap.Width, zoneLayout.FixedTop), PixelFormat.Format32bppArgb);
+        }
+
+        if (zoneLayout.FixedBottom > 0)
+        {
+            _fixedBottomBitmap = bitmap.Clone(
+                new Rectangle(0, bitmap.Height - zoneLayout.FixedBottom, bitmap.Width, zoneLayout.FixedBottom),
+                PixelFormat.Format32bppArgb);
+        }
+
+        if (zoneLayout.FixedLeft > 0)
+        {
+            _fixedLeftBitmap = bitmap.Clone(
+                new Rectangle(0, zoneLayout.ScrollBand.Y, zoneLayout.FixedLeft, zoneLayout.ScrollBand.Height),
+                PixelFormat.Format32bppArgb);
+        }
+
+        if (zoneLayout.FixedRight > 0)
+        {
+            _fixedRightBitmap = bitmap.Clone(
+                new Rectangle(bitmap.Width - zoneLayout.FixedRight, zoneLayout.ScrollBand.Y, zoneLayout.FixedRight, zoneLayout.ScrollBand.Height),
+                PixelFormat.Format32bppArgb);
+        }
+    }
+
+    private void RaisePreviewUpdated()
+    {
+        if (PreviewUpdated is null || _segments.Count == 0 || _zoneLayout is null)
+        {
+            return;
+        }
+
+        var previewWidth = _direction == ScrollDirection.Vertical
+            ? _zoneLayout.Value.ScrollBand.Width
+            : _segments.Max(segment => segment.Offset + segment.Bitmap.Width);
+        var previewHeight = _direction == ScrollDirection.Vertical
+            ? _segments.Max(segment => segment.Offset + segment.Bitmap.Height)
+            : _zoneLayout.Value.ScrollBand.Height;
+
+        var previewBitmap = new Bitmap(previewWidth, previewHeight, PixelFormat.Format32bppArgb);
+        using (var graphics = Graphics.FromImage(previewBitmap))
+        {
+            graphics.Clear(Color.Transparent);
+            foreach (var segment in _segments.OrderBy(segment => segment.Offset))
+            {
+                DrawBitmapPixelExact(
+                    graphics,
+                    segment.Bitmap,
+                    _direction == ScrollDirection.Vertical ? 0 : segment.Offset,
+                    _direction == ScrollDirection.Vertical ? segment.Offset : 0);
+            }
+        }
+
+        var targetSize = _direction == ScrollDirection.Vertical
+            ? new Size(Math.Max(1, Math.Min(180, previewBitmap.Width)), Math.Max(1, Math.Min(320, previewBitmap.Height)))
+            : new Size(Math.Max(1, Math.Min(320, previewBitmap.Width)), Math.Max(1, Math.Min(180, previewBitmap.Height)));
+
+        if (targetSize.Width != previewBitmap.Width || targetSize.Height != previewBitmap.Height)
+        {
+            using var original = previewBitmap;
+            PreviewUpdated(PixelBuffer.Downscale(original, targetSize));
+            return;
+        }
+
+        PreviewUpdated(previewBitmap);
+    }
+
+    private static void DrawBitmapPixelExact(Graphics graphics, Bitmap bitmap, int x, int y)
+    {
+        graphics.DrawImage(
+            bitmap,
+            new Rectangle(x, y, bitmap.Width, bitmap.Height),
+            new Rectangle(0, 0, bitmap.Width, bitmap.Height),
+            GraphicsUnit.Pixel);
+    }
+
+    private Bitmap ExtractBandBitmap(Bitmap bitmap, ScreenRect band)
+    {
+        return bitmap.Clone(new Rectangle(band.X, band.Y, band.Width, band.Height), PixelFormat.Format32bppArgb);
+    }
+
+    private DirectionalOverlapResult FindOverlap(PixelBufferSnapshot previousBand, Bitmap currentBitmap, ZoneLayout zoneLayout)
+    {
+        using var currentBandBitmap = ExtractBandBitmap(currentBitmap, zoneLayout.ScrollBand);
+        var currentBand = PixelBuffer.FromBitmap(currentBandBitmap);
+        return _overlapMatcher.FindOverlap(
+            previousBand.Pixels,
+            currentBand.Pixels,
+            currentBand.Width,
+            currentBand.Height,
+            _direction);
+    }
+
+    private CapturedFrame CloneFrame(CapturedFrame frame)
+    {
+        return new CapturedFrame((Bitmap)frame.Bitmap.Clone(), frame.Region, frame.CapturedAtUtc, frame.DpiScale);
+    }
+
+    private int GetPrimaryAxisSize(Bitmap bitmap)
+    {
+        return _direction == ScrollDirection.Vertical ? bitmap.Height : bitmap.Width;
+    }
+
+    private void DisposeFixedRegions()
+    {
+        _fixedTopBitmap?.Dispose();
+        _fixedBottomBitmap?.Dispose();
+        _fixedLeftBitmap?.Dispose();
+        _fixedRightBitmap?.Dispose();
+        _fixedTopBitmap = null;
+        _fixedBottomBitmap = null;
+        _fixedLeftBitmap = null;
+        _fixedRightBitmap = null;
+    }
+
+    private void ClearComposition()
+    {
+        _primaryAxisExtent = 0;
+
+        foreach (var segment in _segments)
+        {
+            segment.Dispose();
+        }
+
+        _segments.Clear();
+        DisposeFixedRegions();
+    }
+
+    private void Reset()
+    {
+        foreach (var frame in _frameHistory)
+        {
+            frame.Dispose();
+        }
+
+        _frameHistory.Clear();
+        ClearComposition();
+        _zoneLayout = null;
+        _started = false;
+        _finished = false;
+    }
+
+    private sealed record PlacedBand(Bitmap Bitmap, int Offset);
+}

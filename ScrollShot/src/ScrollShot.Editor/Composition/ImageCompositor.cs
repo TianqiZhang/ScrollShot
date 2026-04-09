@@ -19,7 +19,10 @@ public sealed class ImageCompositor : IImageCompositor
 
     private static Bitmap ComposeBase(CaptureResult result, bool includeChrome)
     {
-        var segmentPrimarySize = result.Segments.Sum(segment => result.Direction == ScrollDirection.Vertical ? segment.Bitmap.Height : segment.Bitmap.Width);
+        // Segment offsets are authoritative layout coordinates across all profiles.
+        // Legacy append-only sessions already emit contiguous offsets, while experimental
+        // sessions can intentionally place segments before or after the current anchor.
+        var segmentPrimarySize = result.Segments.Max(segment => segment.Offset + GetPrimaryAxisSize(segment, result.Direction));
         var width = result.Direction == ScrollDirection.Vertical
             ? (includeChrome ? (result.FixedLeftBitmap?.Width ?? 0) + result.ZoneLayout.ScrollBand.Width + (result.FixedRightBitmap?.Width ?? 0) : result.ZoneLayout.ScrollBand.Width)
             : (includeChrome ? segmentPrimarySize + (result.FixedLeftBitmap?.Width ?? 0) + (result.FixedRightBitmap?.Width ?? 0) : segmentPrimarySize);
@@ -58,16 +61,11 @@ public sealed class ImageCompositor : IImageCompositor
 
         foreach (var segment in result.Segments.OrderBy(segment => segment.Offset))
         {
-            DrawBitmapPixelExact(graphics, segment.Bitmap, offsetX, offsetY);
-
-            if (result.Direction == ScrollDirection.Vertical)
-            {
-                offsetY += segment.Bitmap.Height;
-            }
-            else
-            {
-                offsetX += segment.Bitmap.Width;
-            }
+            DrawBitmapPixelExact(
+                graphics,
+                segment.Bitmap,
+                result.Direction == ScrollDirection.Vertical ? offsetX : leftInset + segment.Offset,
+                result.Direction == ScrollDirection.Vertical ? topInset + segment.Offset : offsetY);
         }
 
         if (includeChrome && result.Direction == ScrollDirection.Vertical && result.FixedBottomBitmap is not null)
@@ -96,6 +94,11 @@ public sealed class ImageCompositor : IImageCompositor
         }
 
         return bitmap;
+    }
+
+    private static int GetPrimaryAxisSize(ScrollSegment segment, ScrollDirection direction)
+    {
+        return direction == ScrollDirection.Vertical ? segment.Bitmap.Height : segment.Bitmap.Width;
     }
 
     private static void DrawBitmapPixelExact(Graphics graphics, Bitmap bitmap, int x, int y)

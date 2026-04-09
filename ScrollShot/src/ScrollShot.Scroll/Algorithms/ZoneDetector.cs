@@ -40,12 +40,12 @@ public sealed class ZoneDetector : IZoneDetector
         var fixedLeft = ScanLeft(previousBuffer, currentBuffer, scrollBandTop, scrollBandHeight);
         var fixedRight = ScanRight(previousBuffer, currentBuffer, scrollBandTop, scrollBandHeight);
 
-        if (fixedLeft > 0 && !HasRichVerticalContent(previousBuffer, 0, fixedLeft, scrollBandTop, scrollBandHeight))
+        if (fixedLeft > 0 && !EdgeContentGuard.HasRichVerticalContent(previousBuffer, 0, fixedLeft, scrollBandTop, scrollBandHeight, _edgeRichnessThreshold))
         {
             fixedLeft = 0;
         }
 
-        if (fixedRight > 0 && !HasRichVerticalContent(previousBuffer, previousBuffer.Width - fixedRight, fixedRight, scrollBandTop, scrollBandHeight))
+        if (fixedRight > 0 && !EdgeContentGuard.HasRichVerticalContent(previousBuffer, previousBuffer.Width - fixedRight, fixedRight, scrollBandTop, scrollBandHeight, _edgeRichnessThreshold))
         {
             fixedRight = 0;
         }
@@ -129,37 +129,5 @@ public sealed class ZoneDetector : IZoneDetector
         }
 
         return fixedRight;
-    }
-
-    private bool HasRichVerticalContent(PixelBufferSnapshot snapshot, int startColumn, int columnCount, int startRow, int rowCount)
-    {
-        if (columnCount <= 0 || rowCount <= 1)
-        {
-            return false;
-        }
-
-        long totalDifference = 0;
-        var comparisons = 0;
-
-        for (var y = startRow + 1; y < startRow + rowCount; y++)
-        {
-            for (var x = startColumn; x < startColumn + columnCount; x++)
-            {
-                var currentIndex = ((y * snapshot.Width) + x) * 4;
-                var previousIndex = ((((y - 1) * snapshot.Width) + x) * 4);
-                totalDifference += Math.Abs(snapshot.Pixels[currentIndex] - snapshot.Pixels[previousIndex]);
-                totalDifference += Math.Abs(snapshot.Pixels[currentIndex + 1] - snapshot.Pixels[previousIndex + 1]);
-                totalDifference += Math.Abs(snapshot.Pixels[currentIndex + 2] - snapshot.Pixels[previousIndex + 2]);
-                comparisons += 3;
-            }
-        }
-
-        if (comparisons == 0)
-        {
-            return false;
-        }
-
-        var averageDifference = totalDifference / (comparisons * 255d);
-        return averageDifference >= _edgeRichnessThreshold;
     }
 }

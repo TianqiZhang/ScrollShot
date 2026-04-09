@@ -36,6 +36,9 @@ public sealed class ImageCompositorTests
 
         composed.Width.Should().Be(4);
         composed.Height.Should().Be(8); // 2 top + 3 seg1 + 2 seg2 + 1 bottom
+        composed.GetPixel(1, 2).ToArgb().Should().Be(Color.Red.ToArgb());
+        composed.GetPixel(1, 5).ToArgb().Should().Be(Color.Yellow.ToArgb());
+        composed.GetPixel(1, 7).ToArgb().Should().Be(Color.Green.ToArgb());
     }
 
     [Fact]
@@ -145,6 +148,29 @@ public sealed class ImageCompositorTests
         composed.Width.Should().Be(10);
         composed.Height.Should().Be(4);
         composed.GetPixel(9, 2).ToArgb().Should().Be(Color.Red.ToArgb());
+    }
+
+    [Fact]
+    public void Compose_UsesSegmentOffsetsAsAuthoritativePlacement()
+    {
+        using var segmentOne = CreateSolidBitmap(3, 4, Color.Red);
+        using var segmentTwo = CreateSolidBitmap(3, 4, Color.Blue);
+        var result = new CaptureResult(
+            new[]
+            {
+                new ScrollSegment((Bitmap)segmentOne.Clone(), 1),
+                new ScrollSegment((Bitmap)segmentTwo.Clone(), 0),
+            },
+            new ZoneLayout(0, 0, 0, 0, new ScreenRect(0, 0, 3, 4)),
+            ScrollDirection.Vertical,
+            3,
+            5);
+
+        using var composed = _compositor.Compose(result, EditState.Default);
+
+        composed.Height.Should().Be(5);
+        composed.GetPixel(1, 0).ToArgb().Should().Be(Color.Blue.ToArgb());
+        composed.GetPixel(1, 4).ToArgb().Should().Be(Color.Red.ToArgb());
     }
 
     private static CaptureResult CreateSingleSegmentResult(Bitmap segment, int width, int height)

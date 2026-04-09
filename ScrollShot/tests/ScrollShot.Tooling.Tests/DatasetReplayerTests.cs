@@ -56,6 +56,7 @@ public sealed class DatasetReplayerTests : IDisposable
     [Theory]
     [InlineData(StitchingProfiles.SignalZoneExperiment)]
     [InlineData(StitchingProfiles.SignalHybridExperiment)]
+    [InlineData(StitchingProfiles.BidirectionalCurrentExperiment)]
     public void Replay_AcceptsExperimentalProfile(string profileName)
     {
         var inputPath = Path.Combine(_tempDirectory, "groundtruth-experimental.png");

@@ -17,7 +17,11 @@
   "CompletedAtUtc": "2026-04-08T08:21:07.5346172+00:00",
   "CompletionReason": "completed",
   "FailureMessage": null,
-  "Truth": null,
+  "Truth": {
+    "GroundTruthRelativePath": "ground_truth.png",
+    "GroundTruthWidth": 909,
+    "GroundTruthHeight": 1312
+  },
   "Frames": [
     {
       "Index": 0,

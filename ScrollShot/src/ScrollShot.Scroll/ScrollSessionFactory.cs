@@ -11,7 +11,7 @@ public sealed class ScrollSessionFactory : IScrollSessionFactory
         if (!StitchingProfiles.IsKnown(ProfileName))
         {
             throw new ArgumentException(
-                $"Unknown stitching profile '{profileName}'. Supported values: {StitchingProfiles.Current}, {StitchingProfiles.SignalZoneExperiment}, {StitchingProfiles.SignalHybridExperiment}.",
+                $"Unknown stitching profile '{profileName}'. Supported values: {StitchingProfiles.Current}, {StitchingProfiles.SignalZoneExperiment}, {StitchingProfiles.SignalHybridExperiment}, {StitchingProfiles.BidirectionalCurrentExperiment}.",
                 nameof(profileName));
         }
     }
@@ -25,6 +25,7 @@ public sealed class ScrollSessionFactory : IScrollSessionFactory
             StitchingProfiles.Current => new ScrollSession(),
             StitchingProfiles.SignalZoneExperiment => new ScrollSession(new SignalZoneDetector(), new OverlapMatcher()),
             StitchingProfiles.SignalHybridExperiment => new ScrollSession(new SignalZoneDetector(), new SignalHybridOverlapMatcher()),
+            StitchingProfiles.BidirectionalCurrentExperiment => new BidirectionalScrollSession(new ZoneDetector(), new BidirectionalOverlapMatcher(new OverlapMatcher())),
             _ => throw new InvalidOperationException($"Unsupported stitching profile '{ProfileName}'."),
         };
     }

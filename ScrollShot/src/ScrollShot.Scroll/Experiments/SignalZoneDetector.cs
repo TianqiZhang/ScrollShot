@@ -9,15 +9,18 @@ public sealed class SignalZoneDetector : IZoneDetector
     private readonly double _fixedThreshold;
     private readonly int _transitionRunLength;
     private readonly int _smoothingRadius;
+    private readonly double _edgeRichnessThreshold;
 
     public SignalZoneDetector(
         double fixedThreshold = 0.02,
         int transitionRunLength = 2,
-        int smoothingRadius = 0)
+        int smoothingRadius = 0,
+        double edgeRichnessThreshold = 0.01)
     {
         _fixedThreshold = fixedThreshold;
         _transitionRunLength = transitionRunLength;
         _smoothingRadius = smoothingRadius;
+        _edgeRichnessThreshold = edgeRichnessThreshold;
     }
 
     public ZoneLayout DetectZones(CapturedFrame previous, CapturedFrame current, ScrollDirection direction)
@@ -52,6 +55,17 @@ public sealed class SignalZoneDetector : IZoneDetector
         var columnSignal = Smooth(ComputeColumnSignal(previous, current, scrollBandTop, scrollBandHeight));
         var fixedLeft = FindStableExtentFromStart(columnSignal);
         var fixedRight = FindStableExtentFromEnd(columnSignal);
+
+        if (fixedLeft > 0 && !EdgeContentGuard.HasRichVerticalContent(previous, 0, fixedLeft, scrollBandTop, scrollBandHeight, _edgeRichnessThreshold))
+        {
+            fixedLeft = 0;
+        }
+
+        if (fixedRight > 0 && !EdgeContentGuard.HasRichVerticalContent(previous, previous.Width - fixedRight, fixedRight, scrollBandTop, scrollBandHeight, _edgeRichnessThreshold))
+        {
+            fixedRight = 0;
+        }
+
         if (fixedLeft + fixedRight >= previous.Width)
         {
             return new ZoneLayout(fixedTop, fixedBottom, 0, 0, new ScreenRect(0, fixedTop, previous.Width, scrollBandHeight));
