@@ -28,34 +28,44 @@ public sealed class ZoneDetector : IZoneDetector
             throw new ArgumentException("Frames must have the same dimensions.");
         }
 
-        var fixedTop = ScanTop(previousBuffer, currentBuffer);
-        var fixedBottom = ScanBottom(previousBuffer, currentBuffer);
+        if (direction == ScrollDirection.Vertical)
+        {
+            var fixedTop = ScanTop(previousBuffer, currentBuffer);
+            var fixedBottom = ScanBottom(previousBuffer, currentBuffer);
+            if (fixedTop + fixedBottom >= previousBuffer.Height)
+            {
+                return new ZoneLayout(0, 0, 0, 0, new ScreenRect(0, 0, previousBuffer.Width, previousBuffer.Height));
+            }
 
-        if (fixedTop + fixedBottom >= previousBuffer.Height)
+            return new ZoneLayout(
+                fixedTop,
+                fixedBottom,
+                0,
+                0,
+                new ScreenRect(
+                    0,
+                    fixedTop,
+                    previousBuffer.Width,
+                    previousBuffer.Height - fixedTop - fixedBottom));
+        }
+
+        var fixedLeft = ScanLeft(previousBuffer, currentBuffer, 0, previousBuffer.Height);
+        var fixedRight = ScanRight(previousBuffer, currentBuffer, 0, previousBuffer.Height);
+        if (fixedLeft + fixedRight >= previousBuffer.Width)
         {
             return new ZoneLayout(0, 0, 0, 0, new ScreenRect(0, 0, previousBuffer.Width, previousBuffer.Height));
         }
 
-        var scrollBandTop = fixedTop;
-        var scrollBandHeight = previousBuffer.Height - fixedTop - fixedBottom;
-        var fixedLeft = ScanLeft(previousBuffer, currentBuffer, scrollBandTop, scrollBandHeight);
-        var fixedRight = ScanRight(previousBuffer, currentBuffer, scrollBandTop, scrollBandHeight);
-
-        if (fixedLeft + fixedRight >= previousBuffer.Width)
-        {
-            return new ZoneLayout(fixedTop, fixedBottom, 0, 0, new ScreenRect(0, fixedTop, previousBuffer.Width, scrollBandHeight));
-        }
-
         return new ZoneLayout(
-            fixedTop,
-            fixedBottom,
+            0,
+            0,
             fixedLeft,
             fixedRight,
             new ScreenRect(
                 fixedLeft,
-                fixedTop,
+                0,
                 previousBuffer.Width - fixedLeft - fixedRight,
-                previousBuffer.Height - fixedTop - fixedBottom));
+                previousBuffer.Height));
     }
 
     public ZoneLayout RefineZones(ZoneLayout existing, CapturedFrame previous, CapturedFrame current, ScrollDirection direction)

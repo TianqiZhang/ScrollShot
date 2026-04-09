@@ -69,6 +69,40 @@ public sealed class ZoneDetectorTests
 
         refined.Should().Be(existing);
     }
+
+    [Fact]
+    public void DetectZones_VerticalScroll_IgnoresStableSideMarginsThatBelongToScrollableContent()
+    {
+        using var previousBitmap = TestBitmapFactory.CreateVerticalScrollFrameWithStableSideMargins(width: 12, height: 10, sideMargin: 3, scrollOffset: 0);
+        using var currentBitmap = TestBitmapFactory.CreateVerticalScrollFrameWithStableSideMargins(width: 12, height: 10, sideMargin: 3, scrollOffset: 1);
+        using var previous = new CapturedFrame(previousBitmap, new ScreenRect(0, 0, 12, 10), DateTimeOffset.UtcNow);
+        using var current = new CapturedFrame(currentBitmap, new ScreenRect(0, 0, 12, 10), DateTimeOffset.UtcNow);
+        var detector = new ZoneDetector();
+
+        var result = detector.DetectZones(previous, current, ScrollDirection.Vertical);
+
+        result.FixedLeft.Should().Be(0);
+        result.FixedRight.Should().Be(0);
+        result.ScrollBand.Should().Be(new ScreenRect(0, 0, 12, 10));
+    }
+
+    [Fact]
+    public void DetectZones_VerticalScroll_FindsOnlyBottomFixedMargin()
+    {
+        using var previousBitmap = TestBitmapFactory.CreateVerticalScrollFrame(width: 8, height: 10, topFixed: 0, bottomFixed: 2, scrollOffset: 0);
+        using var currentBitmap = TestBitmapFactory.CreateVerticalScrollFrame(width: 8, height: 10, topFixed: 0, bottomFixed: 2, scrollOffset: 1);
+        using var previous = new CapturedFrame(previousBitmap, new ScreenRect(0, 0, 8, 10), DateTimeOffset.UtcNow);
+        using var current = new CapturedFrame(currentBitmap, new ScreenRect(0, 0, 8, 10), DateTimeOffset.UtcNow);
+        var detector = new ZoneDetector();
+
+        var result = detector.DetectZones(previous, current, ScrollDirection.Vertical);
+
+        result.FixedTop.Should().Be(0);
+        result.FixedBottom.Should().Be(2);
+        result.FixedLeft.Should().Be(0);
+        result.FixedRight.Should().Be(0);
+        result.ScrollBand.Should().Be(new ScreenRect(0, 0, 8, 8));
+    }
 }
 
 internal static class TestBitmapFactory
@@ -114,6 +148,25 @@ internal static class TestBitmapFactory
         var bitmap = new Bitmap(width, height);
         using var graphics = Graphics.FromImage(bitmap);
         graphics.Clear(color);
+        return bitmap;
+    }
+
+    public static Bitmap CreateVerticalScrollFrameWithStableSideMargins(int width, int height, int sideMargin, int scrollOffset)
+    {
+        var bitmap = new Bitmap(width, height);
+
+        for (var y = 0; y < height; y++)
+        {
+            for (var x = 0; x < width; x++)
+            {
+                var color = x < sideMargin || x >= width - sideMargin
+                    ? Color.Black
+                    : Color.FromArgb(255, ((y + scrollOffset) * 31) % 255, (x * 19) % 255, ((y + scrollOffset) * 13 + x * 7) % 255);
+
+                bitmap.SetPixel(x, y, color);
+            }
+        }
+
         return bitmap;
     }
 }
