@@ -26,6 +26,7 @@
 | Phase 21 | Completed | Bidirectional performance pass 2: adjacent-pair analysis cache | Cached zone detection and overlap eligibility per adjacent frame pair so history estimation reuses prior analysis, added cache-focused regressions, and kept the change only after another dev-suite drop plus an exact correctness-gate replay on both tracked dumps |
 | Phase 22 | Completed | Bidirectional performance pass 3: allocation-free overlap slices | Reworked `OverlapMatcher` to compare overlap windows directly from the input spans instead of cloning arrays and sub-rectangles, kept the same search/crop policy, and retained the change only after another large speedup plus exact correctness-gate replay on both tracked dumps |
 | Phase 23 | Completed | Bidirectional performance pass 4: SIMD absolute-difference kernel | Replaced the hot scalar byte-difference loop in `PixelBuffer` with a vectorized SIMD path plus scalar tail, added regression coverage for vector-sized input with a remainder, discarded the separate snapshot-cache prototype as not worthwhile, and kept the SIMD change only after the dev suite dropped again and the correctness gate still matched both tracked dump ground truths exactly |
+| Phase 24 | Completed | Bidirectional performance pass 5: reuse cached pair overlaps | Extended the adjacent-pair analysis cache to retain the already-computed overlap result itself, reused that result during rebuild and incremental append whenever the aggregate zone matched the pair zone, and kept the change only after another dev-suite drop plus an exact correctness-gate replay on both tracked dumps |
 
 ## Commits
 
@@ -54,7 +55,8 @@
 | Phase 20 | `ffae129` |
 | Phase 21 | `d952242` |
 | Phase 22 | `56ecc81` |
-| Phase 23 | Uncommitted |
+| Phase 23 | `4b058ab` |
+| Phase 24 | Uncommitted |
 
 ## Notes
 
@@ -86,3 +88,6 @@
 - The third retained performance pass removed the hottest remaining overlap-matcher allocations without changing its thresholds or search order. On the fixed Release dev suite it moved the stitch medians again from `7808/1811/1765 ms` to `4577/1210/1112 ms` (total `11384 -> 6899 ms`), and the full correctness gate stayed exact on both tracked dumps (`debug-20260408-082055888: 3316 ms`, `debug-20260408-082216796: 6508 ms`, both with `normalized diff = 0`).
 - The next experiment after that was a snapshot-cache prototype, but it was explicitly discarded: it only improved the dev-suite total from `6899 ms` to `6763 ms` and slightly regressed `synthetic-up`, which was not enough to justify the extra seam.
 - The fourth retained performance pass replaced the hot scalar absolute-difference loop in `PixelBuffer` with a SIMD vectorized path while preserving the same scoring behavior and scalar tail handling. A code-review follow-up widened the SIMD accumulators to avoid latent overflow on very large spans. On the fixed Release dev suite the final kept version moved the stitch medians again from `4577/1210/1112 ms` to `1086/285/299 ms` (total `6899 -> 1670 ms`), and the correctness gate still matched both tracked dumps and both synthetic fixtures exactly (`debug-20260408-082055888: 992 ms`, `debug-20260408-082216796: 1740 ms`, all `normalized diff = 0`).
+- The next post-SIMD experiment was a behavior-safe coarse fingerprint prepass ahead of full pixel scoring, but it was discarded: even with a fallback that preserved the current overlap-selection semantics, the dev-suite total moved from `1670 ms` to `1715 ms`, so the extra pass was simply slower than the accepted baseline.
+- A second post-SIMD experiment was also discarded: extracting band snapshots directly from source bitmaps instead of going through temporary band clones moved the dev-suite total from `1670 ms` to `1785 ms`, so that lower-level allocation/GDI tweak was not helping this workload either.
+- The fifth retained performance pass reused the adjacent-pair overlap result that the session was already computing during history analysis instead of recomputing that same overlap during rebuild and incremental append when the aggregate zone still matched the pair zone. On the fixed Release dev suite it moved the stitch medians again from `1086/285/299 ms` to `933/220/222 ms` (total `1670 -> 1375 ms`), and the correctness gate still matched both tracked dumps and both synthetic fixtures exactly (`debug-20260408-082055888: 522 ms`, `debug-20260408-082216796: 1517 ms`, all `normalized diff = 0`).

@@ -152,22 +152,24 @@ The first structural optimization wave already landed:
 - adjacent-pair analysis caching
 - allocation-free overlap slice comparison
 - SIMD absolute-difference scoring
+- reuse of cached adjacent-pair overlap results during rebuild/append
 
-On the fixed Release development suite, those four kept passes reduced the stitch-median total from `27449 ms` to `1670 ms`.
+On the fixed Release development suite, those five kept passes reduced the stitch-median total from `27449 ms` to `1375 ms`.
 
 That changes the remaining opportunity set:
 
 1. **Still practical next ideas**
-   - add a coarse fingerprint or candidate-pruning pass ahead of full pixel scoring
    - revisit bounded search windows from recent motion estimates
-   - revisit snapshot reuse only if a future design can avoid adding another detector seam for a single-digit gain
+    - revisit snapshot reuse only if a future design can avoid adding another detector seam for a single-digit gain
 2. **Now deprioritized or discarded**
-   - freeze zone consensus after stabilization
-   - parallelize history rescans
-   - the first frame-snapshot cache prototype
-   - broader runtime or architecture rewrites before cheaper in-process wins are exhausted
+    - freeze zone consensus after stabilization
+    - parallelize history rescans
+    - the first frame-snapshot cache prototype
+    - the coarse fingerprint prepass prototype
+    - the direct band-snapshot prototype
+    - broader runtime or architecture rewrites before cheaper in-process wins are exhausted
 
-The remaining backlog should therefore bias toward **localized hot-path work inside overlap scoring and candidate pruning**, not more session-level restructuring.
+The remaining backlog should therefore bias toward **localized hot-path work inside overlap scoring and search-window reduction**, not more session-level restructuring.
 
 ## Commit policy
 

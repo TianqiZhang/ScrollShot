@@ -1,7 +1,7 @@
 {
   "Program": "bidirectional-performance",
   "PrimaryMetric": "median StitchElapsedMilliseconds",
-  "LastUpdatedUtc": "2026-04-10T05:09:42Z",
+  "LastUpdatedUtc": "2026-04-10T05:22:35Z",
   "Curve": [
     {
       "Label": "baseline-release",
@@ -60,12 +60,25 @@
       "TimestampUtc": "2026-04-10T05:09:42Z",
       "Suite": "suite.json",
       "RunDirectory": "runs/20260410-050942914",
-      "Commit": null,
+      "Commit": "4b058ab",
       "Metrics": {
         "SuiteStitchMedianTotalMilliseconds": 1670,
         "debug-20260408-082216796-slice": 1086,
         "synthetic-down": 285,
         "synthetic-up": 299
+      }
+    },
+    {
+      "Label": "reuse-cached-pair-overlaps",
+      "TimestampUtc": "2026-04-10T05:22:16Z",
+      "Suite": "suite.json",
+      "RunDirectory": "runs/20260410-052216276",
+      "Commit": null,
+      "Metrics": {
+        "SuiteStitchMedianTotalMilliseconds": 1375,
+        "debug-20260408-082216796-slice": 933,
+        "synthetic-down": 220,
+        "synthetic-up": 222
       }
     }
   ],
@@ -155,13 +168,25 @@
     {
       "Id": "coarse-fingerprint-pass",
       "Title": "Add a coarse row or column fingerprint pass before pixel refinement",
-      "Status": "ready",
+      "Status": "discarded",
       "DependsOn": [
         "baseline-benchmark"
       ],
       "Hypothesis": "Cheap 1D fingerprints can reject most impossible overlaps before expensive per-pixel comparisons.",
       "Risk": "medium",
-      "Outcome": null,
+      "Outcome": "Discarded after measurement. A behavior-safe prototype that used coarse fingerprints only as a prefilter plus full-fidelity fallback over skipped larger candidates moved the dev-suite stitch medians from 1086/285/299 ms to 1130/294/291 ms (suite total 1670 -> 1715), so it was slightly slower than the accepted SIMD baseline.",
+      "Commit": null
+    },
+    {
+      "Id": "direct-band-snapshots",
+      "Title": "Extract band snapshots directly from source bitmaps without intermediate band clones",
+      "Status": "discarded",
+      "DependsOn": [
+        "simd-sad-kernel"
+      ],
+      "Hypothesis": "Avoiding temporary band bitmap clones for pair analysis and no-match paths should reduce allocation and GDI overhead while preserving the current overlap logic.",
+      "Risk": "low",
+      "Outcome": "Discarded after measurement. A direct bitmap-region snapshot prototype moved the dev-suite stitch medians from 1086/285/299 ms to 1096/350/339 ms (suite total 1670 -> 1785), so it was clearly slower than the accepted SIMD baseline.",
       "Commit": null
     },
     {
@@ -186,6 +211,18 @@
       "Hypothesis": "Vectorized byte-difference kernels should accelerate row, column, and overlap scoring without changing the algorithm.",
       "Risk": "medium",
       "Outcome": "Kept. The first SIMD draft was tightened after code review to avoid latent accumulator overflow on very large spans, and the final dev-suite stitch medians improved from 4577/1210/1112 ms to 1086/285/299 ms (suite total 6899 -> 1670, about 75.8% faster vs the prior kept baseline and about 93.9% faster vs the original Release baseline). The correctness gate stayed exact on both tracked dumps and both synthetic fixtures in runs/20260410-050921908.",
+      "Commit": "4b058ab"
+    },
+    {
+      "Id": "reuse-cached-pair-overlaps",
+      "Title": "Reuse cached adjacent-pair overlap results during rebuilds and incremental appends",
+      "Status": "kept",
+      "DependsOn": [
+        "pair-analysis-cache"
+      ],
+      "Hypothesis": "The adjacent-pair analysis pass already computes overlap results, so reusing them whenever the aggregate zone matches the pair zone should remove duplicate matcher work during rebuild and append paths.",
+      "Risk": "low",
+      "Outcome": "Kept. Reusing cached adjacent-pair overlap results cut the dev-suite stitch medians from 1086/285/299 ms to 933/220/222 ms (suite total 1670 -> 1375, about 17.7% faster vs the prior kept baseline and about 95.0% faster vs the original Release baseline). The correctness gate stayed exact on both tracked dumps and both synthetic fixtures in runs/20260410-052235100.",
       "Commit": null
     },
     {

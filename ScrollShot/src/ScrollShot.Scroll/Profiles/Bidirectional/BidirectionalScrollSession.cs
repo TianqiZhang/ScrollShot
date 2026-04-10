@@ -82,7 +82,7 @@ public sealed class BidirectionalScrollSession : IScrollSession
             : _placements.Select(placement => placement.Bitmap).ToHashSet(ReferenceEqualityComparer.Instance);
         if (CanAppendIncrementally(estimatedZone, startFrameIndex))
         {
-            AppendLatestFrameToComposition(_frameHistory[^1].Bitmap, estimatedZone);
+            AppendLatestFrameToComposition(_frameHistory.Count - 1, estimatedZone);
         }
         else
         {
@@ -154,7 +154,7 @@ public sealed class BidirectionalScrollSession : IScrollSession
     private bool TryEstimateZoneFromHistory(out ZoneLayout zoneLayout, out int startFrameIndex)
     {
         var candidates = _pairAnalyses
-            .Where(analysis => analysis.HasMatch)
+            .Where(analysis => analysis.Overlap.HasMatch)
             .Select(analysis => (analysis.StartIndex, analysis.Zone))
             .ToList();
 
@@ -224,7 +224,7 @@ public sealed class BidirectionalScrollSession : IScrollSession
         using var currentBand = ExtractBandBitmap(current.Bitmap, detectedZone.ScrollBand);
         var currentBandSnapshot = PixelBuffer.FromBitmap(currentBand);
         var overlap = FindOverlap(previousBandSnapshot, currentBandSnapshot);
-        _pairAnalyses.Add(new PairAnalysis(startIndex, detectedZone, overlap.HasMatch));
+        _pairAnalyses.Add(new PairAnalysis(startIndex, detectedZone, overlap));
     }
 
     private bool CanAppendIncrementally(ZoneLayout zoneLayout, int startFrameIndex)
@@ -249,16 +249,16 @@ public sealed class BidirectionalScrollSession : IScrollSession
 
         for (var index = startFrameIndex + 1; index < _frameHistory.Count; index++)
         {
-            ProcessFrameIntoComposition(_frameHistory[index].Bitmap, zoneLayout);
+            ProcessFrameIntoComposition(index, zoneLayout);
             _processedFrameCount = index + 1;
         }
 
         RefreshNormalizedPlacements();
     }
 
-    private void AppendLatestFrameToComposition(Bitmap bitmap, ZoneLayout zoneLayout)
+    private void AppendLatestFrameToComposition(int frameIndex, ZoneLayout zoneLayout)
     {
-        ProcessFrameIntoComposition(bitmap, zoneLayout);
+        ProcessFrameIntoComposition(frameIndex, zoneLayout);
         _processedFrameCount = _frameHistory.Count;
         RefreshNormalizedPlacements();
     }
@@ -271,16 +271,19 @@ public sealed class BidirectionalScrollSession : IScrollSession
         _previousPrimarySize = GetPrimaryAxisSize(startBandBitmap);
     }
 
-    private void ProcessFrameIntoComposition(Bitmap currentBitmap, ZoneLayout zoneLayout)
+    private void ProcessFrameIntoComposition(int frameIndex, ZoneLayout zoneLayout)
     {
         if (_previousBandSnapshot is null)
         {
             return;
         }
 
+        var currentBitmap = _frameHistory[frameIndex].Bitmap;
         using var currentBandBitmap = ExtractBandBitmap(currentBitmap, zoneLayout.ScrollBand);
         var currentSnapshot = PixelBuffer.FromBitmap(currentBandBitmap);
-        var overlap = FindOverlap(_previousBandSnapshot.Value, currentSnapshot);
+        var overlap = TryGetCachedOverlap(frameIndex, zoneLayout, out var cachedOverlap)
+            ? cachedOverlap
+            : FindOverlap(_previousBandSnapshot.Value, currentSnapshot);
         if (!overlap.HasMatch)
         {
             return;
@@ -423,6 +426,25 @@ public sealed class BidirectionalScrollSession : IScrollSession
             _direction);
     }
 
+    private bool TryGetCachedOverlap(int frameIndex, ZoneLayout zoneLayout, out DirectionalOverlapResult overlap)
+    {
+        if (frameIndex <= 0 || frameIndex - 1 >= _pairAnalyses.Count)
+        {
+            overlap = default;
+            return false;
+        }
+
+        var analysis = _pairAnalyses[frameIndex - 1];
+        if (analysis.StartIndex != frameIndex - 1 || analysis.Zone != zoneLayout)
+        {
+            overlap = default;
+            return false;
+        }
+
+        overlap = analysis.Overlap;
+        return true;
+    }
+
     private CapturedFrame CloneFrame(CapturedFrame frame)
     {
         return new CapturedFrame((Bitmap)frame.Bitmap.Clone(), frame.Region, frame.CapturedAtUtc, frame.DpiScale);
@@ -479,7 +501,7 @@ public sealed class BidirectionalScrollSession : IScrollSession
         _finished = false;
     }
 
-    private sealed record PairAnalysis(int StartIndex, ZoneLayout Zone, bool HasMatch);
+    private sealed record PairAnalysis(int StartIndex, ZoneLayout Zone, DirectionalOverlapResult Overlap);
 
     private sealed record PlacedBand(Bitmap Bitmap, int Offset);
 

@@ -105,7 +105,7 @@ public sealed class BidirectionalScrollSessionTests
         var result = session.GetResult();
 
         detector.CallCount.Should().Be(3);
-        matcher.CallCount.Should().Be(6);
+        matcher.CallCount.Should().Be(3);
         result.TotalHeight.Should().Be(7);
         result.Segments.Select(segment => segment.Offset).Should().Equal(0, 1, 2, 3);
     }
