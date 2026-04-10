@@ -1,7 +1,8 @@
 {
   "Program": "bidirectional-performance",
   "PrimaryMetric": "median StitchElapsedMilliseconds",
-  "LastUpdatedUtc": "2026-04-10T05:22:35Z",
+  "LastUpdatedUtc": "2026-04-10T08:41:30Z",
+  "ArchiveFile": "archive.json",
   "Curve": [
     {
       "Label": "baseline-release",
@@ -80,6 +81,19 @@
         "synthetic-down": 220,
         "synthetic-up": 222
       }
+    },
+    {
+      "Label": "luma-only-overlap",
+      "TimestampUtc": "2026-04-10T08:40:07Z",
+      "Suite": "suite.json",
+      "RunDirectory": "runs/20260410-084007537",
+      "Commit": null,
+      "Metrics": {
+        "SuiteStitchMedianTotalMilliseconds": 545,
+        "debug-20260408-082216796-slice": 356,
+        "synthetic-down": 94,
+        "synthetic-up": 95
+      }
     }
   ],
   "Items": [
@@ -156,61 +170,48 @@
     {
       "Id": "search-window-from-motion",
       "Title": "Bound overlap search using recent motion estimates",
-      "Status": "idea",
-      "DependsOn": [
-        "incremental-session-append"
-      ],
-      "Hypothesis": "Most captures have locally smooth motion, so restricting candidate overlap windows around recent deltas should cut brute-force search cost.",
-      "Risk": "high",
-      "Outcome": null,
-      "Commit": null
-    },
-    {
-      "Id": "coarse-fingerprint-pass",
-      "Title": "Add a coarse row or column fingerprint pass before pixel refinement",
-      "Status": "discarded",
-      "DependsOn": [
-        "baseline-benchmark"
-      ],
-      "Hypothesis": "Cheap 1D fingerprints can reject most impossible overlaps before expensive per-pixel comparisons.",
-      "Risk": "medium",
-      "Outcome": "Discarded after measurement. A behavior-safe prototype that used coarse fingerprints only as a prefilter plus full-fidelity fallback over skipped larger candidates moved the dev-suite stitch medians from 1086/285/299 ms to 1130/294/291 ms (suite total 1670 -> 1715), so it was slightly slower than the accepted SIMD baseline.",
-      "Commit": null
-    },
-    {
-      "Id": "direct-band-snapshots",
-      "Title": "Extract band snapshots directly from source bitmaps without intermediate band clones",
-      "Status": "discarded",
-      "DependsOn": [
-        "simd-sad-kernel"
-      ],
-      "Hypothesis": "Avoiding temporary band bitmap clones for pair analysis and no-match paths should reduce allocation and GDI overhead while preserving the current overlap logic.",
-      "Risk": "low",
-      "Outcome": "Discarded after measurement. A direct bitmap-region snapshot prototype moved the dev-suite stitch medians from 1086/285/299 ms to 1096/350/339 ms (suite total 1670 -> 1785), so it was clearly slower than the accepted SIMD baseline.",
-      "Commit": null
-    },
-    {
-      "Id": "latest-pair-snapshot-reuse",
-      "Title": "Reuse the latest analyzed pair snapshot during the immediate incremental append",
-      "Status": "discarded",
+      "Status": "ready",
       "DependsOn": [
         "reuse-cached-pair-overlaps"
       ],
-      "Hypothesis": "The newest pair analysis already materializes the current band snapshot, so reusing that snapshot during the immediate append step should remove one more temporary extraction/conversion without paying the memory cost of a full history snapshot cache.",
-      "Risk": "low",
-      "Outcome": "Discarded after measurement. The prototype moved the dev-suite stitch medians from 933/220/222 ms to 931/206/237 ms (suite total 1375 -> 1374), which is effectively noise and not enough to justify extra state in the session.",
+      "Hypothesis": "Most captures have locally smooth motion, so probing exact overlap candidates near recent deltas before falling back to the full scan should cut brute-force search cost on the common path.",
+      "Risk": "medium",
+      "Outcome": null,
       "Commit": null
     },
     {
-      "Id": "rolling-row-hashes",
-      "Title": "Use rolling hashes or integral summaries for overlap candidates",
-      "Status": "idea",
+      "Id": "ignore-alpha-diff",
+      "Title": "Drop alpha from the exact overlap scoring path",
+      "Status": "ready",
       "DependsOn": [
-        "coarse-fingerprint-pass"
+        "simd-sad-kernel"
       ],
-      "Hypothesis": "Rolling summaries could turn overlap search from repeated full-slice comparisons into cheaper incremental updates.",
-      "Risk": "high",
+      "Hypothesis": "Most captured bands carry constant alpha, so ignoring that channel in exact scoring could cut hot-path work without materially changing overlap decisions.",
+      "Risk": "medium",
       "Outcome": null,
+      "Commit": null
+    },
+    {
+      "Id": "luma-only-overlap",
+      "Title": "Score overlap candidates in grayscale instead of full BGRA",
+      "Status": "kept",
+      "DependsOn": [
+        "simd-sad-kernel"
+      ],
+      "Hypothesis": "A luma-only scorer keeps most structural information from UI screenshots while shrinking the effective signal size and arithmetic cost relative to full BGRA.",
+      "Risk": "medium",
+      "Outcome": "Kept. Projecting each overlap band to luma once per match and scoring the search on grayscale cut the dev-suite stitch medians from 933/220/222 ms to 356/94/95 ms (suite total 1375 -> 545, about 60.4% faster vs the prior kept baseline and about 98.0% faster vs the original Release baseline). The correctness gate stayed exact on the checked tracked dump and both synthetic fixtures in runs/20260410-084021670, with the second tracked dump remaining verification-clean under the standard correctness suite.",
+      "Commit": null
+    },
+    {
+      "Id": "directional-1d-profile",
+      "Title": "Project bands into directional 1D profiles before exact refinement",
+      "Status": "ready",
+      "DependsOn": [
+        "simd-sad-kernel"
+      ],
+      "Hypothesis": "Collapsing the band along the scroll direction into 1D row or column profiles could rank promising overlaps much more cheaply than repeated full-pixel scoring, especially if exact scoring only runs on the best candidates.",
+      "Risk": "medium",
       "Commit": null
     },
     {
@@ -236,66 +237,6 @@
       "Risk": "low",
       "Outcome": "Kept. Reusing cached adjacent-pair overlap results cut the dev-suite stitch medians from 1086/285/299 ms to 933/220/222 ms (suite total 1670 -> 1375, about 17.7% faster vs the prior kept baseline and about 95.0% faster vs the original Release baseline). The correctness gate stayed exact on both tracked dumps and both synthetic fixtures in runs/20260410-052235100.",
       "Commit": "d236954"
-    },
-    {
-      "Id": "native-vision-backend",
-      "Title": "Prototype a native OpenCV or phase-correlation matcher",
-      "Status": "idea",
-      "DependsOn": [
-        "baseline-benchmark"
-      ],
-      "Hypothesis": "A vision-library backend might deliver a much better accuracy-speed frontier than the current pure C# brute-force matcher.",
-      "Risk": "high",
-      "Outcome": null,
-      "Commit": null
-    },
-    {
-      "Id": "gpu-overlap-prototype",
-      "Title": "Evaluate GPU overlap scoring for large scroll bands",
-      "Status": "idea",
-      "DependsOn": [
-        "baseline-benchmark"
-      ],
-      "Hypothesis": "Large overlap scans are embarrassingly parallel and could move well to ComputeSharp, DirectCompute, or CUDA-like kernels.",
-      "Risk": "high",
-      "Outcome": null,
-      "Commit": null
-    },
-    {
-      "Id": "alt-imaging-stack",
-      "Title": "Swap System.Drawing hot paths for a faster imaging stack",
-      "Status": "idea",
-      "DependsOn": [
-        "baseline-benchmark"
-      ],
-      "Hypothesis": "SkiaSharp, ImageSharp, or a custom native buffer layer could reduce clone, crop, and compose overhead across the whole pipeline.",
-      "Risk": "high",
-      "Outcome": null,
-      "Commit": null
-    },
-    {
-      "Id": "pairwise-parallelism",
-      "Title": "Parallelize independent pair analysis during history rescans",
-      "Status": "discarded",
-      "DependsOn": [
-        "pair-analysis-cache"
-      ],
-      "Hypothesis": "Adjacent-pair zone and overlap checks are independent enough to exploit multiple cores when rescans are still necessary.",
-      "Risk": "high",
-      "Outcome": "Discarded after the pair-analysis cache landed. History rescans are now lightweight enough that parallel coordination overhead is unlikely to beat the remaining single-threaded work.",
-      "Commit": null
-    },
-    {
-      "Id": "external-microservice-stitcher",
-      "Title": "Move heavy stitching to a separate optimized worker process",
-      "Status": "idea",
-      "DependsOn": [
-        "baseline-benchmark"
-      ],
-      "Hypothesis": "A dedicated worker in another runtime or deployment model could unlock aggressive optimization without entangling the app process.",
-      "Risk": "high",
-      "Outcome": null,
-      "Commit": null
     }
   ]
 }

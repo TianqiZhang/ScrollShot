@@ -99,6 +99,7 @@ experiments/bidirectional-performance/
 ├── program.md
 ├── suite.json
 ├── backlog.json
+├── archive.json
 ├── correctness-suite.json
 ├── generated-datasets/   # ignored, deterministic synthetic manifests and frames
 └── runs/                 # ignored, benchmark outputs and summaries
@@ -110,13 +111,14 @@ experiments/bidirectional-performance/
 - `datasets/` — committed representative subsets used to keep the inner-loop suite fast
 - `suite.json` — the fast inner-loop speed benchmark
 - `correctness-suite.json` — the broader validation benchmark
-- `backlog.json` — the current filtered idea list, dependencies, and outcomes
+- `backlog.json` — the active filtered idea list, dependencies, and outcomes
+- `archive.json` — discarded or parked ideas moved out of the active queue
 - `generated-datasets/` — regenerated synthetic fixtures used by the suite
 - `runs/` — timestamped benchmark results, including verification outputs and `summary.json`
 
 ## Backlog policy
 
-Use `backlog.json` as the canonical record for the loop.
+Use `backlog.json` as the canonical active record for the loop.
 
 Each item should carry:
 
@@ -130,6 +132,8 @@ Each item should carry:
 - commit hash if retained
 
 Ideas only move to `ready` when they are both understandable and testable in isolation.
+
+Move clearly discarded or clearly parked ideas into `archive.json` once they stop being useful in the next few rounds. The active backlog should stay short enough to drive immediate experiment choices rather than serve as a full historical dump.
 
 ## Expected first wave of ideas
 
@@ -160,7 +164,9 @@ That changes the remaining opportunity set:
 
 1. **Still practical next ideas**
    - revisit bounded search windows from recent motion estimates
-    - revisit snapshot reuse only if a future design can avoid adding another detector seam for a single-digit gain
+   - drop alpha from exact overlap scoring if captured bands keep alpha effectively constant
+   - test a luma-only overlap scorer instead of full BGRA
+   - test directional 1D row or column projections before exact refinement
 2. **Now deprioritized or discarded**
     - freeze zone consensus after stabilization
     - parallelize history rescans
@@ -170,7 +176,7 @@ That changes the remaining opportunity set:
     - the latest-pair snapshot reuse prototype
     - broader runtime or architecture rewrites before cheaper in-process wins are exhausted
 
-The remaining backlog should therefore bias toward **localized hot-path work inside overlap scoring and search-window reduction**, not more session-level restructuring.
+The remaining backlog should therefore bias toward **localized hot-path work inside overlap scoring, signal simplification, and search-window reduction**, not more session-level restructuring.
 
 ## Commit policy
 
