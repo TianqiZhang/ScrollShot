@@ -1,5 +1,6 @@
-using ScrollShot.Scroll.Algorithms;
-using ScrollShot.Scroll.Experiments;
+using ScrollShot.Scroll.Profiles.Bidirectional;
+using ScrollShot.Scroll.Profiles.Current;
+using ScrollShot.Scroll.Profiles.Signal;
 
 namespace ScrollShot.Scroll;
 

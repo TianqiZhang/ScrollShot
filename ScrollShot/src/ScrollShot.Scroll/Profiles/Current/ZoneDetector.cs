@@ -1,8 +1,9 @@
 using System.Drawing;
 using ScrollShot.Capture.Models;
+using ScrollShot.Scroll.Shared;
 using ScrollShot.Scroll.Models;
 
-namespace ScrollShot.Scroll.Algorithms;
+namespace ScrollShot.Scroll.Profiles.Current;
 
 public sealed class ZoneDetector : IZoneDetector
 {

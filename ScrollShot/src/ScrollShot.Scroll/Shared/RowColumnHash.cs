@@ -1,4 +1,4 @@
-namespace ScrollShot.Scroll.Algorithms;
+namespace ScrollShot.Scroll.Shared;
 
 public static class RowColumnHash
 {

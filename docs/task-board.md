@@ -20,6 +20,7 @@
 | Phase 15 | Completed | Multi-frame zone re-estimation and history rebuild | `ScrollSession` now aggregates usable adjacent-pair zone observations across the full frame history, rebuilds segments from the aggregated zone, and keeps the current synthetic + real-dump baselines stable while allowing vertical fixed-side detection experiments |
 | Phase 16 | Completed | Cross-profile robustness alignment and replay comparison | Moved the side-band false-positive guard into logic shared by the default and experimental zone detectors, added experiment regressions for stable side margins and true side panels, and replayed both real dumps across `current`, `signal-zone`, and `signal-hybrid` for a fairer comparison |
 | Phase 17 | Completed | Bidirectional overlap experiment and offset-aware composition | Added a new `bidirectional-current` profile with directed overlap selection plus signed placement, updated composition to draw by actual segment offsets, expanded tests, and compared all four profiles on real dumps plus upward/downward synthetic datasets |
+| Phase 18 | Completed | Stitching-engine layout reorganization | Reorganized `ScrollShot.Scroll` into clearer shared/contracts/profile boundaries, updated namespaces/usings/tests, refreshed agent docs, and re-ran the dump replay matrix to confirm the stabilized profile outputs were unchanged |
 
 ## Commits
 
@@ -40,9 +41,10 @@
 | Phase 12 | `d496370` |
 | Phase 13 | `eeef2db` |
 | Phase 14 | `830efa0` |
-| Phase 15 | Uncommitted by request |
+| Phase 15 | `39e67a6` |
 | Phase 16 | Uncommitted by request |
-| Phase 17 | Uncommitted by request |
+| Phase 17 | `686cbbb` |
+| Phase 18 | Uncommitted by request |
 
 ## Notes
 
@@ -67,3 +69,4 @@
 - The compositor change is a deliberate shared-path correction rather than an experiment-only hack: `ScrollSegment.Offset` was already part of the result model, and the default append-only session still emits contiguous offsets, so existing profiles keep the same layout while offset-aware experiments can finally be rendered/exported faithfully. The new regression coverage checks both that contiguous offsets still compose the old way and that non-sequential offsets are honored when present.
 - Replay results show that this profile is direction-aware but not yet ready to replace the baseline. On the real dumps it produced `debug-20260408-082055888 → 909x1312 (6 segments)` and `debug-20260408-082216796 → 1113x1593 (5 segments)`; on the generated synthetic pair it behaved much better on the upward-ordered dataset than the old one-direction baselines (`synthetic-up: bidirectional-current=320x1393` vs `current/signal-zone=320x1793`), while still matching the current profile on the downward-ordered synthetic dataset (`320x1393`). The profile therefore proves the signed-placement path works, but still needs better overlap scoring/selection before it is a promotion candidate.
 - Comparing replay outputs against actual image references sharpens that result. On `synthetic-up`, `bidirectional-current` is clearly the closest to ground truth (`height delta = -7`, shared-area diff `0.026526`) while the one-direction baselines over-stitch badly (`height delta = +393`, shared-area diff `0.063104`); on `synthetic-down`, `current`, `signal-zone`, and `bidirectional-current` are effectively tied (`height delta = -7`, shared-area diff about `0.0264`). If the two real dumps are provisionally treated as `bidirectional-current` reference outputs, the other profiles still differ materially on the shared area too (roughly `0.064` normalized pixel diff), so those dumps are not just producing different total heights - they are producing meaningfully different stitched images.
+- The latest maintenance pass was structural rather than algorithmic: `ScrollShot.Scroll` is now laid out so maintainers can tell at a glance what is shared (`Shared/`), what is contractual (interfaces in `Contracts/`, still exposed through the root `ScrollShot.Scroll` namespace), and what belongs to each concrete profile (`Profiles/Current`, `Profiles/Signal`, `Profiles/Bidirectional`). After the namespace migration, the full solution test suite still passed (`95/95`), and replaying both tracked dump datasets across all four profiles reproduced the same outcome matrix as before the reorganization: `debug-20260408-082055888` → `current=909x2479`, `signal-zone=909x2479`, `signal-hybrid=909x2284`, `bidirectional-current=909x1312`; `debug-20260408-082216796` → `current=1113x1448`, `signal-zone=1113x1367`, `signal-hybrid=1113x1267`, `bidirectional-current=1113x1593`, with `bidirectional-current` still matching both tracked dump ground truths exactly (`normalized diff = 0`).

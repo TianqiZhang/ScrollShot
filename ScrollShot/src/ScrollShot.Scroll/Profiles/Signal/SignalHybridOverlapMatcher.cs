@@ -1,8 +1,9 @@
 using System.Drawing;
-using ScrollShot.Scroll.Algorithms;
 using ScrollShot.Scroll.Models;
+using ScrollShot.Scroll.Profiles.Current;
+using ScrollShot.Scroll.Shared;
 
-namespace ScrollShot.Scroll.Experiments;
+namespace ScrollShot.Scroll.Profiles.Signal;
 
 public sealed class SignalHybridOverlapMatcher : IOverlapMatcher
 {

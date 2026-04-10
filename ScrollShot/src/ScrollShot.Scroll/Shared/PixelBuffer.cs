@@ -2,7 +2,7 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
 
-namespace ScrollShot.Scroll.Algorithms;
+namespace ScrollShot.Scroll.Shared;
 
 public readonly record struct PixelBufferSnapshot(int Width, int Height, int Stride, byte[] Pixels);
 

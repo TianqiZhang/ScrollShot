@@ -1,8 +1,11 @@
 using FluentAssertions;
-using ScrollShot.Scroll.Algorithms;
 using ScrollShot.Scroll.Models;
+using ScrollShot.Scroll.Profiles.Bidirectional;
+using ScrollShot.Scroll.Profiles.Current;
+using ScrollShot.Scroll.Shared;
+using ScrollShot.Scroll.Tests.Profiles.Current;
 
-namespace ScrollShot.Scroll.Tests.Algorithms;
+namespace ScrollShot.Scroll.Tests.Profiles.Bidirectional;
 
 public sealed class BidirectionalOverlapMatcherTests
 {

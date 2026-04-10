@@ -1,11 +1,11 @@
 using System.Drawing;
 using FluentAssertions;
 using ScrollShot.Capture.Models;
-using ScrollShot.Scroll.Experiments;
 using ScrollShot.Scroll.Models;
-using ScrollShot.Scroll.Tests.Algorithms;
+using ScrollShot.Scroll.Profiles.Signal;
+using ScrollShot.Scroll.Tests.Profiles.Current;
 
-namespace ScrollShot.Scroll.Tests.Experiments;
+namespace ScrollShot.Scroll.Tests.Profiles.Signal;
 
 public sealed class SignalZoneDetectorTests
 {

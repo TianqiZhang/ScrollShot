@@ -4,7 +4,7 @@ using ScrollShot.Capture.Models;
 using ScrollShot.Editor.Composition;
 using ScrollShot.Editor.Models;
 using ScrollShot.Scroll;
-using ScrollShot.Scroll.Algorithms;
+using ScrollShot.Scroll.Shared;
 using ScrollShot.StitchingData.Models;
 using ScrollShot.StitchingData.Services;
 using ScrollShot.Tooling.Models;

@@ -2,6 +2,7 @@ using System.Drawing;
 using FluentAssertions;
 using ScrollShot.Capture.Models;
 using ScrollShot.Scroll.Models;
+using ScrollShot.Scroll.Profiles.Current;
 
 namespace ScrollShot.Scroll.Tests;
 

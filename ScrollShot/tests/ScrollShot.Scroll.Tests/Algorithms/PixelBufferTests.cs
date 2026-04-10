@@ -1,7 +1,7 @@
 using FluentAssertions;
-using ScrollShot.Scroll.Algorithms;
+using ScrollShot.Scroll.Shared;
 
-namespace ScrollShot.Scroll.Tests.Algorithms;
+namespace ScrollShot.Scroll.Tests.Shared;
 
 public sealed class PixelBufferTests
 {

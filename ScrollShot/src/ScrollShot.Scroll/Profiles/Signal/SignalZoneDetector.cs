@@ -1,8 +1,8 @@
 using ScrollShot.Capture.Models;
-using ScrollShot.Scroll.Algorithms;
 using ScrollShot.Scroll.Models;
+using ScrollShot.Scroll.Shared;
 
-namespace ScrollShot.Scroll.Experiments;
+namespace ScrollShot.Scroll.Profiles.Signal;
 
 public sealed class SignalZoneDetector : IZoneDetector
 {

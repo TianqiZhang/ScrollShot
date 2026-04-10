@@ -44,7 +44,7 @@ ScrollShot.Tooling (CLI, offline analysis)
 ### Key Modules
 
 - **ScrollShot.Capture** — Screen capture via DXGI Desktop Duplication (primary) or GDI BitBlt (fallback). `ScreenCapturerFactory` auto-selects.
-- **ScrollShot.Scroll** — Core stitching engine. `ScrollSession` orchestrates zone detection, overlap matching, and segment assembly. Algorithms live in `Algorithms/` (ZoneDetector, OverlapMatcher, RowColumnHash, PixelBuffer). Experimental variants in `Experiments/`.
+- **ScrollShot.Scroll** — Core stitching engine. Public contracts live under `Contracts/` while keeping the root `ScrollShot.Scroll` namespace, low-level reusable primitives live under `Shared/`, and concrete algorithm implementations are organized by profile under `Profiles/Current`, `Profiles/Signal`, and `Profiles/Bidirectional`.
 - **ScrollShot.Overlay** — Transparent topmost WPF window for area selection and live preview during scroll capture.
 - **ScrollShot.Editor** — Preview editor with zoomable viewport, timeline strip, trim/cut/crop editing (command pattern with undo/redo via `EditCommandStack`), and `ImageCompositor` for final output.
 - **ScrollShot.App** — App shell with system tray, global hotkey (Ctrl+Shift+S), settings persistence, and `CaptureOrchestrator` workflow (hotkey → overlay → capture → editor).

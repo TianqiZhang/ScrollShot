@@ -1,6 +1,7 @@
 using ScrollShot.Scroll.Models;
+using ScrollShot.Scroll.Profiles.Current;
 
-namespace ScrollShot.Scroll.Algorithms;
+namespace ScrollShot.Scroll.Profiles.Bidirectional;
 
 public sealed class BidirectionalOverlapMatcher : IBidirectionalOverlapMatcher
 {

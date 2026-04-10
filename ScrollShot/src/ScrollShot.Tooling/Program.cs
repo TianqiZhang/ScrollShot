@@ -179,7 +179,7 @@ public static class ToolCli
             Commands:
               slice  --input <image> --output <dir> --viewport-height <px> [--viewport-width <px>] [--step <px> | --overlap <px>] [--crop-x <px>] [--name <dataset>]
               synthesize --output <dir> --viewport-height <px> [--width <px>] [--total-height <px>] [--step <px> | --overlap <px>] [--fixed-top <px>] [--fixed-bottom <px>] [--name <dataset>]
-              replay --manifest <manifest.json> --output <dir> [--profile <current|signal-zone|signal-hybrid>]
+              replay --manifest <manifest.json> --output <dir> [--profile <current|signal-zone|signal-hybrid|bidirectional-current>]
             """);
     }
 }

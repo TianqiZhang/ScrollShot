@@ -1,8 +1,9 @@
 using FluentAssertions;
-using ScrollShot.Scroll.Algorithms;
+using ScrollShot.Scroll.Profiles.Current;
+using ScrollShot.Scroll.Shared;
 using ScrollShot.Scroll.Models;
 
-namespace ScrollShot.Scroll.Tests.Algorithms;
+namespace ScrollShot.Scroll.Tests.Profiles.Current;
 
 public sealed class OverlapMatcherTests
 {
