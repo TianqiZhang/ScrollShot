@@ -14,7 +14,7 @@ public sealed class BidirectionalScrollSession : IScrollSession
     private readonly List<CapturedFrame> _frameHistory = new();
     private readonly List<PairAnalysis> _pairAnalyses = new();
     private readonly List<PlacedBand> _placements = new();
-    private readonly List<NormalizedPlacedBand> _normalizedPlacements = new();
+    private readonly List<PlacedBand> _normalizedPlacements = new();
     private ZoneLayout? _zoneLayout;
     private Bitmap? _fixedTopBitmap;
     private Bitmap? _fixedBottomBitmap;
@@ -318,7 +318,7 @@ public sealed class BidirectionalScrollSession : IScrollSession
 
         var minOffset = _placements.Min(placement => placement.Offset);
         var normalizedPlacements = _placements
-            .Select(placement => new NormalizedPlacedBand(placement.Bitmap, placement.Offset - minOffset))
+            .Select(placement => new PlacedBand(placement.Bitmap, placement.Offset - minOffset))
             .OrderBy(placement => placement.Offset);
 
         foreach (var placement in normalizedPlacements)
@@ -504,6 +504,4 @@ public sealed class BidirectionalScrollSession : IScrollSession
     private sealed record PairAnalysis(int StartIndex, ZoneLayout Zone, DirectionalOverlapResult Overlap);
 
     private sealed record PlacedBand(Bitmap Bitmap, int Offset);
-
-    private sealed record NormalizedPlacedBand(Bitmap Bitmap, int Offset);
 }
