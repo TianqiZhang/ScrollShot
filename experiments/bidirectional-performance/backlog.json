@@ -1,7 +1,7 @@
 {
   "Program": "bidirectional-performance",
   "PrimaryMetric": "median StitchElapsedMilliseconds",
-  "LastUpdatedUtc": "2026-04-10T03:41:12Z",
+  "LastUpdatedUtc": "2026-04-10T03:50:28Z",
   "Curve": [
     {
       "Label": "baseline-release",
@@ -34,12 +34,25 @@
       "TimestampUtc": "2026-04-10T03:40:55Z",
       "Suite": "suite.json",
       "RunDirectory": "runs/20260410-034003620",
-      "Commit": null,
+      "Commit": "d952242",
       "Metrics": {
         "SuiteStitchMedianTotalMilliseconds": 11384,
         "debug-20260408-082216796-slice": 7808,
         "synthetic-down": 1811,
         "synthetic-up": 1765
+      }
+    },
+    {
+      "Label": "overlap-no-copy-slices",
+      "TimestampUtc": "2026-04-10T03:49:45Z",
+      "Suite": "suite.json",
+      "RunDirectory": "runs/20260410-034945027",
+      "Commit": null,
+      "Metrics": {
+        "SuiteStitchMedianTotalMilliseconds": 6899,
+        "debug-20260408-082216796-slice": 4577,
+        "synthetic-down": 1210,
+        "synthetic-up": 1112
       }
     }
   ],
@@ -76,18 +89,18 @@
       "Hypothesis": "Memoizing pairwise zone detection and overlap eligibility across history scans should sharply reduce repeated bitmap extraction and matcher work even when rebuilds still happen.",
       "Risk": "medium",
       "Outcome": "Kept. Dev-suite stitch medians improved from 15313/3736/3738 ms to 7808/1811/1765 ms (suite total 22787 -> 11384, about 50.0% faster vs the prior kept baseline and about 58.5% faster vs the original Release baseline). Full correctness gate stayed exact on both tracked dumps and both synthetic fixtures in runs/20260410-034112647.",
-      "Commit": null
+      "Commit": "d952242"
     },
     {
       "Id": "overlap-no-copy-slices",
       "Title": "Remove overlap matcher span-to-array and sub-rectangle allocation churn",
-      "Status": "ready",
+      "Status": "kept",
       "DependsOn": [
         "baseline-benchmark"
       ],
       "Hypothesis": "Keeping overlap comparisons in spans/snapshots rather than allocating arrays and sub-buffers per candidate should lower both CPU and GC pressure.",
       "Risk": "medium",
-      "Outcome": null,
+      "Outcome": "Kept. Dev-suite stitch medians improved from 7808/1811/1765 ms to 4577/1210/1112 ms (suite total 11384 -> 6899, about 39.4% faster vs the prior kept baseline and about 74.9% faster vs the original Release baseline). Full correctness gate stayed exact on both tracked dumps and both synthetic fixtures in runs/20260410-035028320.",
       "Commit": null
     },
     {

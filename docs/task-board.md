@@ -24,6 +24,7 @@
 | Phase 19 | Completed | Bidirectional performance program setup | Added replay timing metrics, synthetic frame-order control, benchmark-suite tooling, and an `experiments/bidirectional-performance/` workspace with fixed speed/correctness suites, backlog scaffolding, and a formal `program.md` |
 | Phase 20 | Completed | Bidirectional performance pass 1: incremental composition reuse | Reused the existing bidirectional composition state when the estimated zone/start frame stayed stable, added an incremental-path regression test, switched the perf program to Release benchmark runs, and kept the change only after the dev suite improved and the full correctness gate still matched both tracked dump ground truths exactly |
 | Phase 21 | Completed | Bidirectional performance pass 2: adjacent-pair analysis cache | Cached zone detection and overlap eligibility per adjacent frame pair so history estimation reuses prior analysis, added cache-focused regressions, and kept the change only after another dev-suite drop plus an exact correctness-gate replay on both tracked dumps |
+| Phase 22 | Completed | Bidirectional performance pass 3: allocation-free overlap slices | Reworked `OverlapMatcher` to compare overlap windows directly from the input spans instead of cloning arrays and sub-rectangles, kept the same search/crop policy, and retained the change only after another large speedup plus exact correctness-gate replay on both tracked dumps |
 
 ## Commits
 
@@ -50,7 +51,8 @@
 | Phase 18 | Uncommitted by request |
 | Phase 19 | Uncommitted |
 | Phase 20 | `ffae129` |
-| Phase 21 | Uncommitted |
+| Phase 21 | `d952242` |
+| Phase 22 | Uncommitted |
 
 ## Notes
 
@@ -79,3 +81,4 @@
 - The newest setup pass prepares a dedicated performance-optimization program for `bidirectional-current` instead of jumping straight into ad hoc tuning. `ReplayReport` now records timing breakdowns (`ReplayElapsedMilliseconds`, `FrameLoadElapsedMilliseconds`, `StitchElapsedMilliseconds`, `ComposeElapsedMilliseconds`), synthetic generation can emit forward or reverse frame order, and `ScrollShot.Tooling` now has a `benchmark` command that runs fixed suites and writes timestamped summaries. The repo-level experiment workspace lives under `experiments/bidirectional-performance/` and contains the formal `program.md`, a structured backlog, a fast inner-loop speed suite, a broader correctness suite, ignored folders for generated synthetic datasets and benchmark runs, and a committed real-dump slice manifest so the daily loop can use real data without always replaying the entire slow dump.
 - The first retained performance pass keeps `bidirectional-current` from rebuilding the entire placement history once the estimated zone and start frame remain unchanged. The first Release baseline on the fixed dev suite was `16675/5422/5352 ms` (debug-slice / synthetic-down / synthetic-up stitch medians, total `27449 ms`), and the kept incremental-reuse change moved that to `15313/3736/3738 ms` (total `22787 ms`) while the full correctness gate still matched both tracked dump ground truths exactly (`normalized diff = 0` on both).
 - The second retained performance pass cached adjacent-pair analysis so later history scans stop re-running zone detection and overlap eligibility on the same frame pairs. That moved the fixed Release dev suite again from `15313/3736/3738 ms` to `7808/1811/1765 ms` (total `22787 -> 11384 ms`), and the full correctness gate remained exact on both tracked dumps (`debug-20260408-082055888: 6298 ms`, `debug-20260408-082216796: 11424 ms`, both with `normalized diff = 0`).
+- The third retained performance pass removed the hottest remaining overlap-matcher allocations without changing its thresholds or search order. On the fixed Release dev suite it moved the stitch medians again from `7808/1811/1765 ms` to `4577/1210/1112 ms` (total `11384 -> 6899 ms`), and the full correctness gate stayed exact on both tracked dumps (`debug-20260408-082055888: 3316 ms`, `debug-20260408-082216796: 6508 ms`, both with `normalized diff = 0`).

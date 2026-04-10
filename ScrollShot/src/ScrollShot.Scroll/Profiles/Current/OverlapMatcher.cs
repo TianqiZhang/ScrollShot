@@ -36,31 +36,35 @@ public sealed class OverlapMatcher : IOverlapMatcher
         }
 
         var stride = width * PixelBuffer.BytesPerPixel;
-        var previous = new PixelBufferSnapshot(width, height, stride, previousBand.ToArray());
-        var current = new PixelBufferSnapshot(width, height, stride, currentBand.ToArray());
         var comparisonRectangle = GetComparisonRectangle(width, height, direction);
-        if (comparisonRectangle.Width != width || comparisonRectangle.Height != height)
-        {
-            previous = PixelBuffer.ExtractSubRectangle(previous, comparisonRectangle);
-            current = PixelBuffer.ExtractSubRectangle(current, comparisonRectangle);
-            width = previous.Width;
-            height = previous.Height;
-        }
-
-        var primaryAxisLength = direction == ScrollDirection.Vertical ? height : width;
+        var primaryAxisLength = direction == ScrollDirection.Vertical
+            ? comparisonRectangle.Height
+            : comparisonRectangle.Width;
         var best = OverlapResult.NoMatch;
 
         for (var overlap = primaryAxisLength - 1; overlap >= 1; overlap--)
         {
-            var previousSlice = direction == ScrollDirection.Vertical
-                ? PixelBuffer.ExtractSubRectangle(previous, new Rectangle(0, height - overlap, width, overlap))
-                : PixelBuffer.ExtractSubRectangle(previous, new Rectangle(width - overlap, 0, overlap, height));
-
-            var currentSlice = direction == ScrollDirection.Vertical
-                ? PixelBuffer.ExtractSubRectangle(current, new Rectangle(0, 0, width, overlap))
-                : PixelBuffer.ExtractSubRectangle(current, new Rectangle(0, 0, overlap, height));
-
-            var difference = PixelBuffer.ComputeNormalizedDifference(previousSlice.Pixels, currentSlice.Pixels);
+            var difference = direction == ScrollDirection.Vertical
+                ? ComputeNormalizedDifference(
+                    previousBand,
+                    currentBand,
+                    stride,
+                    comparisonRectangle.X,
+                    comparisonRectangle.Y + comparisonRectangle.Height - overlap,
+                    comparisonRectangle.X,
+                    comparisonRectangle.Y,
+                    comparisonRectangle.Width,
+                    overlap)
+                : ComputeNormalizedDifference(
+                    previousBand,
+                    currentBand,
+                    stride,
+                    comparisonRectangle.X + comparisonRectangle.Width - overlap,
+                    comparisonRectangle.Y,
+                    comparisonRectangle.X,
+                    comparisonRectangle.Y,
+                    overlap,
+                    comparisonRectangle.Height);
             if (difference > _matchThreshold)
             {
                 continue;
@@ -76,6 +80,36 @@ public sealed class OverlapMatcher : IOverlapMatcher
         }
 
         return best;
+    }
+
+    private static double ComputeNormalizedDifference(
+        ReadOnlySpan<byte> previous,
+        ReadOnlySpan<byte> current,
+        int stride,
+        int previousX,
+        int previousY,
+        int currentX,
+        int currentY,
+        int width,
+        int height)
+    {
+        if (width <= 0 || height <= 0)
+        {
+            return 0;
+        }
+
+        var rowLength = width * PixelBuffer.BytesPerPixel;
+        long sad = 0;
+        for (var row = 0; row < height; row++)
+        {
+            var previousOffset = ((previousY + row) * stride) + (previousX * PixelBuffer.BytesPerPixel);
+            var currentOffset = ((currentY + row) * stride) + (currentX * PixelBuffer.BytesPerPixel);
+            sad += PixelBuffer.ComputeSumOfAbsoluteDifferences(
+                previous.Slice(previousOffset, rowLength),
+                current.Slice(currentOffset, rowLength));
+        }
+
+        return sad / (255d * rowLength * height);
     }
 
     private Rectangle GetComparisonRectangle(int width, int height, ScrollDirection direction)
