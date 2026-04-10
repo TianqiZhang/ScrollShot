@@ -25,6 +25,7 @@
 | Phase 20 | Completed | Bidirectional performance pass 1: incremental composition reuse | Reused the existing bidirectional composition state when the estimated zone/start frame stayed stable, added an incremental-path regression test, switched the perf program to Release benchmark runs, and kept the change only after the dev suite improved and the full correctness gate still matched both tracked dump ground truths exactly |
 | Phase 21 | Completed | Bidirectional performance pass 2: adjacent-pair analysis cache | Cached zone detection and overlap eligibility per adjacent frame pair so history estimation reuses prior analysis, added cache-focused regressions, and kept the change only after another dev-suite drop plus an exact correctness-gate replay on both tracked dumps |
 | Phase 22 | Completed | Bidirectional performance pass 3: allocation-free overlap slices | Reworked `OverlapMatcher` to compare overlap windows directly from the input spans instead of cloning arrays and sub-rectangles, kept the same search/crop policy, and retained the change only after another large speedup plus exact correctness-gate replay on both tracked dumps |
+| Phase 23 | Completed | Bidirectional performance pass 4: SIMD absolute-difference kernel | Replaced the hot scalar byte-difference loop in `PixelBuffer` with a vectorized SIMD path plus scalar tail, added regression coverage for vector-sized input with a remainder, discarded the separate snapshot-cache prototype as not worthwhile, and kept the SIMD change only after the dev suite dropped again and the correctness gate still matched both tracked dump ground truths exactly |
 
 ## Commits
 
@@ -52,7 +53,8 @@
 | Phase 19 | Uncommitted |
 | Phase 20 | `ffae129` |
 | Phase 21 | `d952242` |
-| Phase 22 | Uncommitted |
+| Phase 22 | `56ecc81` |
+| Phase 23 | Uncommitted |
 
 ## Notes
 
@@ -82,3 +84,5 @@
 - The first retained performance pass keeps `bidirectional-current` from rebuilding the entire placement history once the estimated zone and start frame remain unchanged. The first Release baseline on the fixed dev suite was `16675/5422/5352 ms` (debug-slice / synthetic-down / synthetic-up stitch medians, total `27449 ms`), and the kept incremental-reuse change moved that to `15313/3736/3738 ms` (total `22787 ms`) while the full correctness gate still matched both tracked dump ground truths exactly (`normalized diff = 0` on both).
 - The second retained performance pass cached adjacent-pair analysis so later history scans stop re-running zone detection and overlap eligibility on the same frame pairs. That moved the fixed Release dev suite again from `15313/3736/3738 ms` to `7808/1811/1765 ms` (total `22787 -> 11384 ms`), and the full correctness gate remained exact on both tracked dumps (`debug-20260408-082055888: 6298 ms`, `debug-20260408-082216796: 11424 ms`, both with `normalized diff = 0`).
 - The third retained performance pass removed the hottest remaining overlap-matcher allocations without changing its thresholds or search order. On the fixed Release dev suite it moved the stitch medians again from `7808/1811/1765 ms` to `4577/1210/1112 ms` (total `11384 -> 6899 ms`), and the full correctness gate stayed exact on both tracked dumps (`debug-20260408-082055888: 3316 ms`, `debug-20260408-082216796: 6508 ms`, both with `normalized diff = 0`).
+- The next experiment after that was a snapshot-cache prototype, but it was explicitly discarded: it only improved the dev-suite total from `6899 ms` to `6763 ms` and slightly regressed `synthetic-up`, which was not enough to justify the extra seam.
+- The fourth retained performance pass replaced the hot scalar absolute-difference loop in `PixelBuffer` with a SIMD vectorized path while preserving the same scoring behavior and scalar tail handling. A code-review follow-up widened the SIMD accumulators to avoid latent overflow on very large spans. On the fixed Release dev suite the final kept version moved the stitch medians again from `4577/1210/1112 ms` to `1086/285/299 ms` (total `6899 -> 1670 ms`), and the correctness gate still matched both tracked dumps and both synthetic fixtures exactly (`debug-20260408-082055888: 992 ms`, `debug-20260408-082216796: 1740 ms`, all `normalized diff = 0`).

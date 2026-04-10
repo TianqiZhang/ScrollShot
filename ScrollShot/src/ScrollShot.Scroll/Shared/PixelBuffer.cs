@@ -1,6 +1,7 @@
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
+using System.Numerics;
 
 namespace ScrollShot.Scroll.Shared;
 
@@ -78,13 +79,61 @@ public static class PixelBuffer
             throw new ArgumentException("Buffers must have the same length.");
         }
 
-        long sum = 0;
-        for (var index = 0; index < left.Length; index++)
+        if (!Vector.IsHardwareAccelerated || left.Length < Vector<byte>.Count)
         {
-            sum += Math.Abs(left[index] - right[index]);
+            return ComputeSumOfAbsoluteDifferencesScalar(left, right);
         }
 
-        return sum;
+        var vectorLength = Vector<byte>.Count;
+        var lastVectorStart = left.Length - vectorLength;
+        var index = 0;
+        var sum0 = Vector<ulong>.Zero;
+        var sum1 = Vector<ulong>.Zero;
+        var sum2 = Vector<ulong>.Zero;
+        var sum3 = Vector<ulong>.Zero;
+        var sum4 = Vector<ulong>.Zero;
+        var sum5 = Vector<ulong>.Zero;
+        var sum6 = Vector<ulong>.Zero;
+        var sum7 = Vector<ulong>.Zero;
+
+        while (index <= lastVectorStart)
+        {
+            var leftVector = new Vector<byte>(left.Slice(index, vectorLength));
+            var rightVector = new Vector<byte>(right.Slice(index, vectorLength));
+
+            Vector.Widen(leftVector, out Vector<ushort> leftLow, out Vector<ushort> leftHigh);
+            Vector.Widen(rightVector, out Vector<ushort> rightLow, out Vector<ushort> rightHigh);
+
+            var differenceLow = Vector.Max(leftLow, rightLow) - Vector.Min(leftLow, rightLow);
+            var differenceHigh = Vector.Max(leftHigh, rightHigh) - Vector.Min(leftHigh, rightHigh);
+
+            Vector.Widen(differenceLow, out Vector<uint> difference0, out Vector<uint> difference1);
+            Vector.Widen(differenceHigh, out Vector<uint> difference2, out Vector<uint> difference3);
+
+            AccumulateDifference(difference0, ref sum0, ref sum1);
+            AccumulateDifference(difference1, ref sum2, ref sum3);
+            AccumulateDifference(difference2, ref sum4, ref sum5);
+            AccumulateDifference(difference3, ref sum6, ref sum7);
+
+            index += vectorLength;
+        }
+
+        ulong sum =
+            SumVector(sum0) +
+            SumVector(sum1) +
+            SumVector(sum2) +
+            SumVector(sum3) +
+            SumVector(sum4) +
+            SumVector(sum5) +
+            SumVector(sum6) +
+            SumVector(sum7);
+
+        if (index < left.Length)
+        {
+            sum += (ulong)ComputeSumOfAbsoluteDifferencesScalar(left.Slice(index), right.Slice(index));
+        }
+
+        return (long)sum;
     }
 
     public static double ComputeNormalizedDifference(ReadOnlySpan<byte> left, ReadOnlySpan<byte> right)
@@ -139,5 +188,34 @@ public static class PixelBuffer
         graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
         graphics.DrawImage(source, new Rectangle(Point.Empty, targetSize));
         return bitmap;
+    }
+
+    private static long ComputeSumOfAbsoluteDifferencesScalar(ReadOnlySpan<byte> left, ReadOnlySpan<byte> right)
+    {
+        long sum = 0;
+        for (var index = 0; index < left.Length; index++)
+        {
+            sum += Math.Abs(left[index] - right[index]);
+        }
+
+        return sum;
+    }
+
+    private static void AccumulateDifference(Vector<uint> difference, ref Vector<ulong> lowAccumulator, ref Vector<ulong> highAccumulator)
+    {
+        Vector.Widen(difference, out Vector<ulong> low, out Vector<ulong> high);
+        lowAccumulator += low;
+        highAccumulator += high;
+    }
+
+    private static ulong SumVector(Vector<ulong> vector)
+    {
+        ulong sum = 0;
+        for (var index = 0; index < Vector<ulong>.Count; index++)
+        {
+            sum += vector[index];
+        }
+
+        return sum;
     }
 }

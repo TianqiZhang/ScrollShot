@@ -1,3 +1,4 @@
+using System.Numerics;
 using FluentAssertions;
 using ScrollShot.Scroll.Shared;
 
@@ -31,5 +32,25 @@ public sealed class PixelBufferTests
         var value = PixelBuffer.ComputeSumOfAbsoluteDifferences(new byte[] { 0, 10, 20 }, new byte[] { 10, 10, 10 });
 
         value.Should().Be(20);
+    }
+
+    [Fact]
+    public void ComputeSumOfAbsoluteDifferences_MatchesScalarResult_ForVectorSizedInputWithTail()
+    {
+        var length = (Vector<byte>.Count * 2) + 3;
+        var left = new byte[length];
+        var right = new byte[length];
+        long expected = 0;
+
+        for (var index = 0; index < length; index++)
+        {
+            left[index] = (byte)((index * 17) % 256);
+            right[index] = (byte)(255 - ((index * 29) % 256));
+            expected += Math.Abs(left[index] - right[index]);
+        }
+
+        var value = PixelBuffer.ComputeSumOfAbsoluteDifferences(left, right);
+
+        value.Should().Be(expected);
     }
 }

@@ -1,7 +1,7 @@
 {
   "Program": "bidirectional-performance",
   "PrimaryMetric": "median StitchElapsedMilliseconds",
-  "LastUpdatedUtc": "2026-04-10T03:50:28Z",
+  "LastUpdatedUtc": "2026-04-10T05:09:42Z",
   "Curve": [
     {
       "Label": "baseline-release",
@@ -47,12 +47,25 @@
       "TimestampUtc": "2026-04-10T03:49:45Z",
       "Suite": "suite.json",
       "RunDirectory": "runs/20260410-034945027",
-      "Commit": null,
+      "Commit": "56ecc81",
       "Metrics": {
         "SuiteStitchMedianTotalMilliseconds": 6899,
         "debug-20260408-082216796-slice": 4577,
         "synthetic-down": 1210,
         "synthetic-up": 1112
+      }
+    },
+    {
+      "Label": "simd-sad-kernel",
+      "TimestampUtc": "2026-04-10T05:09:42Z",
+      "Suite": "suite.json",
+      "RunDirectory": "runs/20260410-050942914",
+      "Commit": null,
+      "Metrics": {
+        "SuiteStitchMedianTotalMilliseconds": 1670,
+        "debug-20260408-082216796-slice": 1086,
+        "synthetic-down": 285,
+        "synthetic-up": 299
       }
     }
   ],
@@ -101,30 +114,30 @@
       "Hypothesis": "Keeping overlap comparisons in spans/snapshots rather than allocating arrays and sub-buffers per candidate should lower both CPU and GC pressure.",
       "Risk": "medium",
       "Outcome": "Kept. Dev-suite stitch medians improved from 7808/1811/1765 ms to 4577/1210/1112 ms (suite total 11384 -> 6899, about 39.4% faster vs the prior kept baseline and about 74.9% faster vs the original Release baseline). Full correctness gate stayed exact on both tracked dumps and both synthetic fixtures in runs/20260410-035028320.",
-      "Commit": null
+      "Commit": "56ecc81"
     },
     {
       "Id": "frame-snapshot-cache",
       "Title": "Persist reusable pixel snapshots per captured frame",
-      "Status": "idea",
+      "Status": "discarded",
       "DependsOn": [
         "baseline-benchmark"
       ],
       "Hypothesis": "Converting each frame bitmap into a reusable snapshot once should cut repeated PixelBuffer.FromBitmap cost across zone detection and overlap search.",
       "Risk": "medium",
-      "Outcome": null,
+      "Outcome": "Discarded after measurement. The prototype only moved the dev-suite stitch medians from 4577/1210/1112 ms to 4428/1173/1162 ms (suite total 6899 -> 6763, about 2.0% faster overall) and slightly regressed synthetic-up, which was not enough to justify the extra detector/cache seam.",
       "Commit": null
     },
     {
       "Id": "zone-stability-short-circuit",
       "Title": "Freeze zone estimation after stable consensus and only invalidate on disagreement",
-      "Status": "idea",
+      "Status": "discarded",
       "DependsOn": [
         "pair-analysis-cache"
       ],
       "Hypothesis": "Avoiding full-history zone recomputation after convergence should eliminate wasted rescans on long monotonic captures.",
       "Risk": "high",
-      "Outcome": null,
+      "Outcome": "Discarded after the pair-analysis cache landed. Remaining zone-estimation work is now a cheap scan over cached pair results, so freezing consensus would add invalidation complexity for little expected payoff.",
       "Commit": null
     },
     {
@@ -142,7 +155,7 @@
     {
       "Id": "coarse-fingerprint-pass",
       "Title": "Add a coarse row or column fingerprint pass before pixel refinement",
-      "Status": "idea",
+      "Status": "ready",
       "DependsOn": [
         "baseline-benchmark"
       ],
@@ -166,13 +179,13 @@
     {
       "Id": "simd-sad-kernel",
       "Title": "Replace scalar absolute-difference loops with SIMD",
-      "Status": "idea",
+      "Status": "kept",
       "DependsOn": [
         "overlap-no-copy-slices"
       ],
       "Hypothesis": "Vectorized byte-difference kernels should accelerate row, column, and overlap scoring without changing the algorithm.",
       "Risk": "medium",
-      "Outcome": null,
+      "Outcome": "Kept. The first SIMD draft was tightened after code review to avoid latent accumulator overflow on very large spans, and the final dev-suite stitch medians improved from 4577/1210/1112 ms to 1086/285/299 ms (suite total 6899 -> 1670, about 75.8% faster vs the prior kept baseline and about 93.9% faster vs the original Release baseline). The correctness gate stayed exact on both tracked dumps and both synthetic fixtures in runs/20260410-050921908.",
       "Commit": null
     },
     {
@@ -214,13 +227,13 @@
     {
       "Id": "pairwise-parallelism",
       "Title": "Parallelize independent pair analysis during history rescans",
-      "Status": "idea",
+      "Status": "discarded",
       "DependsOn": [
         "pair-analysis-cache"
       ],
       "Hypothesis": "Adjacent-pair zone and overlap checks are independent enough to exploit multiple cores when rescans are still necessary.",
       "Risk": "high",
-      "Outcome": null,
+      "Outcome": "Discarded after the pair-analysis cache landed. History rescans are now lightweight enough that parallel coordination overhead is unlikely to beat the remaining single-threaded work.",
       "Commit": null
     },
     {
