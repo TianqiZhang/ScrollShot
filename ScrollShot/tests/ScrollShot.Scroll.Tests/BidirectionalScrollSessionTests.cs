@@ -84,6 +84,32 @@ public sealed class BidirectionalScrollSessionTests
         result.Segments.Select(segment => segment.Offset).Should().Equal(0, 1);
     }
 
+    [Fact]
+    public void AdjacentPairAnalysis_IsCachedAcrossHistoryRescans()
+    {
+        var detector = new CountingZoneDetector(new ZoneLayout(0, 0, 0, 0, new ScreenRect(0, 0, 3, 4)));
+        var matcher = new CountingBidirectionalOverlapMatcher(new DirectionalOverlapResult(3, false, 1, ScrollPlacement.AppendAfter));
+        using var session = new BidirectionalScrollSession(detector, matcher);
+
+        session.Start(new ScreenRect(0, 0, 3, 4), ScrollDirection.Vertical);
+        using var firstFrame = CreateCapturedFrame(Color.Red, 3, 4);
+        using var secondFrame = CreateCapturedFrame(Color.Blue, 3, 4);
+        using var thirdFrame = CreateCapturedFrame(Color.Green, 3, 4);
+        using var fourthFrame = CreateCapturedFrame(Color.Yellow, 3, 4);
+        session.ProcessFrame(firstFrame);
+        session.ProcessFrame(secondFrame);
+        session.ProcessFrame(thirdFrame);
+        session.ProcessFrame(fourthFrame);
+        session.Finish();
+
+        var result = session.GetResult();
+
+        detector.CallCount.Should().Be(3);
+        matcher.CallCount.Should().Be(6);
+        result.TotalHeight.Should().Be(7);
+        result.Segments.Select(segment => segment.Offset).Should().Equal(0, 1, 2, 3);
+    }
+
     private static CapturedFrame CreateCapturedFrame(Color color, int width, int height)
     {
         return new CapturedFrame(CreateFrame(color, width, height), new ScreenRect(0, 0, width, height), DateTimeOffset.UtcNow);
@@ -107,6 +133,24 @@ public sealed class BidirectionalScrollSessionTests
         }
 
         public ZoneLayout DetectZones(CapturedFrame previous, CapturedFrame current, ScrollDirection direction) => _layout;
+    }
+
+    private sealed class CountingZoneDetector : IZoneDetector
+    {
+        private readonly ZoneLayout _layout;
+
+        public CountingZoneDetector(ZoneLayout layout)
+        {
+            _layout = layout;
+        }
+
+        public int CallCount { get; private set; }
+
+        public ZoneLayout DetectZones(CapturedFrame previous, CapturedFrame current, ScrollDirection direction)
+        {
+            CallCount++;
+            return _layout;
+        }
     }
 
     private sealed class SequenceBidirectionalOverlapMatcher : IBidirectionalOverlapMatcher
@@ -144,6 +188,24 @@ public sealed class BidirectionalScrollSessionTests
             }
 
             return hash;
+        }
+    }
+
+    private sealed class CountingBidirectionalOverlapMatcher : IBidirectionalOverlapMatcher
+    {
+        private readonly DirectionalOverlapResult _result;
+
+        public CountingBidirectionalOverlapMatcher(DirectionalOverlapResult result)
+        {
+            _result = result;
+        }
+
+        public int CallCount { get; private set; }
+
+        public DirectionalOverlapResult FindOverlap(ReadOnlySpan<byte> previousBand, ReadOnlySpan<byte> currentBand, int width, int height, ScrollDirection direction)
+        {
+            CallCount++;
+            return _result;
         }
     }
 }

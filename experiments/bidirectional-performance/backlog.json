@@ -1,7 +1,7 @@
 {
   "Program": "bidirectional-performance",
   "PrimaryMetric": "median StitchElapsedMilliseconds",
-  "LastUpdatedUtc": "2026-04-10T03:19:13Z",
+  "LastUpdatedUtc": "2026-04-10T03:41:12Z",
   "Curve": [
     {
       "Label": "baseline-release",
@@ -21,12 +21,25 @@
       "TimestampUtc": "2026-04-10T03:28:13Z",
       "Suite": "suite.json",
       "RunDirectory": "runs/20260410-032618615",
-      "Commit": null,
+      "Commit": "ffae129",
       "Metrics": {
         "SuiteStitchMedianTotalMilliseconds": 22787,
         "debug-20260408-082216796-slice": 15313,
         "synthetic-down": 3736,
         "synthetic-up": 3738
+      }
+    },
+    {
+      "Label": "pair-analysis-cache",
+      "TimestampUtc": "2026-04-10T03:40:55Z",
+      "Suite": "suite.json",
+      "RunDirectory": "runs/20260410-034003620",
+      "Commit": null,
+      "Metrics": {
+        "SuiteStitchMedianTotalMilliseconds": 11384,
+        "debug-20260408-082216796-slice": 7808,
+        "synthetic-down": 1811,
+        "synthetic-up": 1765
       }
     }
   ],
@@ -51,18 +64,18 @@
       "Hypothesis": "Once the estimated zone and start frame stabilize, processing only the newest frame should remove the dominant O(n^2) replay cost while preserving the same placement sequence.",
       "Risk": "medium",
       "Outcome": "Kept. Dev-suite stitch medians improved from 16675/5422/5352 ms to 15313/3736/3738 ms (suite total 27449 -> 22787, about 17.0% faster). Full correctness gate stayed exact on both tracked dumps and both synthetic fixtures in runs/20260410-032827482.",
-      "Commit": null
+      "Commit": "ffae129"
     },
     {
       "Id": "pair-analysis-cache",
       "Title": "Cache adjacent-frame zone and overlap analysis",
-      "Status": "ready",
+      "Status": "kept",
       "DependsOn": [
         "baseline-benchmark"
       ],
       "Hypothesis": "Memoizing pairwise zone detection and overlap eligibility across history scans should sharply reduce repeated bitmap extraction and matcher work even when rebuilds still happen.",
       "Risk": "medium",
-      "Outcome": null,
+      "Outcome": "Kept. Dev-suite stitch medians improved from 15313/3736/3738 ms to 7808/1811/1765 ms (suite total 22787 -> 11384, about 50.0% faster vs the prior kept baseline and about 58.5% faster vs the original Release baseline). Full correctness gate stayed exact on both tracked dumps and both synthetic fixtures in runs/20260410-034112647.",
       "Commit": null
     },
     {

@@ -23,6 +23,7 @@
 | Phase 18 | Completed | Stitching-engine layout reorganization | Reorganized `ScrollShot.Scroll` into clearer shared/contracts/profile boundaries, updated namespaces/usings/tests, refreshed agent docs, and re-ran the dump replay matrix to confirm the stabilized profile outputs were unchanged |
 | Phase 19 | Completed | Bidirectional performance program setup | Added replay timing metrics, synthetic frame-order control, benchmark-suite tooling, and an `experiments/bidirectional-performance/` workspace with fixed speed/correctness suites, backlog scaffolding, and a formal `program.md` |
 | Phase 20 | Completed | Bidirectional performance pass 1: incremental composition reuse | Reused the existing bidirectional composition state when the estimated zone/start frame stayed stable, added an incremental-path regression test, switched the perf program to Release benchmark runs, and kept the change only after the dev suite improved and the full correctness gate still matched both tracked dump ground truths exactly |
+| Phase 21 | Completed | Bidirectional performance pass 2: adjacent-pair analysis cache | Cached zone detection and overlap eligibility per adjacent frame pair so history estimation reuses prior analysis, added cache-focused regressions, and kept the change only after another dev-suite drop plus an exact correctness-gate replay on both tracked dumps |
 
 ## Commits
 
@@ -48,7 +49,8 @@
 | Phase 17 | `686cbbb` |
 | Phase 18 | Uncommitted by request |
 | Phase 19 | Uncommitted |
-| Phase 20 | Uncommitted |
+| Phase 20 | `ffae129` |
+| Phase 21 | Uncommitted |
 
 ## Notes
 
@@ -76,3 +78,4 @@
 - The latest maintenance pass was structural rather than algorithmic: `ScrollShot.Scroll` is now laid out so maintainers can tell at a glance what is shared (`Shared/`), what is contractual (interfaces in `Contracts/`, still exposed through the root `ScrollShot.Scroll` namespace), and what belongs to each concrete profile (`Profiles/Current`, `Profiles/Signal`, `Profiles/Bidirectional`). After the namespace migration, the full solution test suite still passed (`95/95`), and replaying both tracked dump datasets across all four profiles reproduced the same outcome matrix as before the reorganization: `debug-20260408-082055888` → `current=909x2479`, `signal-zone=909x2479`, `signal-hybrid=909x2284`, `bidirectional-current=909x1312`; `debug-20260408-082216796` → `current=1113x1448`, `signal-zone=1113x1367`, `signal-hybrid=1113x1267`, `bidirectional-current=1113x1593`, with `bidirectional-current` still matching both tracked dump ground truths exactly (`normalized diff = 0`).
 - The newest setup pass prepares a dedicated performance-optimization program for `bidirectional-current` instead of jumping straight into ad hoc tuning. `ReplayReport` now records timing breakdowns (`ReplayElapsedMilliseconds`, `FrameLoadElapsedMilliseconds`, `StitchElapsedMilliseconds`, `ComposeElapsedMilliseconds`), synthetic generation can emit forward or reverse frame order, and `ScrollShot.Tooling` now has a `benchmark` command that runs fixed suites and writes timestamped summaries. The repo-level experiment workspace lives under `experiments/bidirectional-performance/` and contains the formal `program.md`, a structured backlog, a fast inner-loop speed suite, a broader correctness suite, ignored folders for generated synthetic datasets and benchmark runs, and a committed real-dump slice manifest so the daily loop can use real data without always replaying the entire slow dump.
 - The first retained performance pass keeps `bidirectional-current` from rebuilding the entire placement history once the estimated zone and start frame remain unchanged. The first Release baseline on the fixed dev suite was `16675/5422/5352 ms` (debug-slice / synthetic-down / synthetic-up stitch medians, total `27449 ms`), and the kept incremental-reuse change moved that to `15313/3736/3738 ms` (total `22787 ms`) while the full correctness gate still matched both tracked dump ground truths exactly (`normalized diff = 0` on both).
+- The second retained performance pass cached adjacent-pair analysis so later history scans stop re-running zone detection and overlap eligibility on the same frame pairs. That moved the fixed Release dev suite again from `15313/3736/3738 ms` to `7808/1811/1765 ms` (total `22787 -> 11384 ms`), and the full correctness gate remained exact on both tracked dumps (`debug-20260408-082055888: 6298 ms`, `debug-20260408-082216796: 11424 ms`, both with `normalized diff = 0`).

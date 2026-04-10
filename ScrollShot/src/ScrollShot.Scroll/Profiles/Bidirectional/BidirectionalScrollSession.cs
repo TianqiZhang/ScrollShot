@@ -12,6 +12,7 @@ public sealed class BidirectionalScrollSession : IScrollSession
     private readonly IZoneDetector _zoneDetector;
     private readonly IBidirectionalOverlapMatcher _overlapMatcher;
     private readonly List<CapturedFrame> _frameHistory = new();
+    private readonly List<PairAnalysis> _pairAnalyses = new();
     private readonly List<PlacedBand> _placements = new();
     private readonly List<NormalizedPlacedBand> _normalizedPlacements = new();
     private ZoneLayout? _zoneLayout;
@@ -65,6 +66,11 @@ public sealed class BidirectionalScrollSession : IScrollSession
         }
 
         _frameHistory.Add(CloneFrame(frame));
+        if (_frameHistory.Count >= 2)
+        {
+            AnalyzeLatestPair();
+        }
+
         if (_frameHistory.Count < 2 || !TryEstimateZoneFromHistory(out var estimatedZone, out var startFrameIndex))
         {
             return;
@@ -147,22 +153,10 @@ public sealed class BidirectionalScrollSession : IScrollSession
 
     private bool TryEstimateZoneFromHistory(out ZoneLayout zoneLayout, out int startFrameIndex)
     {
-        var candidates = new List<(int StartIndex, ZoneLayout Zone)>();
-        for (var index = 1; index < _frameHistory.Count; index++)
-        {
-            var previous = _frameHistory[index - 1];
-            var current = _frameHistory[index];
-            var detectedZone = _zoneDetector.DetectZones(previous, current, _direction);
-            using var previousBand = ExtractBandBitmap(previous.Bitmap, detectedZone.ScrollBand);
-            var previousBandSnapshot = PixelBuffer.FromBitmap(previousBand);
-            using var currentBand = ExtractBandBitmap(current.Bitmap, detectedZone.ScrollBand);
-            var currentBandSnapshot = PixelBuffer.FromBitmap(currentBand);
-            var overlap = FindOverlap(previousBandSnapshot, currentBandSnapshot);
-            if (overlap.HasMatch)
-            {
-                candidates.Add((index - 1, detectedZone));
-            }
-        }
+        var candidates = _pairAnalyses
+            .Where(analysis => analysis.HasMatch)
+            .Select(analysis => (analysis.StartIndex, analysis.Zone))
+            .ToList();
 
         if (candidates.Count == 0)
         {
@@ -217,6 +211,20 @@ public sealed class BidirectionalScrollSession : IScrollSession
         }
 
         return ordered[ordered.Length / 2];
+    }
+
+    private void AnalyzeLatestPair()
+    {
+        var startIndex = _frameHistory.Count - 2;
+        var previous = _frameHistory[startIndex];
+        var current = _frameHistory[startIndex + 1];
+        var detectedZone = _zoneDetector.DetectZones(previous, current, _direction);
+        using var previousBand = ExtractBandBitmap(previous.Bitmap, detectedZone.ScrollBand);
+        var previousBandSnapshot = PixelBuffer.FromBitmap(previousBand);
+        using var currentBand = ExtractBandBitmap(current.Bitmap, detectedZone.ScrollBand);
+        var currentBandSnapshot = PixelBuffer.FromBitmap(currentBand);
+        var overlap = FindOverlap(previousBandSnapshot, currentBandSnapshot);
+        _pairAnalyses.Add(new PairAnalysis(startIndex, detectedZone, overlap.HasMatch));
     }
 
     private bool CanAppendIncrementally(ZoneLayout zoneLayout, int startFrameIndex)
@@ -464,11 +472,14 @@ public sealed class BidirectionalScrollSession : IScrollSession
         }
 
         _frameHistory.Clear();
+        _pairAnalyses.Clear();
         ClearComposition();
         _zoneLayout = null;
         _started = false;
         _finished = false;
     }
+
+    private sealed record PairAnalysis(int StartIndex, ZoneLayout Zone, bool HasMatch);
 
     private sealed record PlacedBand(Bitmap Bitmap, int Offset);
 
