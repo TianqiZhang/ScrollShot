@@ -64,7 +64,7 @@
 | Phase 25 | `c4b77b8` |
 | Phase 26 | `1b191c8` |
 | Phase 27 | `9863d6b` |
-| Phase 28 | Uncommitted |
+| Phase 28 | `212eaf6` |
 
 ## Notes
 
