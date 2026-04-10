@@ -6,6 +6,7 @@ public static class StitchingProfiles
     public const string SignalZoneExperiment = "signal-zone";
     public const string SignalHybridExperiment = "signal-hybrid";
     public const string BidirectionalCurrentExperiment = "bidirectional-current";
+    public const string Default = BidirectionalCurrentExperiment;
 
     public static bool IsKnown(string profileName)
     {

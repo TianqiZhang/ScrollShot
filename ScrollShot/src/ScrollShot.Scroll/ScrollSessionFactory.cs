@@ -6,7 +6,7 @@ namespace ScrollShot.Scroll;
 
 public sealed class ScrollSessionFactory : IScrollSessionFactory
 {
-    public ScrollSessionFactory(string profileName = StitchingProfiles.Current)
+    public ScrollSessionFactory(string profileName = StitchingProfiles.Default)
     {
         ProfileName = StitchingProfiles.Normalize(profileName);
         if (!StitchingProfiles.IsKnown(ProfileName))

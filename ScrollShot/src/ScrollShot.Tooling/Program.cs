@@ -95,7 +95,7 @@ public static class ToolCli
         {
             ManifestPath = GetRequired(options, "manifest"),
             OutputDirectory = GetRequired(options, "output"),
-            ProfileName = GetOptional(options, "profile") ?? StitchingProfiles.Current,
+            ProfileName = GetOptional(options, "profile") ?? StitchingProfiles.Default,
         });
 
         if (!report.Succeeded)

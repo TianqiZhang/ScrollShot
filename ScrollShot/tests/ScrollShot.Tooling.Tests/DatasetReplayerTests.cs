@@ -45,7 +45,7 @@ public sealed class DatasetReplayerTests : IDisposable
 
         report.Succeeded.Should().BeTrue();
         report.DatasetName.Should().Be("ideal");
-        report.ProfileName.Should().Be(StitchingProfiles.Current);
+        report.ProfileName.Should().Be(StitchingProfiles.Default);
         report.FrameCount.Should().Be(manifest.Frames.Count);
         report.OutputWidth.Should().Be(6);
         report.OutputHeight.Should().Be(11);

@@ -8,7 +8,7 @@ public sealed class ReplayCommandOptions
 
     public required string OutputDirectory { get; init; }
 
-    public string ProfileName { get; init; } = StitchingProfiles.Current;
+    public string ProfileName { get; init; } = StitchingProfiles.Default;
 
     public bool PersistOutputImage { get; init; } = true;
 

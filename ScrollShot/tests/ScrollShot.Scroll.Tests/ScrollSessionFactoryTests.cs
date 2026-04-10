@@ -5,6 +5,14 @@ namespace ScrollShot.Scroll.Tests;
 
 public sealed class ScrollSessionFactoryTests
 {
+    [Fact]
+    public void DefaultConstructor_UsesDefaultProfile()
+    {
+        var factory = new ScrollSessionFactory();
+
+        factory.ProfileName.Should().Be(StitchingProfiles.Default);
+    }
+
     [Theory]
     [InlineData(StitchingProfiles.Current)]
     [InlineData(StitchingProfiles.SignalZoneExperiment)]

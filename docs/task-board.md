@@ -30,6 +30,7 @@
 | Phase 25 | Completed | Bidirectional performance pass 6: luma-only overlap scoring | Projected overlap bands to grayscale once per match and scored overlap candidates on luma instead of full BGRA, then kept the change only after a much lower Release dev-suite total plus a clean correctness gate |
 | Phase 26 | Completed | Bidirectional performance pass 7: directional 1D candidate ranking | Ranked overlap candidates with a cheap 1D luma profile and only ran the full exact scan when those candidates did not already contain an excellent match, then kept the pass after another Release dev-suite drop plus a clean correctness gate |
 | Phase 27 | Completed | Bidirectional performance pass 8: threshold-driven exact early exit | Short-circuited exact luma overlap diffs once a candidate could no longer beat the current match/excellent thresholds, then kept the pass after another Release dev-suite drop plus a clean correctness gate |
+| Phase 28 | Completed | Promote bidirectional profile to default | Compared `current` against `bidirectional-current` on the shared correctness datasets, confirmed the old default was wrong on multiple datasets while the bidirectional profile stayed exact on the available ground truths, and switched the default factory/replay profile to `bidirectional-current` while keeping the old `current` profile available explicitly |
 
 ## Commits
 
@@ -63,6 +64,7 @@
 | Phase 25 | `c4b77b8` |
 | Phase 26 | `1b191c8` |
 | Phase 27 | `9863d6b` |
+| Phase 28 | Uncommitted |
 
 ## Notes
 
@@ -101,5 +103,6 @@
 - A follow-up shared-precompute experiment was discarded: letting `BidirectionalOverlapMatcher` share luma/profile preprocessing across forward and reverse evaluation only moved the dev-suite total from `385 ms` to `380 ms`, which was too small to justify the extra matcher surface area.
 - The newest retained pass keeps the same 1D-ranked search but makes the exact luma scorer stop early when a candidate already exceeds the relevant threshold. On the fixed Release dev suite that moved the stitch medians again from `250/61/74 ms` to `186/52/67 ms` (total `385 -> 305 ms`), while the standard correctness gate stayed clean on the tracked dump + synthetic validation suite.
 - A deeper row-level early-exit follow-up was also discarded: pushing the threshold budget down into the row SAD kernel moved the dev-suite total from `305 ms` to `318 ms`, so the extra checkpointing overhead was not worth keeping.
+- The old default `current` profile is now no longer the app/tooling default. A direct correctness comparison on the shared datasets showed `current` was only exact on `synthetic-down`, but it produced wrong output dimensions on `synthetic-up` (`320x1960` vs ground-truth `320x1400`) and on both tracked real dumps (`909x2505` and `1113x478` instead of the newer bidirectional outputs). `bidirectional-current` stayed exact on the datasets with available ground truth (`debug-20260408-082055888`, `synthetic-down`, `synthetic-up`), so the default factory/replay path now points to `bidirectional-current` while the old `current` profile remains available for explicit comparison.
 - The fifth retained performance pass reused the adjacent-pair overlap result that the session was already computing during history analysis instead of recomputing that same overlap during rebuild and incremental append when the aggregate zone still matched the pair zone. On the fixed Release dev suite it moved the stitch medians again from `1086/285/299 ms` to `933/220/222 ms` (total `1670 -> 1375 ms`), and the correctness gate still matched both tracked dumps and both synthetic fixtures exactly (`debug-20260408-082055888: 522 ms`, `debug-20260408-082216796: 1517 ms`, all `normalized diff = 0`).
 - One last narrow follow-up was also discarded: reusing only the most recently analyzed pair snapshot during the immediate append step produced a near-tied dev-suite result (`1375 -> 1374 ms` total), which was too small to matter and not worth the extra session state.
