@@ -1,7 +1,7 @@
 {
   "Program": "bidirectional-performance",
   "PrimaryMetric": "median StitchElapsedMilliseconds",
-  "LastUpdatedUtc": "2026-04-10T08:41:30Z",
+  "LastUpdatedUtc": "2026-04-10T08:47:20Z",
   "ArchiveFile": "archive.json",
   "Curve": [
     {
@@ -87,12 +87,25 @@
       "TimestampUtc": "2026-04-10T08:40:07Z",
       "Suite": "suite.json",
       "RunDirectory": "runs/20260410-084007537",
-      "Commit": null,
+      "Commit": "c4b77b8",
       "Metrics": {
         "SuiteStitchMedianTotalMilliseconds": 545,
         "debug-20260408-082216796-slice": 356,
         "synthetic-down": 94,
         "synthetic-up": 95
+      }
+    },
+    {
+      "Label": "directional-1d-profile",
+      "TimestampUtc": "2026-04-10T08:46:57Z",
+      "Suite": "suite.json",
+      "RunDirectory": "runs/20260410-084657446",
+      "Commit": null,
+      "Metrics": {
+        "SuiteStitchMedianTotalMilliseconds": 385,
+        "debug-20260408-082216796-slice": 250,
+        "synthetic-down": 61,
+        "synthetic-up": 74
       }
     }
   ],
@@ -201,17 +214,18 @@
       "Hypothesis": "A luma-only scorer keeps most structural information from UI screenshots while shrinking the effective signal size and arithmetic cost relative to full BGRA.",
       "Risk": "medium",
       "Outcome": "Kept. Projecting each overlap band to luma once per match and scoring the search on grayscale cut the dev-suite stitch medians from 933/220/222 ms to 356/94/95 ms (suite total 1375 -> 545, about 60.4% faster vs the prior kept baseline and about 98.0% faster vs the original Release baseline). The correctness gate stayed exact on the checked tracked dump and both synthetic fixtures in runs/20260410-084021670, with the second tracked dump remaining verification-clean under the standard correctness suite.",
-      "Commit": null
+      "Commit": "c4b77b8"
     },
     {
       "Id": "directional-1d-profile",
       "Title": "Project bands into directional 1D profiles before exact refinement",
-      "Status": "ready",
+      "Status": "kept",
       "DependsOn": [
         "simd-sad-kernel"
       ],
       "Hypothesis": "Collapsing the band along the scroll direction into 1D row or column profiles could rank promising overlaps much more cheaply than repeated full-pixel scoring, especially if exact scoring only runs on the best candidates.",
       "Risk": "medium",
+      "Outcome": "Kept. Ranking overlaps with a directional 1D luma profile and only skipping the full scan when the top profile candidates already contain an excellent exact match cut the dev-suite stitch medians from 356/94/95 ms to 250/61/74 ms (suite total 545 -> 385, about 29.4% faster vs the prior kept baseline and about 98.6% faster vs the original Release baseline). The correctness gate stayed clean on the tracked dump plus synthetic validation suite in runs/20260410-084709651.",
       "Commit": null
     },
     {
