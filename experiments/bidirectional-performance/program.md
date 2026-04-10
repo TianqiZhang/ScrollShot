@@ -167,6 +167,7 @@ That changes the remaining opportunity set:
     - the first frame-snapshot cache prototype
     - the coarse fingerprint prepass prototype
     - the direct band-snapshot prototype
+    - the latest-pair snapshot reuse prototype
     - broader runtime or architecture rewrites before cheaper in-process wins are exhausted
 
 The remaining backlog should therefore bias toward **localized hot-path work inside overlap scoring and search-window reduction**, not more session-level restructuring.

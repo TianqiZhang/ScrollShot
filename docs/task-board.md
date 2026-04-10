@@ -56,7 +56,7 @@
 | Phase 21 | `d952242` |
 | Phase 22 | `56ecc81` |
 | Phase 23 | `4b058ab` |
-| Phase 24 | Uncommitted |
+| Phase 24 | `d236954` |
 
 ## Notes
 
@@ -91,3 +91,4 @@
 - The next post-SIMD experiment was a behavior-safe coarse fingerprint prepass ahead of full pixel scoring, but it was discarded: even with a fallback that preserved the current overlap-selection semantics, the dev-suite total moved from `1670 ms` to `1715 ms`, so the extra pass was simply slower than the accepted baseline.
 - A second post-SIMD experiment was also discarded: extracting band snapshots directly from source bitmaps instead of going through temporary band clones moved the dev-suite total from `1670 ms` to `1785 ms`, so that lower-level allocation/GDI tweak was not helping this workload either.
 - The fifth retained performance pass reused the adjacent-pair overlap result that the session was already computing during history analysis instead of recomputing that same overlap during rebuild and incremental append when the aggregate zone still matched the pair zone. On the fixed Release dev suite it moved the stitch medians again from `1086/285/299 ms` to `933/220/222 ms` (total `1670 -> 1375 ms`), and the correctness gate still matched both tracked dumps and both synthetic fixtures exactly (`debug-20260408-082055888: 522 ms`, `debug-20260408-082216796: 1517 ms`, all `normalized diff = 0`).
+- One last narrow follow-up was also discarded: reusing only the most recently analyzed pair snapshot during the immediate append step produced a near-tied dev-suite result (`1375 -> 1374 ms` total), which was too small to matter and not worth the extra session state.

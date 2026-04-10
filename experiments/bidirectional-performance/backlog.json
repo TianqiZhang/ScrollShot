@@ -73,7 +73,7 @@
       "TimestampUtc": "2026-04-10T05:22:16Z",
       "Suite": "suite.json",
       "RunDirectory": "runs/20260410-052216276",
-      "Commit": null,
+      "Commit": "d236954",
       "Metrics": {
         "SuiteStitchMedianTotalMilliseconds": 1375,
         "debug-20260408-082216796-slice": 933,
@@ -190,6 +190,18 @@
       "Commit": null
     },
     {
+      "Id": "latest-pair-snapshot-reuse",
+      "Title": "Reuse the latest analyzed pair snapshot during the immediate incremental append",
+      "Status": "discarded",
+      "DependsOn": [
+        "reuse-cached-pair-overlaps"
+      ],
+      "Hypothesis": "The newest pair analysis already materializes the current band snapshot, so reusing that snapshot during the immediate append step should remove one more temporary extraction/conversion without paying the memory cost of a full history snapshot cache.",
+      "Risk": "low",
+      "Outcome": "Discarded after measurement. The prototype moved the dev-suite stitch medians from 933/220/222 ms to 931/206/237 ms (suite total 1375 -> 1374), which is effectively noise and not enough to justify extra state in the session.",
+      "Commit": null
+    },
+    {
       "Id": "rolling-row-hashes",
       "Title": "Use rolling hashes or integral summaries for overlap candidates",
       "Status": "idea",
@@ -223,7 +235,7 @@
       "Hypothesis": "The adjacent-pair analysis pass already computes overlap results, so reusing them whenever the aggregate zone matches the pair zone should remove duplicate matcher work during rebuild and append paths.",
       "Risk": "low",
       "Outcome": "Kept. Reusing cached adjacent-pair overlap results cut the dev-suite stitch medians from 1086/285/299 ms to 933/220/222 ms (suite total 1670 -> 1375, about 17.7% faster vs the prior kept baseline and about 95.0% faster vs the original Release baseline). The correctness gate stayed exact on both tracked dumps and both synthetic fixtures in runs/20260410-052235100.",
-      "Commit": null
+      "Commit": "d236954"
     },
     {
       "Id": "native-vision-backend",
