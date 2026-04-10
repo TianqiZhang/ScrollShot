@@ -1,6 +1,6 @@
 {
   "Program": "bidirectional-performance",
-  "ArchivedAtUtc": "2026-04-10T08:35:21Z",
+  "ArchivedAtUtc": "2026-04-10T08:58:30Z",
   "Purpose": "Discarded or parked ideas moved out of the active backlog so backlog.json stays focused on the near-term experiment queue.",
   "Items": [
     {
@@ -61,6 +61,30 @@
       "Hypothesis": "The newest pair analysis already materializes the current band snapshot, so reusing that snapshot during the immediate append step should remove one more temporary extraction/conversion without paying the memory cost of a full history snapshot cache.",
       "Risk": "low",
       "Outcome": "Discarded after measurement. The prototype moved the dev-suite stitch medians from 933/220/222 ms to 931/206/237 ms (suite total 1375 -> 1374), which is effectively noise and not enough to justify extra state in the session.",
+      "Commit": null
+    },
+    {
+      "Id": "shared-bidirectional-precompute",
+      "Title": "Share luma and 1D signal precompute across forward and reverse bidirectional matching",
+      "Status": "discarded",
+      "DependsOn": [
+        "directional-1d-profile"
+      ],
+      "Hypothesis": "Bidirectional matching currently runs the same luma projection and profile-building work twice for the same frame pair, so sharing that preprocessing across forward and reverse overlap evaluation should shave more time off the hot path.",
+      "Risk": "medium",
+      "Outcome": "Discarded after measurement. Sharing the precompute only moved the dev-suite stitch medians from 250/61/74 ms to 244/65/71 ms (suite total 385 -> 380, about 1.3% faster overall) while slightly regressing synthetic-down, which was not enough to justify extra matcher surface area.",
+      "Commit": null
+    },
+    {
+      "Id": "ignore-alpha-diff",
+      "Title": "Drop alpha from the exact overlap scoring path",
+      "Status": "discarded",
+      "DependsOn": [
+        "simd-sad-kernel"
+      ],
+      "Hypothesis": "Most captured bands carry constant alpha, so ignoring that channel in exact scoring could cut hot-path work without materially changing overlap decisions.",
+      "Risk": "medium",
+      "Outcome": "Discarded as superseded after the retained luma-only overlap scorer landed. The current exact path already projects to grayscale and therefore drops alpha along with most per-channel work, so a separate alpha-only experiment is no longer worth running.",
       "Commit": null
     },
     {

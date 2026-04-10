@@ -43,6 +43,9 @@ public sealed class OverlapMatcher : IOverlapMatcher
         var primaryAxisLength = direction == ScrollDirection.Vertical
             ? comparisonRectangle.Height
             : comparisonRectangle.Width;
+        var crossAxisLength = direction == ScrollDirection.Vertical
+            ? comparisonRectangle.Width
+            : comparisonRectangle.Height;
         var lumaPixelCount = width * height;
         var previousLumaBuffer = ArrayPool<byte>.Shared.Rent(lumaPixelCount);
         var currentLumaBuffer = ArrayPool<byte>.Shared.Rent(lumaPixelCount);
@@ -60,14 +63,16 @@ public sealed class OverlapMatcher : IOverlapMatcher
             ProjectToLuma(currentBand, width, height, currentLuma);
             BuildDirectionalSignal(previousLuma, width, height, comparisonRectangle, direction, previousSignal);
             BuildDirectionalSignal(currentLuma, width, height, comparisonRectangle, direction, currentSignal);
-
-            var signalCandidates = SelectSignalCandidates(previousSignal, currentSignal, primaryAxisLength, direction == ScrollDirection.Vertical ? comparisonRectangle.Width : comparisonRectangle.Height);
-            if (TryFindExcellentSignalCandidate(previousLuma, currentLuma, width, comparisonRectangle, direction, signalCandidates, out best))
-            {
-                return best;
-            }
-
-            best = FindBestOverlap(previousLuma, currentLuma, width, comparisonRectangle, direction);
+            best = FindBestOverlapWithSignalCandidates(
+                previousLuma,
+                currentLuma,
+                previousSignal,
+                currentSignal,
+                width,
+                comparisonRectangle,
+                direction,
+                primaryAxisLength,
+                crossAxisLength);
         }
         finally
         {
@@ -89,7 +94,8 @@ public sealed class OverlapMatcher : IOverlapMatcher
         int currentX,
         int currentY,
         int width,
-        int height)
+        int height,
+        double maxDifference = double.PositiveInfinity)
     {
         if (width <= 0 || height <= 0)
         {
@@ -97,6 +103,10 @@ public sealed class OverlapMatcher : IOverlapMatcher
         }
 
         var rowLength = width;
+        var denominator = 255d * rowLength * height;
+        var maxSad = double.IsPositiveInfinity(maxDifference)
+            ? long.MaxValue
+            : (long)Math.Ceiling(maxDifference * denominator);
         long sad = 0;
         for (var row = 0; row < height; row++)
         {
@@ -105,9 +115,13 @@ public sealed class OverlapMatcher : IOverlapMatcher
             sad += PixelBuffer.ComputeSumOfAbsoluteDifferences(
                 previousLuma.Slice(previousOffset, rowLength),
                 currentLuma.Slice(currentOffset, rowLength));
+            if (sad > maxSad)
+            {
+                return (maxSad + 1d) / denominator;
+            }
         }
 
-        return sad / (255d * rowLength * height);
+        return sad / denominator;
     }
 
     private Rectangle GetComparisonRectangle(int width, int height, ScrollDirection direction)
@@ -138,7 +152,7 @@ public sealed class OverlapMatcher : IOverlapMatcher
 
         for (var overlap = primaryAxisLength - 1; overlap >= 1; overlap--)
         {
-            var difference = ComputeOverlapDifference(previousLuma, currentLuma, stride, comparisonRectangle, direction, overlap);
+            var difference = ComputeOverlapDifference(previousLuma, currentLuma, stride, comparisonRectangle, direction, overlap, _matchThreshold);
             if (difference > _matchThreshold)
             {
                 continue;
@@ -156,6 +170,23 @@ public sealed class OverlapMatcher : IOverlapMatcher
         return best;
     }
 
+    private OverlapResult FindBestOverlapWithSignalCandidates(
+        ReadOnlySpan<byte> previousLuma,
+        ReadOnlySpan<byte> currentLuma,
+        ReadOnlySpan<long> previousSignal,
+        ReadOnlySpan<long> currentSignal,
+        int stride,
+        Rectangle comparisonRectangle,
+        ScrollDirection direction,
+        int primaryAxisLength,
+        int crossAxisLength)
+    {
+        var signalCandidates = SelectSignalCandidates(previousSignal, currentSignal, primaryAxisLength, crossAxisLength);
+        return TryFindExcellentSignalCandidate(previousLuma, currentLuma, stride, comparisonRectangle, direction, signalCandidates, out var best)
+            ? best
+            : FindBestOverlap(previousLuma, currentLuma, stride, comparisonRectangle, direction);
+    }
+
     private bool TryFindExcellentSignalCandidate(
         ReadOnlySpan<byte> previousLuma,
         ReadOnlySpan<byte> currentLuma,
@@ -168,7 +199,7 @@ public sealed class OverlapMatcher : IOverlapMatcher
         best = OverlapResult.NoMatch;
         foreach (var overlap in signalCandidates)
         {
-            var difference = ComputeOverlapDifference(previousLuma, currentLuma, stride, comparisonRectangle, direction, overlap);
+            var difference = ComputeOverlapDifference(previousLuma, currentLuma, stride, comparisonRectangle, direction, overlap, _excellentMatchThreshold);
             if (difference > _excellentMatchThreshold)
             {
                 continue;
@@ -191,7 +222,8 @@ public sealed class OverlapMatcher : IOverlapMatcher
         int stride,
         Rectangle comparisonRectangle,
         ScrollDirection direction,
-        int overlap)
+        int overlap,
+        double maxDifference = double.PositiveInfinity)
     {
         return direction == ScrollDirection.Vertical
             ? ComputeNormalizedDifference(
@@ -203,7 +235,8 @@ public sealed class OverlapMatcher : IOverlapMatcher
                 comparisonRectangle.X,
                 comparisonRectangle.Y,
                 comparisonRectangle.Width,
-                overlap)
+                overlap,
+                maxDifference)
             : ComputeNormalizedDifference(
                 previousLuma,
                 currentLuma,
@@ -213,7 +246,8 @@ public sealed class OverlapMatcher : IOverlapMatcher
                 comparisonRectangle.X,
                 comparisonRectangle.Y,
                 overlap,
-                comparisonRectangle.Height);
+                comparisonRectangle.Height,
+                maxDifference);
     }
 
     private IReadOnlyList<int> SelectSignalCandidates(

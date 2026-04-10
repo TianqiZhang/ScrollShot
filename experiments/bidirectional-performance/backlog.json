@@ -1,7 +1,7 @@
 {
   "Program": "bidirectional-performance",
   "PrimaryMetric": "median StitchElapsedMilliseconds",
-  "LastUpdatedUtc": "2026-04-10T08:47:20Z",
+  "LastUpdatedUtc": "2026-04-10T08:59:20Z",
   "ArchiveFile": "archive.json",
   "Curve": [
     {
@@ -107,6 +107,19 @@
         "synthetic-down": 61,
         "synthetic-up": 74
       }
+    },
+    {
+      "Label": "exact-threshold-early-exit",
+      "TimestampUtc": "2026-04-10T08:58:53Z",
+      "Suite": "suite.json",
+      "RunDirectory": "runs/20260410-085853759",
+      "Commit": null,
+      "Metrics": {
+        "SuiteStitchMedianTotalMilliseconds": 305,
+        "debug-20260408-082216796-slice": 186,
+        "synthetic-down": 52,
+        "synthetic-up": 67
+      }
     }
   ],
   "Items": [
@@ -193,18 +206,6 @@
       "Commit": null
     },
     {
-      "Id": "ignore-alpha-diff",
-      "Title": "Drop alpha from the exact overlap scoring path",
-      "Status": "ready",
-      "DependsOn": [
-        "simd-sad-kernel"
-      ],
-      "Hypothesis": "Most captured bands carry constant alpha, so ignoring that channel in exact scoring could cut hot-path work without materially changing overlap decisions.",
-      "Risk": "medium",
-      "Outcome": null,
-      "Commit": null
-    },
-    {
       "Id": "luma-only-overlap",
       "Title": "Score overlap candidates in grayscale instead of full BGRA",
       "Status": "kept",
@@ -226,6 +227,18 @@
       "Hypothesis": "Collapsing the band along the scroll direction into 1D row or column profiles could rank promising overlaps much more cheaply than repeated full-pixel scoring, especially if exact scoring only runs on the best candidates.",
       "Risk": "medium",
       "Outcome": "Kept. Ranking overlaps with a directional 1D luma profile and only skipping the full scan when the top profile candidates already contain an excellent exact match cut the dev-suite stitch medians from 356/94/95 ms to 250/61/74 ms (suite total 545 -> 385, about 29.4% faster vs the prior kept baseline and about 98.6% faster vs the original Release baseline). The correctness gate stayed clean on the tracked dump plus synthetic validation suite in runs/20260410-084709651.",
+      "Commit": "1b191c8"
+    },
+    {
+      "Id": "exact-threshold-early-exit",
+      "Title": "Short-circuit exact overlap diffs once threshold failure is inevitable",
+      "Status": "kept",
+      "DependsOn": [
+        "directional-1d-profile"
+      ],
+      "Hypothesis": "Most rejected overlap candidates exceed the match threshold long before all rows are compared, so stopping the exact luma accumulation as soon as a candidate cannot possibly recover should reduce hot-path work without changing decisions.",
+      "Risk": "low",
+      "Outcome": "Kept. Adding threshold-driven early exit to the exact luma overlap scorer cut the dev-suite stitch medians from 250/61/74 ms to 186/52/67 ms (suite total 385 -> 305, about 20.8% faster vs the prior kept baseline and about 98.9% faster vs the original Release baseline). The correctness gate stayed clean on the tracked dump plus synthetic validation suite in runs/20260410-085903666.",
       "Commit": null
     },
     {
