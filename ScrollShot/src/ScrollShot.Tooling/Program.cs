@@ -30,6 +30,9 @@ public static class ToolCli
                 case "replay":
                     RunReplay(options);
                     return Task.FromResult(0);
+                case "benchmark":
+                    RunBenchmark(options);
+                    return Task.FromResult(0);
                 case "help":
                 case "--help":
                 case "-h":
@@ -79,6 +82,7 @@ public static class ToolCli
             OverlapPixels = GetOptionalInt(options, "overlap"),
             FixedTop = GetOptionalInt(options, "fixed-top") ?? 48,
             FixedBottom = GetOptionalInt(options, "fixed-bottom") ?? 32,
+            FrameOrder = GetOptionalEnum<SyntheticFrameOrder>(options, "frame-order") ?? SyntheticFrameOrder.Forward,
         });
 
         Console.WriteLine($"Synthetic dataset '{manifest.Name}' written with {manifest.Frames.Count} frames.");
@@ -103,6 +107,25 @@ public static class ToolCli
         if (report.NormalizedDifferenceToGroundTruth.HasValue)
         {
             Console.WriteLine($"Normalized difference to ground truth: {report.NormalizedDifferenceToGroundTruth.Value:F6}");
+        }
+    }
+
+    private static void RunBenchmark(IReadOnlyDictionary<string, string> options)
+    {
+        var report = new BenchmarkRunner().Run(new BenchmarkCommandOptions
+        {
+            SuitePath = GetRequired(options, "suite"),
+            OutputDirectory = GetOptional(options, "output"),
+        });
+
+        Console.WriteLine($"Benchmark suite '{report.Name}' completed for profile '{report.ProfileName}'.");
+        Console.WriteLine($"Summary written to {Path.Combine(report.OutputDirectory, "summary.json")}");
+        foreach (var dataset in report.Datasets)
+        {
+            Console.WriteLine(
+                $"{dataset.Name}: stitch median {dataset.StitchElapsedMilliseconds.Median:F1} ms, " +
+                $"replay median {dataset.ReplayElapsedMilliseconds.Median:F1} ms, " +
+                $"ground-truth diff {dataset.VerificationReport.NormalizedDifferenceToGroundTruth?.ToString("F6") ?? "n/a"}");
         }
     }
 
@@ -171,6 +194,23 @@ public static class ToolCli
         return value;
     }
 
+    private static TEnum? GetOptionalEnum<TEnum>(IReadOnlyDictionary<string, string> options, string name)
+        where TEnum : struct, Enum
+    {
+        if (!options.TryGetValue(name, out var raw))
+        {
+            return null;
+        }
+
+        if (!Enum.TryParse<TEnum>(raw, ignoreCase: true, out var value))
+        {
+            var allowedValues = string.Join(", ", Enum.GetNames<TEnum>());
+            throw new ArgumentException($"The --{name} option must be one of: {allowedValues}.");
+        }
+
+        return value;
+    }
+
     private static void PrintUsage()
     {
         Console.WriteLine("""
@@ -178,8 +218,9 @@ public static class ToolCli
 
             Commands:
               slice  --input <image> --output <dir> --viewport-height <px> [--viewport-width <px>] [--step <px> | --overlap <px>] [--crop-x <px>] [--name <dataset>]
-              synthesize --output <dir> --viewport-height <px> [--width <px>] [--total-height <px>] [--step <px> | --overlap <px>] [--fixed-top <px>] [--fixed-bottom <px>] [--name <dataset>]
+              synthesize --output <dir> --viewport-height <px> [--width <px>] [--total-height <px>] [--step <px> | --overlap <px>] [--fixed-top <px>] [--fixed-bottom <px>] [--frame-order <Forward|Reverse>] [--name <dataset>]
               replay --manifest <manifest.json> --output <dir> [--profile <current|signal-zone|signal-hybrid|bidirectional-current>]
+              benchmark --suite <suite.json> [--output <dir>]
             """);
     }
 }

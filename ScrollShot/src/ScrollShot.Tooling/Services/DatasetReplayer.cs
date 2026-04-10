@@ -1,5 +1,6 @@
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.Diagnostics;
 using ScrollShot.Capture.Models;
 using ScrollShot.Editor.Composition;
 using ScrollShot.Editor.Models;
@@ -17,10 +18,17 @@ public sealed class DatasetReplayer
     {
         ArgumentNullException.ThrowIfNull(options);
 
+        var replayStopwatch = Stopwatch.StartNew();
+        long frameLoadElapsedMilliseconds = 0;
+        long stitchElapsedMilliseconds = 0;
+        long composeElapsedMilliseconds = 0;
         var manifest = ManifestStore.Load(options.ManifestPath);
         var manifestDirectory = Path.GetDirectoryName(options.ManifestPath)
                                 ?? throw new InvalidOperationException("The manifest path must include a directory.");
-        Directory.CreateDirectory(options.OutputDirectory);
+        if (options.PersistOutputImage || options.PersistReplayReport)
+        {
+            Directory.CreateDirectory(options.OutputDirectory);
+        }
 
         using var session = new ScrollSessionFactory(options.ProfileName).CreateSession();
         var region = new ScreenRect(0, 0, manifest.ViewportWidth, manifest.ViewportHeight);
@@ -30,35 +38,62 @@ public sealed class DatasetReplayer
         {
             foreach (var frame in manifest.Frames.OrderBy(frame => frame.Index))
             {
-                using var capturedFrame = new CapturedFrame(
-                    LoadArgbBitmap(Path.Combine(manifestDirectory, frame.RelativePath)),
-                    region,
-                    DateTimeOffset.UtcNow);
+                var frameLoadStopwatch = Stopwatch.StartNew();
+                var bitmap = LoadArgbBitmap(Path.Combine(manifestDirectory, frame.RelativePath));
+                frameLoadStopwatch.Stop();
+                frameLoadElapsedMilliseconds += frameLoadStopwatch.ElapsedMilliseconds;
+                using var capturedFrame = new CapturedFrame(bitmap, region, DateTimeOffset.UtcNow);
+
+                var stitchStopwatch = Stopwatch.StartNew();
                 session.ProcessFrame(capturedFrame);
+                stitchStopwatch.Stop();
+                stitchElapsedMilliseconds += stitchStopwatch.ElapsedMilliseconds;
             }
 
+            var finishStopwatch = Stopwatch.StartNew();
             session.Finish();
             var result = session.GetResult();
+            finishStopwatch.Stop();
+            stitchElapsedMilliseconds += finishStopwatch.ElapsedMilliseconds;
             try
             {
-                var outputImageRelativePath = "stitched.png";
-                var outputImagePath = Path.Combine(options.OutputDirectory, outputImageRelativePath);
+                string? outputImageRelativePath = null;
+                var composeStopwatch = Stopwatch.StartNew();
                 using var composed = new ImageCompositor().Compose(result, EditState.Default);
-                composed.Save(outputImagePath, ImageFormat.Png);
+                if (options.PersistOutputImage)
+                {
+                    outputImageRelativePath = "stitched.png";
+                    var outputImagePath = Path.Combine(options.OutputDirectory, outputImageRelativePath);
+                    composed.Save(outputImagePath, ImageFormat.Png);
+                }
+
+                composeStopwatch.Stop();
+                composeElapsedMilliseconds = composeStopwatch.ElapsedMilliseconds;
+                replayStopwatch.Stop();
 
                 var report = new ReplayReport
                 {
                     Succeeded = true,
+                    DatasetName = manifest.Name,
+                    ProfileName = options.ProfileName,
                     FrameCount = manifest.Frames.Count,
                     SegmentCount = result.Segments.Count,
                     OutputWidth = composed.Width,
                     OutputHeight = composed.Height,
                     OutputImageRelativePath = outputImageRelativePath,
+                    ReplayElapsedMilliseconds = replayStopwatch.ElapsedMilliseconds,
+                    FrameLoadElapsedMilliseconds = frameLoadElapsedMilliseconds,
+                    StitchElapsedMilliseconds = stitchElapsedMilliseconds,
+                    ComposeElapsedMilliseconds = composeElapsedMilliseconds,
                     Direction = manifest.Direction,
                 };
 
                 report = AddGroundTruthComparison(report, manifest, manifestDirectory, composed);
-                ManifestStore.SaveReplayReport(report, Path.Combine(options.OutputDirectory, "report.json"));
+                if (options.PersistReplayReport)
+                {
+                    ManifestStore.SaveReplayReport(report, Path.Combine(options.OutputDirectory, "report.json"));
+                }
+
                 return report;
             }
             finally
@@ -68,15 +103,26 @@ public sealed class DatasetReplayer
         }
         catch (Exception exception) when (exception is InvalidOperationException or ArgumentException)
         {
+            replayStopwatch.Stop();
             var report = new ReplayReport
             {
                 Succeeded = false,
                 ErrorMessage = exception.Message,
+                DatasetName = manifest.Name,
+                ProfileName = options.ProfileName,
                 FrameCount = manifest.Frames.Count,
+                ReplayElapsedMilliseconds = replayStopwatch.ElapsedMilliseconds,
+                FrameLoadElapsedMilliseconds = frameLoadElapsedMilliseconds,
+                StitchElapsedMilliseconds = stitchElapsedMilliseconds,
+                ComposeElapsedMilliseconds = composeElapsedMilliseconds,
                 Direction = manifest.Direction,
             };
 
-            ManifestStore.SaveReplayReport(report, Path.Combine(options.OutputDirectory, "report.json"));
+            if (options.PersistReplayReport)
+            {
+                ManifestStore.SaveReplayReport(report, Path.Combine(options.OutputDirectory, "report.json"));
+            }
+
             return report;
         }
     }

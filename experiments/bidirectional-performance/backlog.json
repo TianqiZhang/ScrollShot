@@ -1,0 +1,41 @@
+{
+  "Program": "bidirectional-performance",
+  "PrimaryMetric": "median StitchElapsedMilliseconds",
+  "LastUpdatedUtc": null,
+  "Items": [
+    {
+      "Id": "baseline-benchmark",
+      "Title": "Capture accepted baseline for the fixed suite",
+      "Status": "ready",
+      "DependsOn": [],
+      "Hypothesis": "A fresh benchmark summary gives the comparison point for all later commits.",
+      "Risk": "none",
+      "Outcome": null,
+      "Commit": null
+    },
+    {
+      "Id": "history-rebuild-cost",
+      "Title": "Profile full-history rebuild overhead",
+      "Status": "idea",
+      "DependsOn": [
+        "baseline-benchmark"
+      ],
+      "Hypothesis": "Rebuilding all placements and segments on every frame is the dominant bidirectional cost.",
+      "Risk": "medium",
+      "Outcome": null,
+      "Commit": null
+    },
+    {
+      "Id": "pixel-cache",
+      "Title": "Cache reusable per-frame pixel snapshots",
+      "Status": "idea",
+      "DependsOn": [
+        "baseline-benchmark"
+      ],
+      "Hypothesis": "Avoiding repeated bitmap-to-buffer extraction will reduce replay and stitch time.",
+      "Risk": "medium",
+      "Outcome": null,
+      "Commit": null
+    }
+  ]
+}

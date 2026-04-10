@@ -92,6 +92,29 @@ public sealed class SyntheticDatasetGeneratorTests : IDisposable
         replay.NormalizedDifferenceToGroundTruth.Should().HaveValue().And.BeLessThan(0.0001);
     }
 
+    [Fact]
+    public void Generate_CanReverseFrameOrderForUpwardProgressionFixtures()
+    {
+        var outputDirectory = Path.Combine(_tempDirectory, "synthetic-up");
+        var manifest = new SyntheticDatasetGenerator().Generate(new SyntheticCommandOptions
+        {
+            OutputDirectory = outputDirectory,
+            DatasetName = "synthetic-up",
+            Width = 320,
+            TotalHeight = 1400,
+            ViewportHeight = 360,
+            StepPixels = 180,
+            FixedTop = 48,
+            FixedBottom = 32,
+            FrameOrder = SyntheticFrameOrder.Reverse,
+        });
+
+        manifest.Frames.Should().HaveCountGreaterThan(2);
+        manifest.CompletionReason.Should().Be("generated-reverse");
+        manifest.Frames[0].OffsetPixels.Should().BeGreaterThan(manifest.Frames[1].OffsetPixels!.Value);
+        manifest.Frames[1].ExpectedOverlapWithPreviousPixels.Should().BeGreaterThan(0);
+    }
+
     public void Dispose()
     {
         if (Directory.Exists(_tempDirectory))

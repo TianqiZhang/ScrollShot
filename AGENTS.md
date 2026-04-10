@@ -17,10 +17,11 @@ dotnet test ScrollShot/tests/ScrollShot.Scroll.Tests/ScrollShot.Scroll.Tests.csp
 # Run a single test by name
 dotnet test ScrollShot/ScrollShot.sln --filter "FullyQualifiedName~TestClassName.TestMethodName"
 
-# Run the CLI tooling (replay, slice, synthesize)
+# Run the CLI tooling (replay, slice, synthesize, benchmark)
 dotnet run --project ScrollShot/src/ScrollShot.Tooling -- replay --manifest <manifest.json> --output <output-folder> [--profile current|signal-zone|signal-hybrid|bidirectional-current]
 dotnet run --project ScrollShot/src/ScrollShot.Tooling -- slice --input <image> --output <output-folder> --viewport-height <px>
-dotnet run --project ScrollShot/src/ScrollShot.Tooling -- synthesize --output <output-folder> --viewport-height <px>
+dotnet run --project ScrollShot/src/ScrollShot.Tooling -- synthesize --output <output-folder> --viewport-height <px> [--frame-order Forward|Reverse]
+dotnet run --project ScrollShot/src/ScrollShot.Tooling -- benchmark --suite experiments/bidirectional-performance/suite.json
 ```
 
 ## Architecture
@@ -49,7 +50,7 @@ ScrollShot.Tooling (CLI, offline analysis)
 - **ScrollShot.Editor** — Preview editor with zoomable viewport, timeline strip, trim/cut/crop editing (command pattern with undo/redo via `EditCommandStack`), and `ImageCompositor` for final output.
 - **ScrollShot.App** — App shell with system tray, global hotkey (Ctrl+Shift+S), settings persistence, and `CaptureOrchestrator` workflow (hotkey → overlay → capture → editor).
 - **ScrollShot.StitchingData** — Dataset manifest/report models shared between app debug dumps and offline tooling.
-- **ScrollShot.Tooling** — CLI for offline replay of captured datasets through `ScrollSession`, synthetic dataset generation, and image slicing.
+- **ScrollShot.Tooling** — CLI for offline replay of captured datasets through `ScrollSession`, synthetic dataset generation, benchmark suites, and image slicing.
 
 ### Capture-to-Stitch Pipeline
 
@@ -76,9 +77,12 @@ The app always uses `current`. Tooling replay supports `--profile` for A/B compa
 The `dumps/` directory contains real captured debug datasets. The tooling CLI can:
 - **replay** datasets through any profile and produce stitched output + report
 - **synthesize** deterministic scroll fixtures with known ground truth
+- **benchmark** fixed suites with persisted verification replays plus timing summaries
 - **slice** existing long screenshots into frame sequences
 
 This enables algorithm development without live scrolling.
+
+The repo also contains a dedicated experiment workspace at `experiments/bidirectional-performance/` with the current program, backlog, fixed benchmark suites, generated synthetic datasets, and benchmark run outputs.
 
 ## Design Documents
 

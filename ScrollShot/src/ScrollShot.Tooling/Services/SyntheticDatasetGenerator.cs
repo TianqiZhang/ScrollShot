@@ -59,6 +59,11 @@ public sealed class SyntheticDatasetGenerator
         groundTruth.Save(Path.Combine(options.OutputDirectory, groundTruthRelativePath), ImageFormat.Png);
 
         var offsets = LongScreenshotSlicer.BuildOffsets(scrollContent.Height, scrollViewportHeight, stepPixels);
+        if (options.FrameOrder == SyntheticFrameOrder.Reverse)
+        {
+            offsets.Reverse();
+        }
+
         var frames = new List<StitchDatasetFrame>(offsets.Count);
 
         for (var index = 0; index < offsets.Count; index++)
@@ -77,7 +82,7 @@ public sealed class SyntheticDatasetGenerator
                 Index = index,
                 RelativePath = frameRelativePath,
                 OffsetPixels = offset,
-                ExpectedOverlapWithPreviousPixels = index == 0 ? null : scrollViewportHeight - (offset - offsets[index - 1]),
+                ExpectedOverlapWithPreviousPixels = index == 0 ? null : scrollViewportHeight - Math.Abs(offset - offsets[index - 1]),
                 Width = frameBitmap.Width,
                 Height = frameBitmap.Height,
             });
@@ -97,7 +102,7 @@ public sealed class SyntheticDatasetGenerator
                 Width = options.Width,
                 Height = options.ViewportHeight,
             },
-            CompletionReason = "generated",
+            CompletionReason = options.FrameOrder == SyntheticFrameOrder.Forward ? "generated" : "generated-reverse",
             Truth = new StitchDatasetTruth
             {
                 GroundTruthRelativePath = groundTruthRelativePath,

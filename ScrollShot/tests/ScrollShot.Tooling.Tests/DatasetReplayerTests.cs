@@ -44,11 +44,16 @@ public sealed class DatasetReplayerTests : IDisposable
         });
 
         report.Succeeded.Should().BeTrue();
+        report.DatasetName.Should().Be("ideal");
+        report.ProfileName.Should().Be(StitchingProfiles.Current);
         report.FrameCount.Should().Be(manifest.Frames.Count);
         report.OutputWidth.Should().Be(6);
         report.OutputHeight.Should().Be(11);
         report.GroundTruthDimensionsMatch.Should().BeTrue();
         report.NormalizedDifferenceToGroundTruth.Should().Be(0);
+        report.ReplayElapsedMilliseconds.Should().BeGreaterThanOrEqualTo(0);
+        report.StitchElapsedMilliseconds.Should().BeGreaterThanOrEqualTo(0);
+        report.ComposeElapsedMilliseconds.Should().BeGreaterThanOrEqualTo(0);
         File.Exists(Path.Combine(replayDirectory, "stitched.png")).Should().BeTrue();
         File.Exists(Path.Combine(replayDirectory, "report.json")).Should().BeTrue();
     }
@@ -85,6 +90,40 @@ public sealed class DatasetReplayerTests : IDisposable
 
         report.Succeeded.Should().BeTrue();
         report.OutputHeight.Should().Be(11);
+    }
+
+    [Fact]
+    public void Replay_CanSkipPersistingArtifactsWhileStillReturningMetrics()
+    {
+        var inputPath = Path.Combine(_tempDirectory, "groundtruth-no-persist.png");
+        using (var bitmap = CreateDistinctRowsBitmap(6, 11))
+        {
+            bitmap.Save(inputPath, ImageFormat.Png);
+        }
+
+        var datasetDirectory = Path.Combine(_tempDirectory, "dataset-no-persist");
+        new LongScreenshotSlicer().Slice(new SliceCommandOptions
+        {
+            InputImagePath = inputPath,
+            OutputDirectory = datasetDirectory,
+            ViewportHeight = 5,
+            StepPixels = 3,
+            DatasetName = "ideal-no-persist",
+        });
+
+        var replayDirectory = Path.Combine(_tempDirectory, "replay-no-persist");
+        var report = new DatasetReplayer().Replay(new ReplayCommandOptions
+        {
+            ManifestPath = Path.Combine(datasetDirectory, "manifest.json"),
+            OutputDirectory = replayDirectory,
+            PersistOutputImage = false,
+            PersistReplayReport = false,
+        });
+
+        report.Succeeded.Should().BeTrue();
+        report.OutputImageRelativePath.Should().BeNull();
+        Directory.Exists(replayDirectory).Should().BeFalse();
+        report.ReplayElapsedMilliseconds.Should().BeGreaterThanOrEqualTo(0);
     }
 
     public void Dispose()

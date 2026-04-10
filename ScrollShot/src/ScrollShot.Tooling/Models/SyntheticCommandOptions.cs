@@ -19,4 +19,6 @@ public sealed class SyntheticCommandOptions
     public int FixedTop { get; init; } = 48;
 
     public int FixedBottom { get; init; } = 32;
+
+    public SyntheticFrameOrder FrameOrder { get; init; } = SyntheticFrameOrder.Forward;
 }

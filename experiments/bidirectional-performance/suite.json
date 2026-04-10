@@ -1,0 +1,39 @@
+{
+  "Name": "bidirectional-performance-dev",
+  "ProfileName": "bidirectional-current",
+  "WarmupIterations": 1,
+  "MeasuredIterations": 3,
+  "GeneratedDatasetsDirectory": "generated-datasets",
+  "Datasets": [
+    {
+      "Name": "debug-20260408-082216796-slice",
+      "ManifestPath": "datasets\\debug-20260408-082216796-slice\\manifest.json"
+    },
+    {
+      "Name": "synthetic-down",
+      "Synthetic": {
+        "DatasetName": "synthetic-down",
+        "Width": 320,
+        "TotalHeight": 1400,
+        "ViewportHeight": 360,
+        "StepPixels": 180,
+        "FixedTop": 48,
+        "FixedBottom": 32,
+        "FrameOrder": "Forward"
+      }
+    },
+    {
+      "Name": "synthetic-up",
+      "Synthetic": {
+        "DatasetName": "synthetic-up",
+        "Width": 320,
+        "TotalHeight": 1400,
+        "ViewportHeight": 360,
+        "StepPixels": 180,
+        "FixedTop": 48,
+        "FixedBottom": 32,
+        "FrameOrder": "Reverse"
+      }
+    }
+  ]
+}
