@@ -7,11 +7,11 @@
   "Datasets": [
     {
       "Name": "debug-20260408-082055888",
-      "ManifestPath": "..\\..\\ScrollShot\\dumps\\debug-20260408-082055888\\manifest.json"
+      "ManifestPath": "../../ScrollShot/dumps/debug-20260408-082055888/manifest.json"
     },
     {
       "Name": "debug-20260408-082216796",
-      "ManifestPath": "..\\..\\ScrollShot\\dumps\\debug-20260408-082216796\\manifest.json"
+      "ManifestPath": "../../ScrollShot/dumps/debug-20260408-082216796/manifest.json"
     },
     {
       "Name": "synthetic-down",

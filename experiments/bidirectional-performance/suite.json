@@ -7,7 +7,7 @@
   "Datasets": [
     {
       "Name": "debug-20260408-082216796-slice",
-      "ManifestPath": "datasets\\debug-20260408-082216796-slice\\manifest.json"
+      "ManifestPath": "datasets/debug-20260408-082216796-slice/manifest.json"
     },
     {
       "Name": "synthetic-down",

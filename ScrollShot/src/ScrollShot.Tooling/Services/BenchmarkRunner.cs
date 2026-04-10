@@ -24,7 +24,7 @@ public sealed class BenchmarkRunner
         var suiteDirectory = Path.GetDirectoryName(options.SuitePath)
                              ?? throw new InvalidOperationException("The suite path must include a directory.");
         var outputDirectory = string.IsNullOrWhiteSpace(options.OutputDirectory)
-            ? Path.Combine(suiteDirectory, "runs", DateTime.UtcNow.ToString("yyyyMMdd-HHmmss"))
+            ? Path.Combine(suiteDirectory, "runs", DateTime.UtcNow.ToString("yyyyMMdd-HHmmssfff"))
             : options.OutputDirectory;
         Directory.CreateDirectory(outputDirectory);
 
@@ -67,28 +67,38 @@ public sealed class BenchmarkRunner
 
         var iterations = new List<ReplayReport>(suite.MeasuredIterations);
         var scratchDirectory = Path.Combine(outputDirectory, "_scratch", SanitizePathSegment(dataset.Name));
-        for (var iteration = 0; iteration < suite.WarmupIterations; iteration++)
+        try
         {
-            _datasetReplayer.Replay(new ReplayCommandOptions
+            for (var iteration = 0; iteration < suite.WarmupIterations; iteration++)
             {
-                ManifestPath = manifestPath,
-                OutputDirectory = scratchDirectory,
-                ProfileName = suite.ProfileName,
-                PersistOutputImage = false,
-                PersistReplayReport = false,
-            });
-        }
+                _datasetReplayer.Replay(new ReplayCommandOptions
+                {
+                    ManifestPath = manifestPath,
+                    OutputDirectory = scratchDirectory,
+                    ProfileName = suite.ProfileName,
+                    PersistOutputImage = false,
+                    PersistReplayReport = false,
+                });
+            }
 
-        for (var iteration = 0; iteration < suite.MeasuredIterations; iteration++)
-        {
-            iterations.Add(_datasetReplayer.Replay(new ReplayCommandOptions
+            for (var iteration = 0; iteration < suite.MeasuredIterations; iteration++)
             {
-                ManifestPath = manifestPath,
-                OutputDirectory = scratchDirectory,
-                ProfileName = suite.ProfileName,
-                PersistOutputImage = false,
-                PersistReplayReport = false,
-            }));
+                iterations.Add(_datasetReplayer.Replay(new ReplayCommandOptions
+                {
+                    ManifestPath = manifestPath,
+                    OutputDirectory = scratchDirectory,
+                    ProfileName = suite.ProfileName,
+                    PersistOutputImage = false,
+                    PersistReplayReport = false,
+                }));
+            }
+        }
+        finally
+        {
+            if (Directory.Exists(scratchDirectory))
+            {
+                Directory.Delete(scratchDirectory, recursive: true);
+            }
         }
 
         return new BenchmarkDatasetReport
@@ -143,7 +153,7 @@ public sealed class BenchmarkRunner
         var ordered = values.OrderBy(value => value).ToArray();
         if (ordered.Length == 0)
         {
-            return new BenchmarkTimingSummary();
+            throw new InvalidOperationException("Benchmark timing summary requires at least one measured iteration.");
         }
 
         var midpoint = ordered.Length / 2;

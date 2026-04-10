@@ -1,12 +1,10 @@
-using ScrollShot.Scroll;
-
 namespace ScrollShot.Tooling.Models;
 
 public sealed class BenchmarkSuiteDefinition
 {
-    public string Name { get; init; } = "bidirectional-performance";
+    public required string Name { get; init; }
 
-    public string ProfileName { get; init; } = StitchingProfiles.BidirectionalCurrentExperiment;
+    public required string ProfileName { get; init; }
 
     public int WarmupIterations { get; init; } = 1;
 
@@ -19,7 +17,7 @@ public sealed class BenchmarkSuiteDefinition
 
 public sealed class BenchmarkDatasetDefinition
 {
-    public string Name { get; init; } = string.Empty;
+    public required string Name { get; init; }
 
     public string? ManifestPath { get; init; }
 

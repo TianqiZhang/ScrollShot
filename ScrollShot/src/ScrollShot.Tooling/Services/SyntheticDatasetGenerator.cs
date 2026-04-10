@@ -82,6 +82,7 @@ public sealed class SyntheticDatasetGenerator
                 Index = index,
                 RelativePath = frameRelativePath,
                 OffsetPixels = offset,
+                // Reverse-order fixtures make the offset delta signed, but overlap size stays magnitude-based.
                 ExpectedOverlapWithPreviousPixels = index == 0 ? null : scrollViewportHeight - Math.Abs(offset - offsets[index - 1]),
                 Width = frameBitmap.Width,
                 Height = frameBitmap.Height,
