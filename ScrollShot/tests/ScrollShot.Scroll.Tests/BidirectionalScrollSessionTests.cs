@@ -40,6 +40,8 @@ public sealed class BidirectionalScrollSessionTests
             new DirectionalOverlapResult(3, false, 1, ScrollPlacement.AppendAfter),
             new DirectionalOverlapResult(2, false, 1, ScrollPlacement.PrependBefore));
         using var session = new BidirectionalScrollSession(detector, matcher);
+        var eventOffsets = new List<int>();
+        session.SegmentAdded += segment => eventOffsets.Add(segment.Offset);
 
         session.Start(new ScreenRect(0, 0, 3, 4), ScrollDirection.Vertical);
         using var firstFrame = CreateCapturedFrame(Color.Red, 3, 4);
@@ -54,6 +56,32 @@ public sealed class BidirectionalScrollSessionTests
 
         result.TotalHeight.Should().Be(6);
         result.Segments.Select(segment => segment.Offset).Should().Equal(0, 1, 2);
+        eventOffsets.Should().Equal(0, 1, 0);
+    }
+
+    [Fact]
+    public void IdenticalIntermediateFrame_CanStillAppendLaterFrame()
+    {
+        var detector = new FixedZoneDetector(new ZoneLayout(0, 0, 0, 0, new ScreenRect(0, 0, 3, 4)));
+        var matcher = new SequenceBidirectionalOverlapMatcher(
+            DirectionalOverlapResult.Identical(),
+            new DirectionalOverlapResult(3, false, 1, ScrollPlacement.AppendAfter));
+        using var session = new BidirectionalScrollSession(detector, matcher);
+
+        session.Start(new ScreenRect(0, 0, 3, 4), ScrollDirection.Vertical);
+        using var firstFrame = CreateCapturedFrame(Color.Red, 3, 4);
+        using var secondFrame = CreateCapturedFrame(Color.Red, 3, 4);
+        using var thirdFrame = CreateCapturedFrame(Color.Blue, 3, 4);
+        session.ProcessFrame(firstFrame);
+        session.ProcessFrame(secondFrame);
+        session.ProcessFrame(thirdFrame);
+        session.Finish();
+
+        var result = session.GetResult();
+
+        result.TotalHeight.Should().Be(5);
+        result.Segments.Should().HaveCount(2);
+        result.Segments.Select(segment => segment.Offset).Should().Equal(0, 1);
     }
 
     private static CapturedFrame CreateCapturedFrame(Color color, int width, int height)

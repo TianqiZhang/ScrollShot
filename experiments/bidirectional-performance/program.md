@@ -60,16 +60,25 @@ The development speed suite keeps the loop short enough to iterate:
 - deterministic `synthetic-up` and `synthetic-down`
 - fixed warmup + measured iteration counts
 
+All performance measurements must run against the **Release** build of `ScrollShot.Tooling`.
+Build Release once before a measurement session, then use `--no-build` for benchmark runs so the execution path stays consistent.
+
+Prepare the Release benchmark binary from repo root:
+
+```powershell
+dotnet build -c Release ScrollShot/ScrollShot.sln
+```
+
 Run the development suite from repo root:
 
 ```powershell
-dotnet run --project ScrollShot/src/ScrollShot.Tooling -- benchmark --suite experiments/bidirectional-performance/suite.json
+dotnet run -c Release --no-build --project ScrollShot/src/ScrollShot.Tooling -- benchmark --suite experiments/bidirectional-performance/suite.json
 ```
 
 Run the full correctness suite before keeping a change:
 
 ```powershell
-dotnet run --project ScrollShot/src/ScrollShot.Tooling -- benchmark --suite experiments/bidirectional-performance/correctness-suite.json
+dotnet run -c Release --no-build --project ScrollShot/src/ScrollShot.Tooling -- benchmark --suite experiments/bidirectional-performance/correctness-suite.json
 ```
 
 Each suite command will:

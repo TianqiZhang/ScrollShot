@@ -11,8 +11,9 @@ public sealed class BidirectionalScrollSession : IScrollSession
 {
     private readonly IZoneDetector _zoneDetector;
     private readonly IBidirectionalOverlapMatcher _overlapMatcher;
-    private readonly List<ScrollSegment> _segments = new();
     private readonly List<CapturedFrame> _frameHistory = new();
+    private readonly List<PlacedBand> _placements = new();
+    private readonly List<NormalizedPlacedBand> _normalizedPlacements = new();
     private ZoneLayout? _zoneLayout;
     private Bitmap? _fixedTopBitmap;
     private Bitmap? _fixedBottomBitmap;
@@ -21,6 +22,11 @@ public sealed class BidirectionalScrollSession : IScrollSession
     private ScreenRect _region;
     private ScrollDirection _direction;
     private int _primaryAxisExtent;
+    private int _compositionStartFrameIndex;
+    private int _processedFrameCount;
+    private PixelBufferSnapshot? _previousBandSnapshot;
+    private int _previousPlacementStart;
+    private int _previousPrimarySize;
     private bool _started;
     private bool _finished;
 
@@ -65,19 +71,28 @@ public sealed class BidirectionalScrollSession : IScrollSession
         }
 
         var previousZone = _zoneLayout;
-        var previousSegmentCount = _segments.Count;
-        RebuildFromHistory(estimatedZone, startFrameIndex);
+        var previousPlacementBitmaps = SegmentAdded is null
+            ? null
+            : _placements.Select(placement => placement.Bitmap).ToHashSet(ReferenceEqualityComparer.Instance);
+        if (CanAppendIncrementally(estimatedZone, startFrameIndex))
+        {
+            AppendLatestFrameToComposition(_frameHistory[^1].Bitmap, estimatedZone);
+        }
+        else
+        {
+            RebuildFromHistory(estimatedZone, startFrameIndex);
+        }
 
         if (previousZone != estimatedZone)
         {
             ZonesDetected?.Invoke(estimatedZone);
         }
 
-        if (SegmentAdded is not null && _segments.Count > previousSegmentCount)
+        if (SegmentAdded is not null && previousPlacementBitmaps is not null)
         {
-            foreach (var segment in _segments.Skip(previousSegmentCount))
+            foreach (var segment in _normalizedPlacements.Where(segment => !previousPlacementBitmaps.Contains(segment.Bitmap)))
             {
-                SegmentAdded(segment);
+                SegmentAdded(new ScrollSegment((Bitmap)segment.Bitmap.Clone(), segment.Offset));
             }
         }
 
@@ -101,7 +116,7 @@ public sealed class BidirectionalScrollSession : IScrollSession
             throw new InvalidOperationException("Finish must be called before retrieving the result.");
         }
 
-        if (_zoneLayout is null || _segments.Count == 0)
+        if (_zoneLayout is null || _normalizedPlacements.Count == 0)
         {
             throw new InvalidOperationException("At least two frames are required to build a scroll result.");
         }
@@ -114,7 +129,7 @@ public sealed class BidirectionalScrollSession : IScrollSession
             : _zoneLayout.Value.FixedTop + _zoneLayout.Value.ScrollBand.Height + _zoneLayout.Value.FixedBottom;
 
         return new CaptureResult(
-            _segments.Select(segment => new ScrollSegment((Bitmap)segment.Bitmap.Clone(), segment.Offset, segment.TemporaryFilePath)).ToArray(),
+            _normalizedPlacements.Select(segment => new ScrollSegment((Bitmap)segment.Bitmap.Clone(), segment.Offset)).ToArray(),
             _zoneLayout.Value,
             _direction,
             totalWidth,
@@ -140,7 +155,9 @@ public sealed class BidirectionalScrollSession : IScrollSession
             var detectedZone = _zoneDetector.DetectZones(previous, current, _direction);
             using var previousBand = ExtractBandBitmap(previous.Bitmap, detectedZone.ScrollBand);
             var previousBandSnapshot = PixelBuffer.FromBitmap(previousBand);
-            var overlap = FindOverlap(previousBandSnapshot, current.Bitmap, detectedZone);
+            using var currentBand = ExtractBandBitmap(current.Bitmap, detectedZone.ScrollBand);
+            var currentBandSnapshot = PixelBuffer.FromBitmap(currentBand);
+            var overlap = FindOverlap(previousBandSnapshot, currentBandSnapshot);
             if (overlap.HasMatch)
             {
                 candidates.Add((index - 1, detectedZone));
@@ -202,75 +219,103 @@ public sealed class BidirectionalScrollSession : IScrollSession
         return ordered[ordered.Length / 2];
     }
 
+    private bool CanAppendIncrementally(ZoneLayout zoneLayout, int startFrameIndex)
+    {
+        return _zoneLayout == zoneLayout &&
+               _compositionStartFrameIndex == startFrameIndex &&
+               _processedFrameCount == _frameHistory.Count - 1 &&
+               _placements.Count > 0 &&
+               _previousBandSnapshot is not null;
+    }
+
     private void RebuildFromHistory(ZoneLayout zoneLayout, int startFrameIndex)
     {
         ClearComposition();
         _zoneLayout = zoneLayout;
+        _compositionStartFrameIndex = startFrameIndex;
         CaptureFixedRegions(_frameHistory[startFrameIndex].Bitmap, zoneLayout);
 
         using var startBandBitmap = ExtractBandBitmap(_frameHistory[startFrameIndex].Bitmap, zoneLayout.ScrollBand);
-        var placements = new List<PlacedBand>
-        {
-            new((Bitmap)startBandBitmap.Clone(), 0),
-        };
-
-        var previousSnapshot = PixelBuffer.FromBitmap(startBandBitmap);
-        var previousPlacementStart = 0;
-        var previousPrimarySize = GetPrimaryAxisSize(startBandBitmap);
+        AddInitialPlacement(startBandBitmap);
+        _processedFrameCount = startFrameIndex + 1;
 
         for (var index = startFrameIndex + 1; index < _frameHistory.Count; index++)
         {
-            var currentFrame = _frameHistory[index];
-            using var currentBandBitmap = ExtractBandBitmap(currentFrame.Bitmap, zoneLayout.ScrollBand);
-            var overlap = FindOverlap(previousSnapshot, currentFrame.Bitmap, zoneLayout);
-            if (!overlap.HasMatch)
-            {
-                continue;
-            }
-
-            var currentSnapshot = PixelBuffer.FromBitmap(currentBandBitmap);
-            if (overlap.IsIdentical)
-            {
-                previousSnapshot = currentSnapshot;
-                previousPrimarySize = GetPrimaryAxisSize(currentBandBitmap);
-                continue;
-            }
-
-            var currentPrimarySize = GetPrimaryAxisSize(currentBandBitmap);
-            var currentPlacementStart = overlap.Placement == ScrollPlacement.AppendAfter
-                ? previousPlacementStart + previousPrimarySize - overlap.OverlapPixels
-                : previousPlacementStart - (currentPrimarySize - overlap.OverlapPixels);
-
-            placements.Add(new PlacedBand((Bitmap)currentBandBitmap.Clone(), currentPlacementStart));
-            previousSnapshot = currentSnapshot;
-            previousPlacementStart = currentPlacementStart;
-            previousPrimarySize = currentPrimarySize;
+            ProcessFrameIntoComposition(_frameHistory[index].Bitmap, zoneLayout);
+            _processedFrameCount = index + 1;
         }
 
-        NormalizePlacementsIntoSegments(placements);
+        RefreshNormalizedPlacements();
     }
 
-    private void NormalizePlacementsIntoSegments(IEnumerable<PlacedBand> placements)
+    private void AppendLatestFrameToComposition(Bitmap bitmap, ZoneLayout zoneLayout)
     {
-        var placementList = placements.ToList();
-        if (placementList.Count == 0)
+        ProcessFrameIntoComposition(bitmap, zoneLayout);
+        _processedFrameCount = _frameHistory.Count;
+        RefreshNormalizedPlacements();
+    }
+
+    private void AddInitialPlacement(Bitmap startBandBitmap)
+    {
+        _placements.Add(new PlacedBand((Bitmap)startBandBitmap.Clone(), 0));
+        _previousBandSnapshot = PixelBuffer.FromBitmap(startBandBitmap);
+        _previousPlacementStart = 0;
+        _previousPrimarySize = GetPrimaryAxisSize(startBandBitmap);
+    }
+
+    private void ProcessFrameIntoComposition(Bitmap currentBitmap, ZoneLayout zoneLayout)
+    {
+        if (_previousBandSnapshot is null)
+        {
+            return;
+        }
+
+        using var currentBandBitmap = ExtractBandBitmap(currentBitmap, zoneLayout.ScrollBand);
+        var currentSnapshot = PixelBuffer.FromBitmap(currentBandBitmap);
+        var overlap = FindOverlap(_previousBandSnapshot.Value, currentSnapshot);
+        if (!overlap.HasMatch)
+        {
+            return;
+        }
+
+        if (overlap.IsIdentical)
+        {
+            _previousBandSnapshot = currentSnapshot;
+            _previousPrimarySize = GetPrimaryAxisSize(currentBandBitmap);
+            return;
+        }
+
+        var currentPrimarySize = GetPrimaryAxisSize(currentBandBitmap);
+        var currentPlacementStart = overlap.Placement == ScrollPlacement.AppendAfter
+            ? _previousPlacementStart + _previousPrimarySize - overlap.OverlapPixels
+            : _previousPlacementStart - (currentPrimarySize - overlap.OverlapPixels);
+
+        _placements.Add(new PlacedBand((Bitmap)currentBandBitmap.Clone(), currentPlacementStart));
+        _previousBandSnapshot = currentSnapshot;
+        _previousPlacementStart = currentPlacementStart;
+        _previousPrimarySize = currentPrimarySize;
+    }
+
+    private void RefreshNormalizedPlacements()
+    {
+        _normalizedPlacements.Clear();
+        if (_placements.Count == 0)
         {
             _primaryAxisExtent = 0;
             return;
         }
 
-        var minOffset = placementList.Min(placement => placement.Offset);
-        var normalizedPlacements = placementList
-            .Select(placement => new PlacedBand(placement.Bitmap, placement.Offset - minOffset))
-            .OrderBy(placement => placement.Offset)
-            .ToList();
+        var minOffset = _placements.Min(placement => placement.Offset);
+        var normalizedPlacements = _placements
+            .Select(placement => new NormalizedPlacedBand(placement.Bitmap, placement.Offset - minOffset))
+            .OrderBy(placement => placement.Offset);
 
         foreach (var placement in normalizedPlacements)
         {
-            _segments.Add(new ScrollSegment(placement.Bitmap, placement.Offset));
+            _normalizedPlacements.Add(placement);
         }
 
-        _primaryAxisExtent = normalizedPlacements.Max(placement => placement.Offset + GetPrimaryAxisSize(placement.Bitmap));
+        _primaryAxisExtent = _normalizedPlacements.Max(placement => placement.Offset + GetPrimaryAxisSize(placement.Bitmap));
     }
 
     private void CaptureFixedRegions(Bitmap bitmap, ZoneLayout zoneLayout)
@@ -306,23 +351,23 @@ public sealed class BidirectionalScrollSession : IScrollSession
 
     private void RaisePreviewUpdated()
     {
-        if (PreviewUpdated is null || _segments.Count == 0 || _zoneLayout is null)
+        if (PreviewUpdated is null || _normalizedPlacements.Count == 0 || _zoneLayout is null)
         {
             return;
         }
 
         var previewWidth = _direction == ScrollDirection.Vertical
             ? _zoneLayout.Value.ScrollBand.Width
-            : _segments.Max(segment => segment.Offset + segment.Bitmap.Width);
+            : _normalizedPlacements.Max(segment => segment.Offset + segment.Bitmap.Width);
         var previewHeight = _direction == ScrollDirection.Vertical
-            ? _segments.Max(segment => segment.Offset + segment.Bitmap.Height)
+            ? _normalizedPlacements.Max(segment => segment.Offset + segment.Bitmap.Height)
             : _zoneLayout.Value.ScrollBand.Height;
 
         var previewBitmap = new Bitmap(previewWidth, previewHeight, PixelFormat.Format32bppArgb);
         using (var graphics = Graphics.FromImage(previewBitmap))
         {
             graphics.Clear(Color.Transparent);
-            foreach (var segment in _segments.OrderBy(segment => segment.Offset))
+            foreach (var segment in _normalizedPlacements)
             {
                 DrawBitmapPixelExact(
                     graphics,
@@ -360,10 +405,8 @@ public sealed class BidirectionalScrollSession : IScrollSession
         return bitmap.Clone(new Rectangle(band.X, band.Y, band.Width, band.Height), PixelFormat.Format32bppArgb);
     }
 
-    private DirectionalOverlapResult FindOverlap(PixelBufferSnapshot previousBand, Bitmap currentBitmap, ZoneLayout zoneLayout)
+    private DirectionalOverlapResult FindOverlap(PixelBufferSnapshot previousBand, PixelBufferSnapshot currentBand)
     {
-        using var currentBandBitmap = ExtractBandBitmap(currentBitmap, zoneLayout.ScrollBand);
-        var currentBand = PixelBuffer.FromBitmap(currentBandBitmap);
         return _overlapMatcher.FindOverlap(
             previousBand.Pixels,
             currentBand.Pixels,
@@ -397,13 +440,19 @@ public sealed class BidirectionalScrollSession : IScrollSession
     private void ClearComposition()
     {
         _primaryAxisExtent = 0;
+        _compositionStartFrameIndex = -1;
+        _processedFrameCount = 0;
+        _previousBandSnapshot = null;
+        _previousPlacementStart = 0;
+        _previousPrimarySize = 0;
 
-        foreach (var segment in _segments)
+        foreach (var placement in _placements)
         {
-            segment.Dispose();
+            placement.Bitmap.Dispose();
         }
 
-        _segments.Clear();
+        _placements.Clear();
+        _normalizedPlacements.Clear();
         DisposeFixedRegions();
     }
 
@@ -422,4 +471,6 @@ public sealed class BidirectionalScrollSession : IScrollSession
     }
 
     private sealed record PlacedBand(Bitmap Bitmap, int Offset);
+
+    private sealed record NormalizedPlacedBand(Bitmap Bitmap, int Offset);
 }

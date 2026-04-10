@@ -1,39 +1,211 @@
 {
   "Program": "bidirectional-performance",
   "PrimaryMetric": "median StitchElapsedMilliseconds",
-  "LastUpdatedUtc": null,
+  "LastUpdatedUtc": "2026-04-10T03:19:13Z",
+  "Curve": [
+    {
+      "Label": "baseline-release",
+      "TimestampUtc": "2026-04-10T03:19:13Z",
+      "Suite": "suite.json",
+      "RunDirectory": "runs/20260410-031655691",
+      "Commit": null,
+      "Metrics": {
+        "SuiteStitchMedianTotalMilliseconds": 27449,
+        "debug-20260408-082216796-slice": 16675,
+        "synthetic-down": 5422,
+        "synthetic-up": 5352
+      }
+    },
+    {
+      "Label": "incremental-session-append",
+      "TimestampUtc": "2026-04-10T03:28:13Z",
+      "Suite": "suite.json",
+      "RunDirectory": "runs/20260410-032618615",
+      "Commit": null,
+      "Metrics": {
+        "SuiteStitchMedianTotalMilliseconds": 22787,
+        "debug-20260408-082216796-slice": 15313,
+        "synthetic-down": 3736,
+        "synthetic-up": 3738
+      }
+    }
+  ],
   "Items": [
     {
       "Id": "baseline-benchmark",
       "Title": "Capture accepted baseline for the fixed suite",
-      "Status": "ready",
+      "Status": "kept",
       "DependsOn": [],
       "Hypothesis": "A fresh benchmark summary gives the comparison point for all later commits.",
       "Risk": "none",
-      "Outcome": null,
+      "Outcome": "Release baseline captured from runs/20260410-031655691. Stitch medians: debug slice 16675 ms, synthetic-down 5422 ms, synthetic-up 5352 ms; suite total 27449 ms.",
       "Commit": null
     },
     {
-      "Id": "history-rebuild-cost",
-      "Title": "Profile full-history rebuild overhead",
-      "Status": "idea",
+      "Id": "incremental-session-append",
+      "Title": "Stop rebuilding the full bidirectional history when zone/start are unchanged",
+      "Status": "kept",
       "DependsOn": [
         "baseline-benchmark"
       ],
-      "Hypothesis": "Rebuilding all placements and segments on every frame is the dominant bidirectional cost.",
+      "Hypothesis": "Once the estimated zone and start frame stabilize, processing only the newest frame should remove the dominant O(n^2) replay cost while preserving the same placement sequence.",
+      "Risk": "medium",
+      "Outcome": "Kept. Dev-suite stitch medians improved from 16675/5422/5352 ms to 15313/3736/3738 ms (suite total 27449 -> 22787, about 17.0% faster). Full correctness gate stayed exact on both tracked dumps and both synthetic fixtures in runs/20260410-032827482.",
+      "Commit": null
+    },
+    {
+      "Id": "pair-analysis-cache",
+      "Title": "Cache adjacent-frame zone and overlap analysis",
+      "Status": "ready",
+      "DependsOn": [
+        "baseline-benchmark"
+      ],
+      "Hypothesis": "Memoizing pairwise zone detection and overlap eligibility across history scans should sharply reduce repeated bitmap extraction and matcher work even when rebuilds still happen.",
       "Risk": "medium",
       "Outcome": null,
       "Commit": null
     },
     {
-      "Id": "pixel-cache",
-      "Title": "Cache reusable per-frame pixel snapshots",
+      "Id": "overlap-no-copy-slices",
+      "Title": "Remove overlap matcher span-to-array and sub-rectangle allocation churn",
+      "Status": "ready",
+      "DependsOn": [
+        "baseline-benchmark"
+      ],
+      "Hypothesis": "Keeping overlap comparisons in spans/snapshots rather than allocating arrays and sub-buffers per candidate should lower both CPU and GC pressure.",
+      "Risk": "medium",
+      "Outcome": null,
+      "Commit": null
+    },
+    {
+      "Id": "frame-snapshot-cache",
+      "Title": "Persist reusable pixel snapshots per captured frame",
       "Status": "idea",
       "DependsOn": [
         "baseline-benchmark"
       ],
-      "Hypothesis": "Avoiding repeated bitmap-to-buffer extraction will reduce replay and stitch time.",
+      "Hypothesis": "Converting each frame bitmap into a reusable snapshot once should cut repeated PixelBuffer.FromBitmap cost across zone detection and overlap search.",
       "Risk": "medium",
+      "Outcome": null,
+      "Commit": null
+    },
+    {
+      "Id": "zone-stability-short-circuit",
+      "Title": "Freeze zone estimation after stable consensus and only invalidate on disagreement",
+      "Status": "idea",
+      "DependsOn": [
+        "pair-analysis-cache"
+      ],
+      "Hypothesis": "Avoiding full-history zone recomputation after convergence should eliminate wasted rescans on long monotonic captures.",
+      "Risk": "high",
+      "Outcome": null,
+      "Commit": null
+    },
+    {
+      "Id": "search-window-from-motion",
+      "Title": "Bound overlap search using recent motion estimates",
+      "Status": "idea",
+      "DependsOn": [
+        "incremental-session-append"
+      ],
+      "Hypothesis": "Most captures have locally smooth motion, so restricting candidate overlap windows around recent deltas should cut brute-force search cost.",
+      "Risk": "high",
+      "Outcome": null,
+      "Commit": null
+    },
+    {
+      "Id": "coarse-fingerprint-pass",
+      "Title": "Add a coarse row or column fingerprint pass before pixel refinement",
+      "Status": "idea",
+      "DependsOn": [
+        "baseline-benchmark"
+      ],
+      "Hypothesis": "Cheap 1D fingerprints can reject most impossible overlaps before expensive per-pixel comparisons.",
+      "Risk": "medium",
+      "Outcome": null,
+      "Commit": null
+    },
+    {
+      "Id": "rolling-row-hashes",
+      "Title": "Use rolling hashes or integral summaries for overlap candidates",
+      "Status": "idea",
+      "DependsOn": [
+        "coarse-fingerprint-pass"
+      ],
+      "Hypothesis": "Rolling summaries could turn overlap search from repeated full-slice comparisons into cheaper incremental updates.",
+      "Risk": "high",
+      "Outcome": null,
+      "Commit": null
+    },
+    {
+      "Id": "simd-sad-kernel",
+      "Title": "Replace scalar absolute-difference loops with SIMD",
+      "Status": "idea",
+      "DependsOn": [
+        "overlap-no-copy-slices"
+      ],
+      "Hypothesis": "Vectorized byte-difference kernels should accelerate row, column, and overlap scoring without changing the algorithm.",
+      "Risk": "medium",
+      "Outcome": null,
+      "Commit": null
+    },
+    {
+      "Id": "native-vision-backend",
+      "Title": "Prototype a native OpenCV or phase-correlation matcher",
+      "Status": "idea",
+      "DependsOn": [
+        "baseline-benchmark"
+      ],
+      "Hypothesis": "A vision-library backend might deliver a much better accuracy-speed frontier than the current pure C# brute-force matcher.",
+      "Risk": "high",
+      "Outcome": null,
+      "Commit": null
+    },
+    {
+      "Id": "gpu-overlap-prototype",
+      "Title": "Evaluate GPU overlap scoring for large scroll bands",
+      "Status": "idea",
+      "DependsOn": [
+        "baseline-benchmark"
+      ],
+      "Hypothesis": "Large overlap scans are embarrassingly parallel and could move well to ComputeSharp, DirectCompute, or CUDA-like kernels.",
+      "Risk": "high",
+      "Outcome": null,
+      "Commit": null
+    },
+    {
+      "Id": "alt-imaging-stack",
+      "Title": "Swap System.Drawing hot paths for a faster imaging stack",
+      "Status": "idea",
+      "DependsOn": [
+        "baseline-benchmark"
+      ],
+      "Hypothesis": "SkiaSharp, ImageSharp, or a custom native buffer layer could reduce clone, crop, and compose overhead across the whole pipeline.",
+      "Risk": "high",
+      "Outcome": null,
+      "Commit": null
+    },
+    {
+      "Id": "pairwise-parallelism",
+      "Title": "Parallelize independent pair analysis during history rescans",
+      "Status": "idea",
+      "DependsOn": [
+        "pair-analysis-cache"
+      ],
+      "Hypothesis": "Adjacent-pair zone and overlap checks are independent enough to exploit multiple cores when rescans are still necessary.",
+      "Risk": "high",
+      "Outcome": null,
+      "Commit": null
+    },
+    {
+      "Id": "external-microservice-stitcher",
+      "Title": "Move heavy stitching to a separate optimized worker process",
+      "Status": "idea",
+      "DependsOn": [
+        "baseline-benchmark"
+      ],
+      "Hypothesis": "A dedicated worker in another runtime or deployment model could unlock aggressive optimization without entangling the app process.",
+      "Risk": "high",
       "Outcome": null,
       "Commit": null
     }

@@ -21,7 +21,8 @@ dotnet test ScrollShot/ScrollShot.sln --filter "FullyQualifiedName~TestClassName
 dotnet run --project ScrollShot/src/ScrollShot.Tooling -- replay --manifest <manifest.json> --output <output-folder> [--profile current|signal-zone|signal-hybrid|bidirectional-current]
 dotnet run --project ScrollShot/src/ScrollShot.Tooling -- slice --input <image> --output <output-folder> --viewport-height <px>
 dotnet run --project ScrollShot/src/ScrollShot.Tooling -- synthesize --output <output-folder> --viewport-height <px> [--frame-order Forward|Reverse]
-dotnet run --project ScrollShot/src/ScrollShot.Tooling -- benchmark --suite experiments/bidirectional-performance/suite.json
+dotnet build -c Release ScrollShot/ScrollShot.sln
+dotnet run -c Release --no-build --project ScrollShot/src/ScrollShot.Tooling -- benchmark --suite experiments/bidirectional-performance/suite.json
 ```
 
 ## Architecture
