@@ -1,7 +1,7 @@
 {
   "Program": "bidirectional-performance",
   "PrimaryMetric": "median StitchElapsedMilliseconds",
-  "LastUpdatedUtc": "2026-04-10T08:59:20Z",
+  "LastUpdatedUtc": "2026-04-10T09:06:10Z",
   "ArchiveFile": "archive.json",
   "Curve": [
     {
@@ -113,7 +113,7 @@
       "TimestampUtc": "2026-04-10T08:58:53Z",
       "Suite": "suite.json",
       "RunDirectory": "runs/20260410-085853759",
-      "Commit": null,
+      "Commit": "9863d6b",
       "Metrics": {
         "SuiteStitchMedianTotalMilliseconds": 305,
         "debug-20260408-082216796-slice": 186,
@@ -239,7 +239,7 @@
       "Hypothesis": "Most rejected overlap candidates exceed the match threshold long before all rows are compared, so stopping the exact luma accumulation as soon as a candidate cannot possibly recover should reduce hot-path work without changing decisions.",
       "Risk": "low",
       "Outcome": "Kept. Adding threshold-driven early exit to the exact luma overlap scorer cut the dev-suite stitch medians from 250/61/74 ms to 186/52/67 ms (suite total 385 -> 305, about 20.8% faster vs the prior kept baseline and about 98.9% faster vs the original Release baseline). The correctness gate stayed clean on the tracked dump plus synthetic validation suite in runs/20260410-085903666.",
-      "Commit": null
+      "Commit": "9863d6b"
     },
     {
       "Id": "simd-sad-kernel",

@@ -1,6 +1,6 @@
 {
   "Program": "bidirectional-performance",
-  "ArchivedAtUtc": "2026-04-10T08:58:30Z",
+  "ArchivedAtUtc": "2026-04-10T09:06:10Z",
   "Purpose": "Discarded or parked ideas moved out of the active backlog so backlog.json stays focused on the near-term experiment queue.",
   "Items": [
     {
@@ -85,6 +85,18 @@
       "Hypothesis": "Most captured bands carry constant alpha, so ignoring that channel in exact scoring could cut hot-path work without materially changing overlap decisions.",
       "Risk": "medium",
       "Outcome": "Discarded as superseded after the retained luma-only overlap scorer landed. The current exact path already projects to grayscale and therefore drops alpha along with most per-channel work, so a separate alpha-only experiment is no longer worth running.",
+      "Commit": null
+    },
+    {
+      "Id": "row-budgeted-sad",
+      "Title": "Short-circuit row-level SAD once the remaining threshold budget is exhausted",
+      "Status": "discarded",
+      "DependsOn": [
+        "exact-threshold-early-exit"
+      ],
+      "Hypothesis": "Pushing threshold-aware early exit down into the row-level SIMD/scalar SAD kernel should let exact overlap candidates fail within a row instead of only between rows.",
+      "Risk": "medium",
+      "Outcome": "Discarded after measurement. The row-budgeted SAD prototype moved the dev-suite stitch medians from 186/52/67 ms to 200/58/60 ms (suite total 305 -> 318), so the extra checkpointing overhead outweighed the finer-grained short-circuiting.",
       "Commit": null
     },
     {

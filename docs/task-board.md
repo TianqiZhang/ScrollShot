@@ -62,7 +62,7 @@
 | Phase 24 | `d236954` |
 | Phase 25 | `c4b77b8` |
 | Phase 26 | `1b191c8` |
-| Phase 27 | Uncommitted |
+| Phase 27 | `9863d6b` |
 
 ## Notes
 
@@ -100,5 +100,6 @@
 - The next retained pass builds directly on that luma scorer with a behavior-safe coarse-to-fine step: `OverlapMatcher` now ranks overlaps by a directional 1D luma profile first, and it only skips the old full exact scan when those top profile candidates already contain an excellent exact match. On the fixed Release dev suite that moved the stitch medians again from `356/94/95 ms` to `250/61/74 ms` (total `545 -> 385 ms`), while the standard correctness gate stayed clean on the tracked dump + synthetic validation suite.
 - A follow-up shared-precompute experiment was discarded: letting `BidirectionalOverlapMatcher` share luma/profile preprocessing across forward and reverse evaluation only moved the dev-suite total from `385 ms` to `380 ms`, which was too small to justify the extra matcher surface area.
 - The newest retained pass keeps the same 1D-ranked search but makes the exact luma scorer stop early when a candidate already exceeds the relevant threshold. On the fixed Release dev suite that moved the stitch medians again from `250/61/74 ms` to `186/52/67 ms` (total `385 -> 305 ms`), while the standard correctness gate stayed clean on the tracked dump + synthetic validation suite.
+- A deeper row-level early-exit follow-up was also discarded: pushing the threshold budget down into the row SAD kernel moved the dev-suite total from `305 ms` to `318 ms`, so the extra checkpointing overhead was not worth keeping.
 - The fifth retained performance pass reused the adjacent-pair overlap result that the session was already computing during history analysis instead of recomputing that same overlap during rebuild and incremental append when the aggregate zone still matched the pair zone. On the fixed Release dev suite it moved the stitch medians again from `1086/285/299 ms` to `933/220/222 ms` (total `1670 -> 1375 ms`), and the correctness gate still matched both tracked dumps and both synthetic fixtures exactly (`debug-20260408-082055888: 522 ms`, `debug-20260408-082216796: 1517 ms`, all `normalized diff = 0`).
 - One last narrow follow-up was also discarded: reusing only the most recently analyzed pair snapshot during the immediate append step produced a near-tied dev-suite result (`1375 -> 1374 ms` total), which was too small to matter and not worth the extra session state.
