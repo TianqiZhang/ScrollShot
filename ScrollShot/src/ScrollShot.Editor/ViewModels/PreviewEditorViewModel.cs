@@ -175,7 +175,6 @@ public sealed class PreviewEditorViewModel : INotifyPropertyChanged
         LastSavedPath = path;
         _lastSavedState = CurrentState;
         OnPropertyChanged(nameof(HasUnsavedChanges));
-        OnPropertyChanged(nameof(SaveLocationHint));
     }
 
     private void Copy()

@@ -141,6 +141,8 @@ public partial class SelectionOverlayWindow : Window
         }
 
         SelectedRegion = ScreenHelper.ToPhysicalScreenRect(_selectionRect, this);
+        InstructionBorder.Visibility = Visibility.Visible;
+        CenterInstruction();
     }
 
     private void OnPreviewMouseWheel(object sender, MouseWheelEventArgs e)

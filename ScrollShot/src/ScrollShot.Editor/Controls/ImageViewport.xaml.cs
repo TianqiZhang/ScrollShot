@@ -56,7 +56,7 @@ public partial class ImageViewport : UserControl
         CropRectangle.Height = cropRect.Value.Height;
     }
 
-    public void FitToView()
+    public bool FitToView()
     {
         if (_image is null ||
             _image.PixelWidth <= 0 ||
@@ -65,13 +65,14 @@ public partial class ImageViewport : UserControl
             ScrollViewer.ViewportHeight <= 0)
         {
             SetZoom(1);
-            return;
+            return false;
         }
 
         var fitScale = Math.Min(
             ScrollViewer.ViewportWidth / _image.PixelWidth,
             ScrollViewer.ViewportHeight / _image.PixelHeight);
         SetZoom(Math.Clamp(fitScale, 0.1, 5.0));
+        return true;
     }
 
     public void SetOneToOne()

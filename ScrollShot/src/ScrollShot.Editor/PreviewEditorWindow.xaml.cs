@@ -166,10 +166,11 @@ public partial class PreviewEditorWindow : Window
         ViewportControl.SetImage(ViewModel.PreviewImage);
         PreviewMetricsTextBlock.Text = ViewModel.PreviewSizeText;
 
-        if (!_hasInitializedViewport && ViewModel.PreviewImage is not null)
+        if (!_hasInitializedViewport &&
+            ViewModel.PreviewImage is not null &&
+            ViewportControl.FitToView())
         {
             _hasInitializedViewport = true;
-            ViewportControl.FitToView();
             UpdateZoomText(ViewportControl.ZoomFactor);
         }
     }
