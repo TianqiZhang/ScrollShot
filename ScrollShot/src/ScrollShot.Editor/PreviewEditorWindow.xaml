@@ -39,8 +39,8 @@
                 <StackPanel>
                     <TextBlock FontSize="12"
                                FontWeight="SemiBold"
-                               Foreground="{DynamicResource AccentBrush}"
-                               Text="EDITOR" />
+                               Foreground="{DynamicResource SecondaryForegroundBrush}"
+                               Text="Editor" />
                     <TextBlock x:Name="EditorTitleTextBlock"
                                Margin="0,8,0,6"
                                FontSize="28"
@@ -65,7 +65,7 @@
                         <TextBlock FontSize="12"
                                    FontWeight="SemiBold"
                                    Foreground="{DynamicResource SecondaryForegroundBrush}"
-                                   Text="STATE" />
+                                   Text="State" />
                         <TextBlock x:Name="DirtyStateTextBlock"
                                    Margin="0,6,0,0"
                                    FontSize="16"
@@ -217,7 +217,7 @@
                             <TextBlock FontSize="12"
                                        FontWeight="SemiBold"
                                        Foreground="{DynamicResource SecondaryForegroundBrush}"
-                                       Text="PREVIEW" />
+                                       Text="Preview" />
                             <TextBlock x:Name="PreviewMetricsTextBlock"
                                        Margin="0,6,0,0"
                                        FontSize="16"
@@ -242,7 +242,7 @@
                             <TextBlock FontSize="12"
                                        FontWeight="SemiBold"
                                        Foreground="{DynamicResource SecondaryForegroundBrush}"
-                                       Text="CURRENT EDITS" />
+                                       Text="Current edits" />
                             <TextBlock x:Name="EditSummaryTextBlock"
                                        Margin="0,8,0,0"
                                        FontSize="13"
@@ -262,7 +262,7 @@
                             <TextBlock FontSize="12"
                                        FontWeight="SemiBold"
                                        Foreground="{DynamicResource SecondaryForegroundBrush}"
-                                       Text="WORKFLOW TIPS" />
+                                       Text="Workflow tips" />
                             <TextBlock x:Name="ViewportModeHintTextBlock"
                                        Margin="0,8,0,0"
                                        FontSize="13"

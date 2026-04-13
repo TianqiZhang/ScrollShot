@@ -23,8 +23,8 @@
             <StackPanel Grid.Row="0">
                 <TextBlock FontSize="12"
                            FontWeight="SemiBold"
-                           Foreground="{DynamicResource AccentBrush}"
-                           Text="CAPTURE IN PROGRESS" />
+                           Foreground="{DynamicResource SecondaryForegroundBrush}"
+                           Text="Capture in progress" />
                 <TextBlock x:Name="DirectionTextBlock"
                            Margin="0,8,0,4"
                            FontSize="18"
