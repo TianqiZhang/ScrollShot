@@ -94,6 +94,7 @@ public partial class SelectionOverlayWindow : Window
         _selectionRect = Rect.Empty;
         _captureDirection = null;
         PreviewStrip.Visibility = Visibility.Collapsed;
+        ActionPanel.Visibility = Visibility.Collapsed;
         InstructionBorder.Visibility = Visibility.Collapsed;
         CaptureMouse();
     }
@@ -134,14 +135,16 @@ public partial class SelectionOverlayWindow : Window
         {
             _selectionRect = Rect.Empty;
             SelectedRegion = null;
+            InstructionBorder.Visibility = Visibility.Visible;
             UpdateSelectionVisuals();
+            CenterInstruction();
             return;
         }
 
         SelectedRegion = ScreenHelper.ToPhysicalScreenRect(_selectionRect, this);
-        InstructionBorder.Visibility = Visibility.Visible;
-        InstructionText.Text = "Enter → instant screenshot\nScroll → scrolling capture\nEsc → cancel";
-        CenterInstruction();
+        SelectionSummaryTextBlock.Text = $"{SelectedRegion.Value.Width} × {SelectedRegion.Value.Height} px";
+        ActionPanel.Visibility = Visibility.Visible;
+        PositionActionPanel();
     }
 
     private void OnPreviewMouseWheel(object sender, MouseWheelEventArgs e)
@@ -153,15 +156,9 @@ public partial class SelectionOverlayWindow : Window
 
         if (_captureDirection is null)
         {
-            _captureDirection = Keyboard.Modifiers.HasFlag(ModifierKeys.Shift)
+            StartScrollCapture(Keyboard.Modifiers.HasFlag(ModifierKeys.Shift)
                 ? ScrollDirection.Horizontal
-                : ScrollDirection.Vertical;
-
-            InstructionBorder.Visibility = Visibility.Collapsed;
-            SelectionBorder.Visibility = Visibility.Collapsed;
-            PreviewStrip.Visibility = Visibility.Visible;
-            PositionPreviewStrip(_captureDirection.Value);
-            ScrollCaptureStarted?.Invoke(this, new OverlayCaptureRequestedEventArgs(SelectedRegion.Value, _captureDirection));
+                : ScrollDirection.Vertical);
         }
 
         ForwardWheelInput(e);
@@ -177,7 +174,7 @@ public partial class SelectionOverlayWindow : Window
                 Close();
                 break;
             case Key.Enter when SelectedRegion is not null && _captureDirection is null:
-                InstantCaptureRequested?.Invoke(this, new OverlayCaptureRequestedEventArgs(SelectedRegion.Value));
+                RequestInstantCapture();
                 break;
             case Key.Enter when _captureDirection is not null:
                 CaptureCompleted?.Invoke(this, EventArgs.Empty);
@@ -188,6 +185,26 @@ public partial class SelectionOverlayWindow : Window
     private void OnPreviewStripDoneClicked(object? sender, EventArgs e)
     {
         CaptureCompleted?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void OnInstantCaptureClick(object sender, RoutedEventArgs e)
+    {
+        RequestInstantCapture();
+    }
+
+    private void OnVerticalScrollCaptureClick(object sender, RoutedEventArgs e)
+    {
+        StartScrollCapture(ScrollDirection.Vertical);
+    }
+
+    private void OnHorizontalScrollCaptureClick(object sender, RoutedEventArgs e)
+    {
+        StartScrollCapture(ScrollDirection.Horizontal);
+    }
+
+    private void OnSelectAgainClick(object sender, RoutedEventArgs e)
+    {
+        ResetSelection();
     }
 
     private void UpdateSelectionVisuals()
@@ -281,6 +298,76 @@ public partial class SelectionOverlayWindow : Window
         var h = ActualHeight <= 0 ? Height : ActualHeight;
         Canvas.SetLeft(InstructionBorder, (w - InstructionBorder.ActualWidth) / 2);
         Canvas.SetTop(InstructionBorder, (h - InstructionBorder.ActualHeight) / 2);
+    }
+
+    private void PositionActionPanel()
+    {
+        if (_selectionRect.IsEmpty || ActionPanel.Visibility != Visibility.Visible)
+        {
+            return;
+        }
+
+        ActionPanel.UpdateLayout();
+        var margin = 14d;
+        var availableWidth = ActualWidth <= 0 ? Width : ActualWidth;
+        var availableHeight = ActualHeight <= 0 ? Height : ActualHeight;
+        var panelWidth = ActionPanel.ActualWidth > 0 ? ActionPanel.ActualWidth : ActionPanel.Width;
+        var panelHeight = ActionPanel.ActualHeight > 0 ? ActionPanel.ActualHeight : ActionPanel.Height;
+
+        var rightX = _selectionRect.Right + margin;
+        var leftX = _selectionRect.Left - panelWidth - margin;
+        var belowY = _selectionRect.Bottom + margin;
+        var aboveY = _selectionRect.Top - panelHeight - margin;
+
+        var x = rightX + panelWidth <= availableWidth
+            ? rightX
+            : Math.Max(margin, leftX);
+        var y = belowY + panelHeight <= availableHeight
+            ? belowY
+            : Math.Max(margin, aboveY);
+
+        Canvas.SetLeft(ActionPanel, Math.Clamp(x, margin, Math.Max(margin, availableWidth - panelWidth - margin)));
+        Canvas.SetTop(ActionPanel, Math.Clamp(y, margin, Math.Max(margin, availableHeight - panelHeight - margin)));
+    }
+
+    private void RequestInstantCapture()
+    {
+        if (SelectedRegion is not ScreenRect region)
+        {
+            return;
+        }
+
+        InstantCaptureRequested?.Invoke(this, new OverlayCaptureRequestedEventArgs(region));
+    }
+
+    private void StartScrollCapture(ScrollDirection direction)
+    {
+        if (SelectedRegion is not ScreenRect region || _captureDirection is not null)
+        {
+            return;
+        }
+
+        _captureDirection = direction;
+        InstructionBorder.Visibility = Visibility.Collapsed;
+        ActionPanel.Visibility = Visibility.Collapsed;
+        SelectionBorder.Visibility = Visibility.Collapsed;
+        PreviewStrip.Visibility = Visibility.Visible;
+        PositionPreviewStrip(direction);
+        ScrollCaptureStarted?.Invoke(this, new OverlayCaptureRequestedEventArgs(region, direction));
+    }
+
+    private void ResetSelection()
+    {
+        _selectionStart = null;
+        _selectionRect = Rect.Empty;
+        SelectedRegion = null;
+        _captureDirection = null;
+        PreviewStrip.Visibility = Visibility.Collapsed;
+        ActionPanel.Visibility = Visibility.Collapsed;
+        SelectionBorder.Visibility = Visibility.Collapsed;
+        InstructionBorder.Visibility = Visibility.Visible;
+        UpdateShadeRegions();
+        CenterInstruction();
     }
 
     private void ForwardWheelInput(MouseWheelEventArgs e)
@@ -377,7 +464,7 @@ public partial class SelectionOverlayWindow : Window
         var width = PreviewStrip.ActualWidth > 0 ? PreviewStrip.ActualWidth : PreviewStrip.Width;
         if (double.IsNaN(width) || width <= 0)
         {
-            width = direction == ScrollDirection.Vertical ? 180d : 340d;
+            width = direction == ScrollDirection.Vertical ? 260d : 420d;
         }
 
         return width;
@@ -388,7 +475,7 @@ public partial class SelectionOverlayWindow : Window
         var height = PreviewStrip.ActualHeight > 0 ? PreviewStrip.ActualHeight : PreviewStrip.Height;
         if (double.IsNaN(height) || height <= 0)
         {
-            height = direction == ScrollDirection.Vertical ? 300d : 150d;
+            height = direction == ScrollDirection.Vertical ? 420d : 250d;
         }
 
         return height;
