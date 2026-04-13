@@ -13,27 +13,12 @@
         ResizeMode="CanMinimize">
     <Grid Margin="24">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="24" />
             <RowDefinition Height="*" />
             <RowDefinition Height="20" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <StackPanel Grid.Row="0">
-            <TextBlock FontSize="12"
-                       FontWeight="SemiBold"
-                       Foreground="{DynamicResource SecondaryForegroundBrush}"
-                       Text="Settings" />
-            <TextBlock Margin="0,8,0,6"
-                       FontSize="26"
-                       FontWeight="SemiBold"
-                       Text="Choose where images are saved and how you start a capture" />
-            <TextBlock Style="{StaticResource SectionSubtitleTextBlockStyle}"
-                       Text="These are secondary options, so they live in a separate window instead of the main capture screen." />
-        </StackPanel>
-
-        <Border Grid.Row="2"
+        <Border Grid.Row="0"
                 Style="{StaticResource CardBorderStyle}">
             <StackPanel>
                     <TextBlock Style="{StaticResource SectionTitleTextBlockStyle}"
@@ -135,7 +120,7 @@
             </StackPanel>
         </Border>
 
-        <DockPanel Grid.Row="4"
+        <DockPanel Grid.Row="2"
                    LastChildFill="False">
             <TextBlock x:Name="StatusTextBlock"
                        VerticalAlignment="Center"
