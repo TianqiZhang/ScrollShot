@@ -45,6 +45,7 @@
 | Phase 40 | Completed | Auto-size settings dialog height | Switched the settings dialog from a fixed height to content-based height so the bottom controls stay visible after the recent layout simplifications |
 | Phase 41 | Completed | Tighten hotkey combo sizing | Reduced the shared ComboBox padding/min-height used by the settings hotkey dropdowns so they feel closer to native control sizing instead of oversized |
 | Phase 42 | Completed | Restore direct capture flow | Removed the post-selection action menu from the overlay and returned to the simpler direct flow: select a region, then use Enter or the mouse wheel shortcuts without an extra decision step |
+| Phase 43 | Completed | Remove viewport mode overlay | Deleted the in-canvas “Move / Crop” badge from the editor viewport because the side panel already explains the current tool and the overlay was visually redundant |
 
 ## Commits
 
@@ -93,6 +94,7 @@
 | Phase 40 | `ea51ac8` |
 | Phase 41 | `05d65a3` |
 | Phase 42 | `a255700` |
+| Phase 43 | `111846d` |
 
 ## Notes
 
@@ -111,6 +113,7 @@
 - The latest tweak makes the settings dialog height content-driven instead of fixed, which is a better fit now that the window is just a compact form and avoids clipping the bottom actions on real layouts.
 - The latest sizing cleanup tightens the shared ComboBox style as well, because the hotkey dropdowns were inheriting an oversized `MinHeight`/`Padding` combination that made them feel bulkier than the rest of the form.
 - The latest capture-flow adjustment rolls back the overlay action menu: the app now returns to the simpler direct flow after selection, while the instruction card explains the Enter / wheel / Shift+wheel shortcuts up front instead of interrupting the flow with a second choice surface.
+- The latest editor cleanup removes the in-canvas mode badge from the viewport too, because mode explanation already exists in the side panel and the overlay only made the editor feel busier.
 - The current algorithm-improvement loop now has an offline path: generate overlapping datasets from a ground-truth image, replay them through `ScrollSession`, and compare against the expected final image.
 - Real scroll captures can now emit opt-in debug datasets from the app itself, including raw frames, manifest metadata, and a stitched output/report snapshot for offline analysis.
 - The first real-dump stabilization pass focused on correctness over aggressive appending: defer locking zones on unusable starter pairs, retry zone detection when overlap matching fails, and compare overlaps on a stable central crop to reduce edge-noise sensitivity.
