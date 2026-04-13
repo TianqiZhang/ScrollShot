@@ -165,9 +165,6 @@ public partial class ImageViewport : UserControl
 
     private void UpdateInteractionVisuals()
     {
-        ModeBadgeTextBlock.Text = _interactionMode == ImageViewportInteractionMode.Crop
-            ? "Crop - drag to choose what to keep"
-            : "Move - drag to look around the image";
         Cursor = _interactionMode == ImageViewportInteractionMode.Crop
             ? Cursors.Cross
             : Cursors.SizeAll;

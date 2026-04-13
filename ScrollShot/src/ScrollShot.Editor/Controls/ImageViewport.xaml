@@ -33,21 +33,6 @@
                                Fill="#2260A5FA"
                                Visibility="Collapsed" />
                 </Canvas>
-                <Border Margin="16"
-                        HorizontalAlignment="Left"
-                        VerticalAlignment="Top"
-                        Background="#CC0B1220"
-                        BorderBrush="{DynamicResource BorderBrush}"
-                        BorderThickness="1"
-                        CornerRadius="10"
-                        Padding="10,6"
-                        IsHitTestVisible="False">
-                    <TextBlock x:Name="ModeBadgeTextBlock"
-                               FontSize="12"
-                               FontWeight="SemiBold"
-                               Foreground="{DynamicResource PrimaryForegroundBrush}"
-                               Text="Move" />
-                </Border>
             </Grid>
         </ScrollViewer>
     </Border>
