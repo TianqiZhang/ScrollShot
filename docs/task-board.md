@@ -47,6 +47,7 @@
 | Phase 42 | Completed | Restore direct capture flow | Removed the post-selection action menu from the overlay and returned to the simpler direct flow: select a region, then use Enter or the mouse wheel shortcuts without an extra decision step |
 | Phase 43 | Completed | Remove viewport mode overlay | Deleted the in-canvas “Move / Crop” badge from the editor viewport because the side panel already explains the current tool and the overlay was visually redundant |
 | Phase 44 | Completed | Guard editor fit-to-view against zero-size images | Added zero-dimension image guards in `ImageViewport.FitToView()` so malformed or empty bitmap sources fall back safely instead of risking divide-by-zero during zoom-to-fit |
+| Phase 45 | Completed | Address AI review follow-ups | Removed the unused `OpenFolder` helper from `SettingsWindow` and split editor property-change handling so `PreviewEditorWindow` no longer rebuilds the whole viewport/timeline UI on every view-model notification |
 
 ## Commits
 
@@ -97,6 +98,7 @@
 | Phase 42 | `a255700` |
 | Phase 43 | `111846d` |
 | Phase 44 | `f38292e` |
+| Phase 45 | `266db4f` |
 
 ## Notes
 
@@ -117,6 +119,7 @@
 - The latest capture-flow adjustment rolls back the overlay action menu: the app now returns to the simpler direct flow after selection, while the instruction card explains the Enter / wheel / Shift+wheel shortcuts up front instead of interrupting the flow with a second choice surface.
 - The latest editor cleanup removes the in-canvas mode badge from the viewport too, because mode explanation already exists in the side panel and the overlay only made the editor feel busier.
 - The latest hardening pass closes the only issue raised by the branch review: `ImageViewport.FitToView()` now treats zero-dimension images the same way it already treated unavailable layout dimensions, avoiding a possible divide-by-zero and falling back to 100% zoom safely.
+- The latest follow-up pass addresses two additional review findings: an unused `SettingsWindow.OpenFolder()` copy-paste leftover is gone, and `PreviewEditorWindow` now updates only the parts of the UI affected by each property change instead of rerunning a full editor refresh for every notification.
 - The current algorithm-improvement loop now has an offline path: generate overlapping datasets from a ground-truth image, replay them through `ScrollSession`, and compare against the expected final image.
 - Real scroll captures can now emit opt-in debug datasets from the app itself, including raw frames, manifest metadata, and a stitched output/report snapshot for offline analysis.
 - The first real-dump stabilization pass focused on correctness over aggressive appending: defer locking zones on unusable starter pairs, retry zone detection when overlap matching fails, and compare overlaps on a stable central crop to reduce edge-noise sensitivity.
