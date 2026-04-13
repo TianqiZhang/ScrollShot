@@ -49,6 +49,7 @@
 | Phase 44 | Completed | Guard editor fit-to-view against zero-size images | Added zero-dimension image guards in `ImageViewport.FitToView()` so malformed or empty bitmap sources fall back safely instead of risking divide-by-zero during zoom-to-fit |
 | Phase 45 | Completed | Address AI review follow-ups | Removed the unused `OpenFolder` helper from `SettingsWindow` and split editor property-change handling so `PreviewEditorWindow` no longer rebuilds the whole viewport/timeline UI on every view-model notification |
 | Phase 46 | Completed | Address PR review comments | Restored visible overlay instructions after region selection, removed a duplicate `SaveLocationHint` notification, and made initial editor fit-to-view wait until layout can actually fit the image |
+| Phase 47 | Completed | Fix editor viewport scrollbar measurement | Moved editor zoom scaling to the shared viewport content layer so the image and overlays scale together and `ScrollViewer` measures the actual fitted size instead of the original image size |
 
 ## Commits
 
@@ -101,6 +102,7 @@
 | Phase 44 | `f38292e` |
 | Phase 45 | `266db4f` |
 | Phase 46 | `84fa41c` |
+| Phase 47 | `bfda4c6` |
 
 ## Notes
 
@@ -123,6 +125,7 @@
 - The latest hardening pass closes the only issue raised by the branch review: `ImageViewport.FitToView()` now treats zero-dimension images the same way it already treated unavailable layout dimensions, avoiding a possible divide-by-zero and falling back to 100% zoom safely.
 - The latest follow-up pass addresses two additional review findings: an unused `SettingsWindow.OpenFolder()` copy-paste leftover is gone, and `PreviewEditorWindow` now updates only the parts of the UI affected by each property change instead of rerunning a full editor refresh for every notification.
 - The latest PR feedback pass tightens the remaining edges: the overlay instructions stay visible after making a selection in the restored direct-capture flow, `SaveLocationHint` no longer fires duplicate property notifications, and initial fit-to-view only marks itself complete once the viewport can truly fit the image.
+- The latest viewport fix corrects a measurement bug in the simplified editor branch: zoom/fitted sizing now applies to the shared viewport content container instead of only the image element, so the crop overlays stay aligned and the viewport scrollbars reflect the true displayed size.
 - The current algorithm-improvement loop now has an offline path: generate overlapping datasets from a ground-truth image, replay them through `ScrollSession`, and compare against the expected final image.
 - Real scroll captures can now emit opt-in debug datasets from the app itself, including raw frames, manifest metadata, and a stitched output/report snapshot for offline analysis.
 - The first real-dump stabilization pass focused on correctness over aggressive appending: defer locking zones on unusable starter pairs, retry zone detection when overlap matching fails, and compare overlaps on a stable central crop to reduce edge-noise sensitivity.
