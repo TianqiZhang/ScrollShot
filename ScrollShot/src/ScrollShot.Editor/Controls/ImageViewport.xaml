@@ -46,7 +46,7 @@
                                FontSize="12"
                                FontWeight="SemiBold"
                                Foreground="{DynamicResource PrimaryForegroundBrush}"
-                               Text="Pan mode" />
+                               Text="Move" />
                 </Border>
             </Grid>
         </ScrollViewer>

@@ -52,7 +52,7 @@ internal sealed class ScrollCaptureDebugDumpSession : IDisposable
     {
         if (string.IsNullOrWhiteSpace(rootDirectory))
         {
-            throw new ArgumentException("The debug dump folder must not be empty.", nameof(rootDirectory));
+            throw new ArgumentException("The diagnostic files folder must not be empty.", nameof(rootDirectory));
         }
 
         var startedAtUtc = DateTimeOffset.UtcNow;
@@ -90,7 +90,7 @@ internal sealed class ScrollCaptureDebugDumpSession : IDisposable
                     using var bitmapClone = (Bitmap)frame.Bitmap.Clone();
                     bitmapClone.Save(fullPath, ImageFormat.Png);
                 },
-                "Saving a captured debug frame"))
+                "Saving a captured frame"))
         {
             return;
         }
@@ -134,12 +134,12 @@ internal sealed class ScrollCaptureDebugDumpSession : IDisposable
                         Direction = result.Direction,
                     };
                 },
-                "Saving the stitched debug output");
+                "Saving the stitched image");
         if (savedOutput && report is not null)
         {
             TryRun(
                 () => ManifestStore.SaveReplayReport(report, Path.Combine(_datasetDirectory, "report.json")),
-                "Saving the debug replay report");
+                "Saving the diagnostics report");
         }
 
         FinalizeManifest("completed");
@@ -170,7 +170,7 @@ internal sealed class ScrollCaptureDebugDumpSession : IDisposable
         _finalized = true;
         TryRun(
             () => ManifestStore.Save(BuildManifest(completionReason), Path.Combine(_datasetDirectory, "manifest.json")),
-            "Saving the debug dataset manifest");
+            "Saving the diagnostics manifest");
     }
 
     private StitchDatasetManifest BuildManifest(string completionReason)

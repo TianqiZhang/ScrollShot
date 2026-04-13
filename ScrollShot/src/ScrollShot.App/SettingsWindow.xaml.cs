@@ -56,7 +56,7 @@ public partial class SettingsWindow : Window
 
     private void OnBrowseDebugDumpFolderClick(object sender, RoutedEventArgs e)
     {
-        if (BrowseForFolder("Choose where ScrollShot stores debug dump sessions.", DebugDumpFolderTextBox.Text) is { } folder)
+        if (BrowseForFolder("Choose where ScrollShot saves diagnostic capture files.", DebugDumpFolderTextBox.Text) is { } folder)
         {
             DebugDumpFolderTextBox.Text = folder;
         }
@@ -72,7 +72,7 @@ public partial class SettingsWindow : Window
         if (HotkeyModifiersComboBox.SelectedItem is not SettingsUiModel.HotkeyOption<ModifierKeys> modifierOption ||
             HotkeyKeyComboBox.SelectedItem is not SettingsUiModel.HotkeyOption<Key> hotkeyOption)
         {
-            StatusTextBlock.Text = "Choose both a modifier combination and a hotkey key before saving.";
+            StatusTextBlock.Text = "Choose both the shortcut keys and the main key before saving.";
             return;
         }
 

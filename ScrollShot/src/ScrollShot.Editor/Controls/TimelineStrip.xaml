@@ -23,13 +23,13 @@
                            FontSize="14"
                            FontWeight="SemiBold"
                            Foreground="{DynamicResource PrimaryForegroundBrush}"
-                           Text="Trim mode" />
+                           Text="Trim ends" />
                 <TextBlock x:Name="HintTextBlock"
                            Margin="0,4,0,0"
                            FontSize="12"
                            Foreground="{DynamicResource SecondaryForegroundBrush}"
                            TextWrapping="Wrap"
-                           Text="Drag the start and end handles to trim the stitched result." />
+                           Text="Drag the top and bottom handles to shorten the capture." />
             </StackPanel>
 
             <Grid Grid.Row="2">

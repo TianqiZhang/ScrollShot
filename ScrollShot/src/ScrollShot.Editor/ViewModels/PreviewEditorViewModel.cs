@@ -93,7 +93,7 @@ public sealed class PreviewEditorViewModel : INotifyPropertyChanged
     public string SaveFolder { get; }
 
     public string SaveLocationHint => LastSavedPath is null
-        ? $"Exports save to {SaveFolder}"
+        ? $"Images are saved to {SaveFolder}"
         : $"Last saved to {LastSavedPath}";
 
     public string? LastSavedPath
@@ -132,8 +132,8 @@ public sealed class PreviewEditorViewModel : INotifyPropertyChanged
     public bool HasCrop => CurrentState.CropRect is not null;
 
     public string ChromeSummary => CurrentState.IncludeChrome
-        ? "Chrome is included in the export."
-        : "Chrome is removed from the export.";
+        ? "The window frame will stay in the saved image."
+        : "The window frame will be removed from the saved image.";
 
     public string EditSummary => BuildEditSummary(CurrentState);
 
@@ -239,11 +239,11 @@ public sealed class PreviewEditorViewModel : INotifyPropertyChanged
 
         if (!state.IncludeChrome)
         {
-            parts.Add("Chrome removed");
+            parts.Add("Window frame removed");
         }
 
         return parts.Count == 0
-            ? "No edits yet. Start by choosing a tool, then drag on the canvas or timeline."
+            ? "No changes yet. Choose a tool, then drag on the image or the strip below."
             : string.Join(" · ", parts);
     }
 }

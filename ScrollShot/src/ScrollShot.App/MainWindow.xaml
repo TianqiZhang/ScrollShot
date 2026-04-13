@@ -5,10 +5,10 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
         Title="ScrollShot"
-        Height="420"
-        Width="920"
-        MinHeight="360"
-        MinWidth="820"
+        Height="400"
+        Width="860"
+        MinHeight="340"
+        MinWidth="760"
         WindowStartupLocation="CenterScreen">
     <Grid>
         <Grid.RowDefinitions>
@@ -39,9 +39,9 @@
                         <TextBlock Margin="0,10,0,8"
                                    FontSize="28"
                                    FontWeight="SemiBold"
-                                   Text="Capture long content without wrestling the UI." />
+                                   Text="Capture a scrolling page in a few seconds." />
                         <TextBlock Style="{StaticResource SectionSubtitleTextBlockStyle}"
-                                   Text="Use the Settings menu when you need to change save location, shortcut, or advanced options." />
+                                   Text="Use the Settings menu if you want to change where images are saved or choose a different shortcut." />
                         <Border Margin="0,18,0,0"
                                 Background="{DynamicResource CardMutedBackgroundBrush}"
                                 BorderBrush="{DynamicResource BorderBrush}"
@@ -60,20 +60,20 @@
                                            Text="Ctrl+Shift+S" />
                                 <TextBlock Margin="0,6,0,0"
                                            Style="{StaticResource SectionSubtitleTextBlockStyle}"
-                                           Text="Close the window anytime. ScrollShot stays in the tray and the hotkey continues to work." />
+                                           Text="ScrollShot stays in the tray after you close this window, so this shortcut keeps working." />
                             </StackPanel>
                         </Border>
                     </StackPanel>
 
                     <StackPanel Grid.Column="1"
                                 VerticalAlignment="Center">
-                        <Button Width="180"
+                        <Button Width="170"
                                 Margin="0,0,0,10"
                                 Style="{StaticResource PrimaryButtonStyle}"
-                                Content="Start New Capture"
+                                Content="Start Capture"
                                 Click="OnNewCaptureClick" />
-                        <Button Width="180"
-                                Content="Open Save Folder"
+                        <Button Width="170"
+                                Content="Open Saved Images"
                                 Click="OnOpenSaveFolderClick" />
                     </StackPanel>
                 </Grid>

@@ -6,25 +6,25 @@
         xmlns:controls="clr-namespace:ScrollShot.Editor.Controls"
         mc:Ignorable="d"
         Title="ScrollShot Editor"
-        Height="920"
-        Width="1440"
-        MinHeight="760"
-        MinWidth="1180"
+        Height="860"
+        Width="1360"
+        MinHeight="720"
+        MinWidth="1120"
         WindowStartupLocation="CenterOwner">
     <Grid x:Name="RootGrid"
-          Margin="16">
+          Margin="12">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
-            <RowDefinition Height="16" />
+            <RowDefinition Height="12" />
             <RowDefinition Height="Auto" />
-            <RowDefinition Height="16" />
+            <RowDefinition Height="12" />
             <RowDefinition Height="*" />
             <RowDefinition Height="0" />
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" />
-            <ColumnDefinition Width="240" />
-            <ColumnDefinition Width="320" />
+            <ColumnDefinition Width="220" />
+            <ColumnDefinition Width="300" />
         </Grid.ColumnDefinitions>
 
         <Border Grid.Row="0"
@@ -45,12 +45,12 @@
                                Margin="0,8,0,6"
                                FontSize="28"
                                FontWeight="SemiBold"
-                               Text="Scrolling capture editor" />
+                               Text="Finish your capture" />
                     <TextBlock x:Name="EditorSubtitleTextBlock"
                                FontSize="14"
                                Foreground="{DynamicResource SecondaryForegroundBrush}"
                                TextWrapping="Wrap"
-                               Text="Use explicit tools to crop, trim, and cut before exporting the final image." />
+                               Text="Crop, trim, and remove anything you do not want before saving the final image." />
                 </StackPanel>
 
                 <Border Grid.Column="1"
@@ -90,15 +90,15 @@
                             VerticalAlignment="Center">
                     <StackPanel Margin="0,0,18,0">
                         <TextBlock Style="{StaticResource FieldLabelTextBlockStyle}"
-                                   Text="Canvas" />
+                                   Text="Image" />
                         <StackPanel Orientation="Horizontal">
                             <ToggleButton x:Name="PanModeToggleButton"
-                                          Width="92"
+                                          Width="84"
                                           Margin="0,0,8,0"
-                                          Content="Pan"
+                                          Content="Move"
                                           Click="OnPanModeClick" />
                             <ToggleButton x:Name="CropModeToggleButton"
-                                          Width="92"
+                                          Width="84"
                                           Content="Crop"
                                           Click="OnCropModeClick" />
                         </StackPanel>
@@ -106,16 +106,16 @@
 
                     <StackPanel Margin="0,0,18,0">
                         <TextBlock Style="{StaticResource FieldLabelTextBlockStyle}"
-                                   Text="Timeline" />
+                                   Text="Sequence" />
                         <StackPanel Orientation="Horizontal">
                             <ToggleButton x:Name="TrimModeToggleButton"
-                                          Width="92"
+                                          Width="96"
                                           Margin="0,0,8,0"
-                                          Content="Trim"
+                                          Content="Trim Ends"
                                           Click="OnTrimModeClick" />
                             <ToggleButton x:Name="CutModeToggleButton"
-                                          Width="92"
-                                          Content="Cut"
+                                          Width="104"
+                                          Content="Remove Part"
                                           Click="OnCutModeClick" />
                         </StackPanel>
                     </StackPanel>
@@ -124,16 +124,16 @@
                         <TextBlock Style="{StaticResource FieldLabelTextBlockStyle}"
                                    Text="Edits" />
                         <StackPanel Orientation="Horizontal">
-                            <Button Width="92"
-                                    Margin="0,0,8,0"
-                                    Content="Undo"
-                                    Command="{Binding UndoCommand}" />
-                            <Button Width="92"
-                                    Margin="0,0,8,0"
-                                    Content="Redo"
-                                    Command="{Binding RedoCommand}" />
-                            <Button Width="110"
-                                    Content="Toggle Chrome"
+                            <Button Width="84"
+                                     Margin="0,0,8,0"
+                                     Content="Undo"
+                                     Command="{Binding UndoCommand}" />
+                            <Button Width="84"
+                                     Margin="0,0,8,0"
+                                     Content="Redo"
+                                     Command="{Binding RedoCommand}" />
+                            <Button Width="104"
+                                    Content="Window Frame"
                                     Command="{Binding ToggleChromeCommand}" />
                         </StackPanel>
                     </StackPanel>
@@ -160,12 +160,12 @@
                             Margin="8,0,8,0"
                             Content="+"
                             Click="OnZoomInClick" />
-                    <Button Width="74"
+                    <Button Width="64"
                             Margin="0,0,8,0"
                             Content="Fit"
                             Click="OnFitClick" />
-                    <Button Width="74"
-                            Content="100%"
+                    <Button Width="64"
+                            Content="1:1"
                             Click="OnOneToOneClick" />
                 </StackPanel>
             </Grid>
@@ -178,30 +178,29 @@
         <controls:TimelineStrip x:Name="TimelineStripControl"
                                 Grid.Row="4"
                                 Grid.Column="1"
-                                Margin="16,0,0,0" />
+                                Margin="12,0,0,0" />
 
         <Border x:Name="InspectorPanel"
                 Grid.Row="4"
                 Grid.Column="2"
                 Grid.RowSpan="2"
-                Margin="16,0,0,0"
+                Margin="12,0,0,0"
                 Style="{StaticResource CardBorderStyle}">
-            <ScrollViewer VerticalScrollBarVisibility="Auto">
-                <StackPanel>
+            <StackPanel>
                     <TextBlock Style="{StaticResource SectionTitleTextBlockStyle}"
-                               Text="Export" />
+                               Text="Save or share" />
                     <TextBlock Margin="0,8,0,16"
                                Style="{StaticResource SectionSubtitleTextBlockStyle}"
-                               Text="Export the polished result once the preview looks right." />
+                               Text="When the preview looks right, save it or copy it." />
 
                     <Button Style="{StaticResource PrimaryButtonStyle}"
-                            Content="Save PNG"
+                            Content="Save Image"
                             Command="{Binding SaveCommand}" />
                     <Button Margin="0,10,0,0"
-                            Content="Copy to Clipboard"
+                            Content="Copy Image"
                             Command="{Binding CopyCommand}" />
                     <Button Margin="0,10,0,0"
-                            Content="Discard and Close"
+                            Content="Discard Changes"
                             Command="{Binding DiscardCommand}" />
                     <Button Margin="0,10,0,0"
                             Content="Clear Crop"
@@ -228,7 +227,7 @@
                                        FontSize="13"
                                        Foreground="{DynamicResource SecondaryForegroundBrush}"
                                        TextWrapping="Wrap"
-                                       Text="Chrome is included in the export." />
+                                        Text="The window frame will stay in the saved image." />
                         </StackPanel>
                     </Border>
 
@@ -248,7 +247,7 @@
                                        FontSize="13"
                                        Foreground="{DynamicResource PrimaryForegroundBrush}"
                                        TextWrapping="Wrap"
-                                       Text="No edits yet." />
+                                        Text="No changes yet." />
                         </StackPanel>
                     </Border>
 
@@ -268,22 +267,21 @@
                                        FontSize="13"
                                        Foreground="{DynamicResource PrimaryForegroundBrush}"
                                        TextWrapping="Wrap"
-                                       Text="Pan mode moves around the canvas. Switch to Crop when you want to define the export area." />
+                                        Text="Move lets you look around the image. Crop lets you choose exactly what to keep." />
                             <TextBlock x:Name="TimelineModeHintTextBlock"
                                        Margin="0,12,0,0"
                                        FontSize="13"
                                        Foreground="{DynamicResource PrimaryForegroundBrush}"
                                        TextWrapping="Wrap"
-                                       Text="Trim mode adjusts the start/end handles. Cut mode removes an internal slice." />
+                                        Text="Trim Ends shortens the capture from the beginning or end. Remove Part cuts out something in the middle." />
                         </StackPanel>
                     </Border>
 
                     <TextBlock x:Name="SaveLocationTextBlock"
                                Margin="0,18,0,0"
                                Style="{StaticResource SectionSubtitleTextBlockStyle}"
-                               Text="Exports save to your screenshots folder." />
-                </StackPanel>
-            </ScrollViewer>
+                               Text="Images are saved to your screenshots folder." />
+            </StackPanel>
         </Border>
     </Grid>
 </Window>

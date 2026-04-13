@@ -57,8 +57,8 @@ public partial class TimelineStrip : UserControl
         PrimaryAxisLength = Math.Max(1, primaryAxisLength);
         TrimRange = trimRange;
         CutRanges = cutRanges;
-        Width = direction == ScrollDirection.Vertical ? 180 : double.NaN;
-        Height = direction == ScrollDirection.Vertical ? double.NaN : 140;
+        Width = direction == ScrollDirection.Vertical ? 168 : double.NaN;
+        Height = direction == ScrollDirection.Vertical ? double.NaN : 128;
         RenderOverlay();
     }
 
@@ -280,14 +280,14 @@ public partial class TimelineStrip : UserControl
     {
         if (_editMode == TimelineStripEditMode.Trim)
         {
-            ModeTextBlock.Text = "Trim mode";
-            HintTextBlock.Text = "Drag the Start and End handles to tighten the stitched result.";
+            ModeTextBlock.Text = "Trim ends";
+            HintTextBlock.Text = "Drag the top and bottom handles to shorten the capture.";
             OverlayCanvas.Cursor = Direction == ScrollDirection.Vertical ? Cursors.SizeNS : Cursors.SizeWE;
             return;
         }
 
-        ModeTextBlock.Text = "Cut mode";
-        HintTextBlock.Text = "Drag across the strip to remove a section from the final image.";
+        ModeTextBlock.Text = "Remove part";
+        HintTextBlock.Text = "Drag across the strip to remove part of the image.";
         OverlayCanvas.Cursor = Cursors.Cross;
     }
 }

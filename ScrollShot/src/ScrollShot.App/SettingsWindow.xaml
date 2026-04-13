@@ -5,10 +5,10 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
         Title="ScrollShot Settings"
-        Height="700"
-        Width="760"
-        MinHeight="620"
-        MinWidth="680"
+        Height="640"
+        Width="720"
+        MinHeight="600"
+        MinWidth="660"
         WindowStartupLocation="CenterOwner"
         ResizeMode="CanMinimize">
     <Grid Margin="24">
@@ -28,17 +28,18 @@
             <TextBlock Margin="0,8,0,6"
                        FontSize="26"
                        FontWeight="SemiBold"
-                       Text="Adjust save location, shortcut, and advanced options" />
+                       Text="Choose where images are saved and how you start a capture" />
             <TextBlock Style="{StaticResource SectionSubtitleTextBlockStyle}"
-                       Text="These are secondary controls, so they live in a separate dialog instead of the main capture surface." />
+                       Text="These are secondary options, so they live in a separate window instead of the main capture screen." />
         </StackPanel>
 
         <Border Grid.Row="2"
                 Style="{StaticResource CardBorderStyle}">
-            <ScrollViewer VerticalScrollBarVisibility="Auto">
-                <StackPanel>
+            <StackPanel>
+                    <TextBlock Style="{StaticResource SectionTitleTextBlockStyle}"
+                               Text="Where to save images" />
                     <TextBlock Style="{StaticResource FieldLabelTextBlockStyle}"
-                               Text="Save folder" />
+                               Text="Save images to" />
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
@@ -55,8 +56,10 @@
 
                     <TextBlock Margin="0,0,0,16"
                                Style="{StaticResource SectionSubtitleTextBlockStyle}"
-                               Text="Files are named with a capture timestamp. A synced screenshots folder works well if you share captures often." />
+                               Text="Each image is saved with the capture time in its file name." />
 
+                    <TextBlock Style="{StaticResource SectionTitleTextBlockStyle}"
+                               Text="Keyboard shortcut" />
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
@@ -66,7 +69,7 @@
 
                         <StackPanel Grid.Column="0">
                             <TextBlock Style="{StaticResource FieldLabelTextBlockStyle}"
-                                       Text="Modifiers" />
+                                       Text="Shortcut keys" />
                             <ComboBox x:Name="HotkeyModifiersComboBox"
                                       DisplayMemberPath="Label"
                                       SelectionChanged="OnHotkeySelectionChanged" />
@@ -74,7 +77,7 @@
 
                         <StackPanel Grid.Column="2">
                             <TextBlock Style="{StaticResource FieldLabelTextBlockStyle}"
-                                       Text="Key" />
+                                       Text="Main key" />
                             <ComboBox x:Name="HotkeyKeyComboBox"
                                       DisplayMemberPath="Label"
                                       SelectionChanged="OnHotkeySelectionChanged" />
@@ -91,7 +94,7 @@
                             <TextBlock FontSize="12"
                                        FontWeight="SemiBold"
                                        Foreground="{DynamicResource SecondaryForegroundBrush}"
-                                       Text="Registered hotkey" />
+                                       Text="Current shortcut" />
                             <TextBlock x:Name="HotkeyHelpTextBlock"
                                        Margin="0,6,0,0"
                                        FontSize="16"
@@ -102,15 +105,17 @@
 
                     <TextBlock Margin="0,8,0,16"
                                Style="{StaticResource SectionSubtitleTextBlockStyle}"
-                               Text="The shortcut keeps working while ScrollShot is hidden in the tray." />
+                               Text="This shortcut keeps working while ScrollShot is running in the tray." />
 
+                    <TextBlock Style="{StaticResource SectionTitleTextBlockStyle}"
+                               Text="Extra options" />
                     <CheckBox x:Name="StartWithWindowsCheckBox"
-                              Content="Start ScrollShot automatically when Windows starts" />
+                              Content="Open ScrollShot when I sign in to Windows" />
                     <CheckBox x:Name="ScrollCaptureDebugDumpEnabledCheckBox"
-                              Content="Save raw scroll-capture debug dumps for replay and stitching analysis" />
+                              Content="Save diagnostic files while capturing a scrolling page" />
 
                     <TextBlock Style="{StaticResource FieldLabelTextBlockStyle}"
-                               Text="Debug dump folder" />
+                               Text="Diagnostic files folder" />
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
@@ -126,9 +131,8 @@
                     </Grid>
 
                     <TextBlock Style="{StaticResource SectionSubtitleTextBlockStyle}"
-                               Text="Enable this only while diagnosing stitching issues. It stores frame sequences and reports on disk." />
-                </StackPanel>
-            </ScrollViewer>
+                               Text="Turn this on only if something is not working as expected. It saves extra capture data to disk." />
+            </StackPanel>
         </Border>
 
         <DockPanel Grid.Row="4"
@@ -142,13 +146,13 @@
 
             <StackPanel DockPanel.Dock="Right"
                         Orientation="Horizontal">
-                <Button Width="100"
+                <Button Width="90"
                         Margin="0,0,12,0"
                         Content="Close"
                         IsCancel="True" />
-                <Button Width="150"
+                <Button Width="130"
                         Style="{StaticResource PrimaryButtonStyle}"
-                        Content="Save Settings"
+                        Content="Save Changes"
                         Click="OnSaveSettingsClick" />
             </StackPanel>
         </DockPanel>

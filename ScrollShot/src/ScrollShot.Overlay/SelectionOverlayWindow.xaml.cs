@@ -142,7 +142,7 @@ public partial class SelectionOverlayWindow : Window
         }
 
         SelectedRegion = ScreenHelper.ToPhysicalScreenRect(_selectionRect, this);
-        SelectionSummaryTextBlock.Text = $"{SelectedRegion.Value.Width} × {SelectedRegion.Value.Height} px";
+        SelectionSummaryTextBlock.Text = $"Selected area: {SelectedRegion.Value.Width} × {SelectedRegion.Value.Height} px";
         ActionPanel.Visibility = Visibility.Visible;
         PositionActionPanel();
     }

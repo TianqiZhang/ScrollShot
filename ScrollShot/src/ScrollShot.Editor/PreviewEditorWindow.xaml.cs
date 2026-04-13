@@ -94,8 +94,8 @@ public partial class PreviewEditorWindow : Window
             ViewModel.CurrentState.CutRanges);
         TimelineStripControl.SetEditMode(_timelineMode);
 
-        EditorTitleTextBlock.Text = ViewModel.HasTimeline ? "Scrolling capture editor" : "Screenshot editor";
-        EditorSubtitleTextBlock.Text = "Use explicit tools to crop, trim, and cut before exporting the final image.";
+        EditorTitleTextBlock.Text = ViewModel.HasTimeline ? "Finish your scrolling capture" : "Review your screenshot";
+        EditorSubtitleTextBlock.Text = "Crop, trim, and remove anything you do not want before saving.";
         DirtyStateTextBlock.Text = ViewModel.HasUnsavedChanges ? "Unsaved changes" : "Saved";
         DirtyStateTextBlock.Foreground = (Brush)(TryFindResource(ViewModel.HasUnsavedChanges ? "DangerBrush" : "SuccessBrush") ?? Brushes.White);
         PreviewMetricsTextBlock.Text = ViewModel.PreviewSizeText;
@@ -120,21 +120,21 @@ public partial class PreviewEditorWindow : Window
 
         if (ViewModel.IsVerticalDirection)
         {
-            RootGrid.ColumnDefinitions[1].Width = new GridLength(240);
+            RootGrid.ColumnDefinitions[1].Width = new GridLength(220);
             RootGrid.RowDefinitions[5].Height = new GridLength(0);
             Grid.SetRow(TimelineStripControl, 4);
             Grid.SetColumn(TimelineStripControl, 1);
             Grid.SetColumnSpan(TimelineStripControl, 1);
-            TimelineStripControl.Margin = new Thickness(16, 0, 0, 0);
+            TimelineStripControl.Margin = new Thickness(12, 0, 0, 0);
         }
         else
         {
             RootGrid.ColumnDefinitions[1].Width = new GridLength(0);
-            RootGrid.RowDefinitions[5].Height = new GridLength(220);
+            RootGrid.RowDefinitions[5].Height = new GridLength(200);
             Grid.SetRow(TimelineStripControl, 5);
             Grid.SetColumn(TimelineStripControl, 0);
             Grid.SetColumnSpan(TimelineStripControl, 2);
-            TimelineStripControl.Margin = new Thickness(0, 16, 0, 0);
+            TimelineStripControl.Margin = new Thickness(0, 12, 0, 0);
         }
     }
 
@@ -225,8 +225,8 @@ public partial class PreviewEditorWindow : Window
         PanModeToggleButton.IsChecked = mode == ImageViewportInteractionMode.Pan;
         CropModeToggleButton.IsChecked = mode == ImageViewportInteractionMode.Crop;
         ViewportModeHintTextBlock.Text = mode == ImageViewportInteractionMode.Pan
-            ? "Pan mode moves around the canvas. Use the mouse wheel or toolbar buttons to adjust zoom."
-            : "Crop mode lets you drag a rectangle directly on the canvas. Clear Crop removes it again.";
+            ? "Move lets you look around the image. Use the mouse wheel or the zoom buttons to get a closer look."
+            : "Crop lets you drag a box around the part you want to keep. Use Clear Crop if you want to start over.";
     }
 
     private void SetTimelineMode(TimelineStripEditMode mode)
@@ -236,8 +236,8 @@ public partial class PreviewEditorWindow : Window
         TrimModeToggleButton.IsChecked = mode == TimelineStripEditMode.Trim;
         CutModeToggleButton.IsChecked = mode == TimelineStripEditMode.Cut;
         TimelineModeHintTextBlock.Text = mode == TimelineStripEditMode.Trim
-            ? "Trim mode adjusts the start and end handles to tighten the stitched result."
-            : "Cut mode removes an internal section. Drag across the strip where the unwanted region appears.";
+            ? "Trim Ends shortens the capture from the beginning or end."
+            : "Remove Part cuts out something in the middle. Drag across the strip where you want that section removed.";
     }
 
     private void UpdateZoomText(double zoomFactor)

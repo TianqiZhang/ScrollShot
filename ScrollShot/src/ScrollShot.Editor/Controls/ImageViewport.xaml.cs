@@ -166,8 +166,8 @@ public partial class ImageViewport : UserControl
     private void UpdateInteractionVisuals()
     {
         ModeBadgeTextBlock.Text = _interactionMode == ImageViewportInteractionMode.Crop
-            ? "Crop mode - drag to define the export area"
-            : "Pan mode - drag to move around the image";
+            ? "Crop - drag to choose what to keep"
+            : "Move - drag to look around the image";
         Cursor = _interactionMode == ImageViewportInteractionMode.Crop
             ? Cursors.Cross
             : Cursors.SizeAll;

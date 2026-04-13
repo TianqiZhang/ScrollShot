@@ -20,25 +20,25 @@ public partial class LivePreviewStrip : System.Windows.Controls.UserControl
 
         PreviewImage.Source = BitmapConversion.ToBitmapSource(bitmap);
         DirectionTextBlock.Text = direction == ScrollDirection.Vertical
-            ? "Vertical scrolling capture"
-            : "Horizontal scrolling capture";
+            ? "Capture while scrolling down"
+            : "Capture side to side";
         StatusTextBlock.Text = direction == ScrollDirection.Vertical
-            ? "Scroll the target window normally. Finish once the live preview covers everything you want."
-            : "Scroll the target window sideways. Finish once the preview covers the full horizontal range.";
+            ? "Keep scrolling down. When the preview looks complete, click Finish."
+            : "Keep scrolling sideways. When the preview looks complete, click Finish.";
 
         if (direction == ScrollDirection.Vertical)
         {
-            Width = 260;
-            Height = 420;
-            PreviewImage.Width = 220;
-            PreviewImage.Height = 280;
+            Width = 232;
+            Height = 356;
+            PreviewImage.Width = 184;
+            PreviewImage.Height = 236;
         }
         else
         {
-            Width = 420;
-            Height = 250;
-            PreviewImage.Width = 360;
-            PreviewImage.Height = 130;
+            Width = 360;
+            Height = 208;
+            PreviewImage.Width = 312;
+            PreviewImage.Height = 112;
         }
     }
 
