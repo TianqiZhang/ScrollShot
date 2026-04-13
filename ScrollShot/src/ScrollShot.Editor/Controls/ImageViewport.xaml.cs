@@ -58,7 +58,11 @@ public partial class ImageViewport : UserControl
 
     public void FitToView()
     {
-        if (_image is null || ScrollViewer.ViewportWidth <= 0 || ScrollViewer.ViewportHeight <= 0)
+        if (_image is null ||
+            _image.PixelWidth <= 0 ||
+            _image.PixelHeight <= 0 ||
+            ScrollViewer.ViewportWidth <= 0 ||
+            ScrollViewer.ViewportHeight <= 0)
         {
             SetZoom(1);
             return;
