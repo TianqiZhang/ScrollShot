@@ -6,17 +6,18 @@
              mc:Ignorable="d"
              d:DesignHeight="450"
              d:DesignWidth="800">
-    <Border Background="#111"
-            BorderBrush="#444"
+    <Border Background="{DynamicResource CardMutedBackgroundBrush}"
+            BorderBrush="{DynamicResource BorderBrush}"
             BorderThickness="1"
-            CornerRadius="6">
+            CornerRadius="16">
         <ScrollViewer x:Name="ScrollViewer"
-                      PreviewMouseWheel="OnPreviewMouseWheel"
-                      MouseLeftButtonDown="OnMouseLeftButtonDown"
-                      MouseLeftButtonUp="OnMouseLeftButtonUp"
-                      MouseMove="OnMouseMove">
+                       PreviewMouseWheel="OnPreviewMouseWheel"
+                       MouseLeftButtonDown="OnMouseLeftButtonDown"
+                       MouseLeftButtonUp="OnMouseLeftButtonUp"
+                       MouseMove="OnMouseMove">
             <Grid>
                 <Image x:Name="ViewportImage"
+                       Stretch="None"
                        RenderTransformOrigin="0,0">
                     <Image.RenderTransform>
                         <ScaleTransform x:Name="ScaleTransform"
@@ -27,11 +28,26 @@
                 <Canvas x:Name="OverlayCanvas"
                         Background="Transparent">
                     <Rectangle x:Name="CropRectangle"
-                               Stroke="Orange"
+                               Stroke="{DynamicResource AccentBrush}"
                                StrokeThickness="2"
-                               Fill="#22FFA500"
+                               Fill="#2260A5FA"
                                Visibility="Collapsed" />
                 </Canvas>
+                <Border Margin="16"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Top"
+                        Background="#CC0B1220"
+                        BorderBrush="{DynamicResource BorderBrush}"
+                        BorderThickness="1"
+                        CornerRadius="10"
+                        Padding="10,6"
+                        IsHitTestVisible="False">
+                    <TextBlock x:Name="ModeBadgeTextBlock"
+                               FontSize="12"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource PrimaryForegroundBrush}"
+                               Text="Pan mode" />
+                </Border>
             </Grid>
         </ScrollViewer>
     </Border>
