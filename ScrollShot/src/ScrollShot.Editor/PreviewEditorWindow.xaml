@@ -106,22 +106,6 @@
 
                     <StackPanel Margin="0,0,18,0">
                         <TextBlock Style="{StaticResource FieldLabelTextBlockStyle}"
-                                   Text="Sequence" />
-                        <StackPanel Orientation="Horizontal">
-                            <ToggleButton x:Name="TrimModeToggleButton"
-                                          Width="96"
-                                          Margin="0,0,8,0"
-                                          Content="Trim Ends"
-                                          Click="OnTrimModeClick" />
-                            <ToggleButton x:Name="CutModeToggleButton"
-                                          Width="104"
-                                          Content="Remove Part"
-                                          Click="OnCutModeClick" />
-                        </StackPanel>
-                    </StackPanel>
-
-                    <StackPanel Margin="0,0,18,0">
-                        <TextBlock Style="{StaticResource FieldLabelTextBlockStyle}"
                                    Text="Edits" />
                         <StackPanel Orientation="Horizontal">
                             <Button Width="84"
@@ -175,10 +159,6 @@
                                 Grid.Row="4"
                                 Grid.Column="0" />
 
-        <controls:TimelineStrip x:Name="TimelineStripControl"
-                                Grid.Row="4"
-                                Grid.Column="1"
-                                Margin="12,0,0,0" />
 
         <Border x:Name="InspectorPanel"
                 Grid.Row="4"
