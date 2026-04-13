@@ -77,132 +77,124 @@
 
             <Border Grid.Row="2"
                     Style="{StaticResource CardBorderStyle}">
-                <StackPanel>
-                    <TextBlock Style="{StaticResource SectionTitleTextBlockStyle}"
-                               Text="Settings" />
-                    <TextBlock Margin="0,8,0,18"
-                               Style="{StaticResource SectionSubtitleTextBlockStyle}"
-                               Text="Keep the main surface simple. Expand only the settings you need." />
-
-                    <Expander Header="Output location"
-                              IsExpanded="False">
-                        <StackPanel Margin="0,12,0,0">
-                            <TextBlock Style="{StaticResource FieldLabelTextBlockStyle}"
-                                       Text="Save folder" />
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <TextBox x:Name="SaveFolderTextBox"
-                                         Grid.Column="0"
-                                         Margin="0,0,12,8" />
-                                <Button Grid.Column="1"
-                                        Margin="0,0,0,8"
-                                        Content="Browse"
-                                        Click="OnBrowseSaveFolderClick" />
-                            </Grid>
-
-                            <TextBlock Style="{StaticResource SectionSubtitleTextBlockStyle}"
-                                       Text="Files are named with a capture timestamp. A synced screenshots folder works well if you share captures often." />
-                        </StackPanel>
-                    </Expander>
-
-                    <Expander Header="Shortcut"
-                              IsExpanded="False">
-                        <StackPanel Margin="0,12,0,0">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="16" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-
-                                <StackPanel Grid.Column="0">
-                                    <TextBlock Style="{StaticResource FieldLabelTextBlockStyle}"
-                                               Text="Modifiers" />
-                                    <ComboBox x:Name="HotkeyModifiersComboBox"
-                                              DisplayMemberPath="Label"
-                                              SelectionChanged="OnHotkeySelectionChanged" />
-                                </StackPanel>
-
-                                <StackPanel Grid.Column="2">
-                                    <TextBlock Style="{StaticResource FieldLabelTextBlockStyle}"
-                                               Text="Key" />
-                                    <ComboBox x:Name="HotkeyKeyComboBox"
-                                              DisplayMemberPath="Label"
-                                              SelectionChanged="OnHotkeySelectionChanged" />
-                                </StackPanel>
-                            </Grid>
-
-                            <Border Margin="0,8,0,0"
-                                    Background="{DynamicResource CardMutedBackgroundBrush}"
-                                    BorderBrush="{DynamicResource BorderBrush}"
-                                    BorderThickness="1"
-                                    CornerRadius="12"
-                                    Padding="14">
-                                <StackPanel>
-                                    <TextBlock FontSize="12"
-                                               FontWeight="SemiBold"
-                                               Foreground="{DynamicResource SecondaryForegroundBrush}"
-                                               Text="Registered hotkey" />
-                                    <TextBlock x:Name="HotkeyHelpTextBlock"
-                                               Margin="0,6,0,0"
-                                               FontSize="16"
-                                               FontWeight="SemiBold"
-                                               Text="Ctrl+Shift+S" />
-                                </StackPanel>
-                            </Border>
-
-                            <TextBlock Margin="0,8,0,0"
+                <Expander IsExpanded="False">
+                    <Expander.Header>
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource SectionTitleTextBlockStyle}"
+                                       Text="Settings" />
+                            <TextBlock Margin="0,6,0,0"
                                        Style="{StaticResource SectionSubtitleTextBlockStyle}"
-                                       Text="The shortcut keeps working while ScrollShot is hidden in the tray." />
+                                       Text="Save location, shortcut, and advanced options." />
                         </StackPanel>
-                    </Expander>
+                    </Expander.Header>
 
-                    <Expander Header="Advanced"
-                              IsExpanded="False">
-                        <StackPanel Margin="0,12,0,0">
-                            <CheckBox x:Name="StartWithWindowsCheckBox"
-                                      Content="Start ScrollShot automatically when Windows starts" />
-                            <CheckBox x:Name="ScrollCaptureDebugDumpEnabledCheckBox"
-                                      Content="Save raw scroll-capture debug dumps for replay and stitching analysis" />
+                    <StackPanel Margin="0,18,0,0">
+                        <TextBlock Style="{StaticResource FieldLabelTextBlockStyle}"
+                                   Text="Save folder" />
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBox x:Name="SaveFolderTextBox"
+                                     Grid.Column="0"
+                                     Margin="0,0,12,8" />
+                            <Button Grid.Column="1"
+                                    Margin="0,0,0,8"
+                                    Content="Browse"
+                                    Click="OnBrowseSaveFolderClick" />
+                        </Grid>
 
-                            <TextBlock Style="{StaticResource FieldLabelTextBlockStyle}"
-                                       Text="Debug dump folder" />
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <TextBox x:Name="DebugDumpFolderTextBox"
-                                         Grid.Column="0"
-                                         Margin="0,0,12,8" />
-                                <Button Grid.Column="1"
-                                        Margin="0,0,0,8"
-                                        Content="Browse"
-                                        Click="OnBrowseDebugDumpFolderClick" />
-                            </Grid>
+                        <TextBlock Margin="0,0,0,16"
+                                   Style="{StaticResource SectionSubtitleTextBlockStyle}"
+                                   Text="Files are named with a capture timestamp. A synced screenshots folder works well if you share captures often." />
 
-                            <TextBlock Style="{StaticResource SectionSubtitleTextBlockStyle}"
-                                       Text="Enable this only while diagnosing stitching issues. It stores frame sequences and reports on disk." />
-                        </StackPanel>
-                    </Expander>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="16" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
 
-                    <Button Width="150"
-                            Margin="0,18,0,0"
-                            HorizontalAlignment="Left"
-                            Style="{StaticResource PrimaryButtonStyle}"
-                            Content="Save Settings"
-                            Click="OnSaveSettingsClick" />
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Style="{StaticResource FieldLabelTextBlockStyle}"
+                                           Text="Modifiers" />
+                                <ComboBox x:Name="HotkeyModifiersComboBox"
+                                          DisplayMemberPath="Label"
+                                          SelectionChanged="OnHotkeySelectionChanged" />
+                            </StackPanel>
 
-                    <TextBlock x:Name="StatusTextBlock"
-                               Margin="0,12,0,0"
-                               FontSize="13"
-                               Foreground="{DynamicResource SecondaryForegroundBrush}"
-                               TextWrapping="Wrap"
-                               Text="Ready." />
-                </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Style="{StaticResource FieldLabelTextBlockStyle}"
+                                           Text="Key" />
+                                <ComboBox x:Name="HotkeyKeyComboBox"
+                                          DisplayMemberPath="Label"
+                                          SelectionChanged="OnHotkeySelectionChanged" />
+                            </StackPanel>
+                        </Grid>
+
+                        <Border Margin="0,8,0,0"
+                                Background="{DynamicResource CardMutedBackgroundBrush}"
+                                BorderBrush="{DynamicResource BorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="12"
+                                Padding="14">
+                            <StackPanel>
+                                <TextBlock FontSize="12"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource SecondaryForegroundBrush}"
+                                           Text="Registered hotkey" />
+                                <TextBlock x:Name="HotkeyHelpTextBlock"
+                                           Margin="0,6,0,0"
+                                           FontSize="16"
+                                           FontWeight="SemiBold"
+                                           Text="Ctrl+Shift+S" />
+                            </StackPanel>
+                        </Border>
+
+                        <TextBlock Margin="0,8,0,16"
+                                   Style="{StaticResource SectionSubtitleTextBlockStyle}"
+                                   Text="The shortcut keeps working while ScrollShot is hidden in the tray." />
+
+                        <CheckBox x:Name="StartWithWindowsCheckBox"
+                                  Content="Start ScrollShot automatically when Windows starts" />
+                        <CheckBox x:Name="ScrollCaptureDebugDumpEnabledCheckBox"
+                                  Content="Save raw scroll-capture debug dumps for replay and stitching analysis" />
+
+                        <TextBlock Style="{StaticResource FieldLabelTextBlockStyle}"
+                                   Text="Debug dump folder" />
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBox x:Name="DebugDumpFolderTextBox"
+                                     Grid.Column="0"
+                                     Margin="0,0,12,8" />
+                            <Button Grid.Column="1"
+                                    Margin="0,0,0,8"
+                                    Content="Browse"
+                                    Click="OnBrowseDebugDumpFolderClick" />
+                        </Grid>
+
+                        <TextBlock Style="{StaticResource SectionSubtitleTextBlockStyle}"
+                                   Text="Enable this only while diagnosing stitching issues. It stores frame sequences and reports on disk." />
+
+                        <Button Width="150"
+                                Margin="0,18,0,0"
+                                HorizontalAlignment="Left"
+                                Style="{StaticResource PrimaryButtonStyle}"
+                                Content="Save Settings"
+                                Click="OnSaveSettingsClick" />
+
+                        <TextBlock x:Name="StatusTextBlock"
+                                   Margin="0,12,0,0"
+                                   FontSize="13"
+                                   Foreground="{DynamicResource SecondaryForegroundBrush}"
+                                   TextWrapping="Wrap"
+                                   Text="Ready." />
+                    </StackPanel>
+                </Expander>
             </Border>
         </Grid>
     </ScrollViewer>
