@@ -51,6 +51,7 @@
 | Phase 46 | Completed | Address PR review comments | Restored visible overlay instructions after region selection, removed a duplicate `SaveLocationHint` notification, and made initial editor fit-to-view wait until layout can actually fit the image |
 | Phase 47 | Completed | Fix editor viewport scrollbar measurement | Moved editor zoom scaling to the shared viewport content layer so the image and overlays scale together and `ScrollViewer` measures the actual fitted size instead of the original image size |
 | Phase 48 | Completed | Remove superpowers draft docs | Deleted the temporary planning/design files under `docs/superpowers/` so the branch only keeps the implementation changes that matter for review |
+| Phase 49 | Completed | Restore visible crop affordance | Added explicit crop guidance and a `Clear Crop` action back to the simplified editor so cropping is discoverable instead of a hidden drag-only interaction |
 
 ## Commits
 
@@ -105,6 +106,7 @@
 | Phase 46 | `84fa41c` |
 | Phase 47 | `bfda4c6` |
 | Phase 48 | `2e44803` |
+| Phase 49 | `c0c6d53` |
 
 ## Notes
 
@@ -129,6 +131,7 @@
 - The latest PR feedback pass tightens the remaining edges: the overlay instructions stay visible after making a selection in the restored direct-capture flow, `SaveLocationHint` no longer fires duplicate property notifications, and initial fit-to-view only marks itself complete once the viewport can truly fit the image.
 - The latest viewport fix corrects a measurement bug in the simplified editor branch: zoom/fitted sizing now applies to the shared viewport content container instead of only the image element, so the crop overlays stay aligned and the viewport scrollbars reflect the true displayed size.
 - The latest cleanup removes the temporary `docs/superpowers/` draft artifacts from the branch so the PR stays focused on product code rather than planning scratch files.
+- The latest editor usability fix makes cropping explicit again in the crop-centric UI by adding visible guidance plus a `Clear Crop` button, avoiding the previous hidden “just drag on the image” behavior.
 - The current algorithm-improvement loop now has an offline path: generate overlapping datasets from a ground-truth image, replay them through `ScrollSession`, and compare against the expected final image.
 - Real scroll captures can now emit opt-in debug datasets from the app itself, including raw frames, manifest metadata, and a stitched output/report snapshot for offline analysis.
 - The first real-dump stabilization pass focused on correctness over aggressive appending: defer locking zones on unusable starter pairs, retry zone detection when overlap matching fails, and compare overlaps on a stable central crop to reduce edge-noise sensitivity.
