@@ -43,6 +43,7 @@
 | Phase 38 | Completed | Rewrite end-user copy and tighten UI sizing | Reworked user-facing text across the main window, settings dialog, overlay, live preview, and editor so it reads like product copy, then tightened sizing/spacing to remove obvious extra whitespace and unnecessary scrollbars |
 | Phase 39 | Completed | Remove redundant settings dialog header | Deleted the extra explanatory header block from the settings dialog so the window opens directly into the settings form and uses vertical space more efficiently |
 | Phase 40 | Completed | Auto-size settings dialog height | Switched the settings dialog from a fixed height to content-based height so the bottom controls stay visible after the recent layout simplifications |
+| Phase 41 | Completed | Tighten hotkey combo sizing | Reduced the shared ComboBox padding/min-height used by the settings hotkey dropdowns so they feel closer to native control sizing instead of oversized |
 
 ## Commits
 
@@ -89,6 +90,7 @@
 | Phase 38 | `dc2c217` |
 | Phase 39 | `255541e` |
 | Phase 40 | `ea51ac8` |
+| Phase 41 | `05d65a3` |
 
 ## Notes
 
@@ -105,6 +107,7 @@
 - The newest polish pass finishes the wording/sizing cleanup requested after that IA change: user-facing text across the main window, settings dialog, overlay, live preview, and editor now reads like product copy instead of internal tooling language, and the most obvious extra space / auto-scroll surfaces were tightened so the UI feels less temporary.
 - The follow-up cleanup trims the settings dialog even further by removing the redundant explanatory header, leaving a more standard “open dialog, edit fields, save” flow and reclaiming vertical space for the controls themselves.
 - The latest tweak makes the settings dialog height content-driven instead of fixed, which is a better fit now that the window is just a compact form and avoids clipping the bottom actions on real layouts.
+- The latest sizing cleanup tightens the shared ComboBox style as well, because the hotkey dropdowns were inheriting an oversized `MinHeight`/`Padding` combination that made them feel bulkier than the rest of the form.
 - The current algorithm-improvement loop now has an offline path: generate overlapping datasets from a ground-truth image, replay them through `ScrollSession`, and compare against the expected final image.
 - Real scroll captures can now emit opt-in debug datasets from the app itself, including raw frames, manifest metadata, and a stitched output/report snapshot for offline analysis.
 - The first real-dump stabilization pass focused on correctness over aggressive appending: defer locking zones on unusable starter pairs, retry zone detection when overlap matching fails, and compare overlaps on a stable central crop to reduce edge-noise sensitivity.
