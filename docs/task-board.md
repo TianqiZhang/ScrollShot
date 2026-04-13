@@ -37,6 +37,7 @@
 | Phase 32 | Completed | Tone down styling and restore contrast | Kept the improved layout and workflows, but switched the shared UI styling back to a restrained light palette with dark text, simpler control styling, and less shouty labeling so the app reads more like a native desktop tool than a themed mockup |
 | Phase 33 | Completed | Collapse secondary settings panes | Kept the primary capture pane fully visible, but tucked output, shortcut, and advanced settings behind collapsed expanders so the main window defaults to a much simpler first-run surface |
 | Phase 34 | Completed | Move save action into settings pane | Kept the secondary settings collapsed, but moved the `Save Settings` action out of the bottom status bar and into the settings pane itself so the action lives with the controls it affects |
+| Phase 35 | Completed | Remove separate status pane | Removed the dedicated status pane entirely and kept any remaining save/validation feedback inline inside the settings pane, which leaves the main window with just the primary capture pane plus progressive-disclosure settings |
 
 ## Commits
 
@@ -77,6 +78,7 @@
 | Phase 32 | `6b41378` |
 | Phase 33 | `e18fc79` |
 | Phase 34 | `3fdb014` |
+| Phase 35 | `0649abc` |
 
 ## Notes
 
@@ -87,6 +89,7 @@
 - The immediate follow-up pass deliberately pulled the styling back toward a more native Windows feel after the first theme pass proved too dark and too loud. Layout, spacing, and workflow improvements stay; the visual system is now lighter, higher-contrast, and less decorative.
 - The next simplification pass narrowed the main window further: the top pane remains a dedicated “start capture” surface, while the rest of the configuration is now progressive disclosure. That keeps the app approachable for first-time users without removing the secondary controls.
 - The latest polish pass tightened that relationship one step further: `Save Settings` is now inside the settings pane instead of the always-visible status strip, so the action appears exactly where users expect to apply configuration changes.
+- The newest cleanup pass removed the last leftover structural noise from the main window: there is no separate status pane anymore, because save/validation feedback is more coherent when shown inline with the settings action that produced it.
 - The current algorithm-improvement loop now has an offline path: generate overlapping datasets from a ground-truth image, replay them through `ScrollSession`, and compare against the expected final image.
 - Real scroll captures can now emit opt-in debug datasets from the app itself, including raw frames, manifest metadata, and a stitched output/report snapshot for offline analysis.
 - The first real-dump stabilization pass focused on correctness over aggressive appending: defer locking zones on unusable starter pairs, retry zone detection when overlap matching fails, and compare overlaps on a stable central crop to reduce edge-noise sensitivity.
