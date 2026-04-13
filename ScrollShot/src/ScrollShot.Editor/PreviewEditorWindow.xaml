@@ -118,7 +118,13 @@
                 <StackPanel Grid.Column="2"
                             Orientation="Horizontal"
                             VerticalAlignment="Center">
+                    <TextBlock x:Name="CropHintTextBlock"
+                               VerticalAlignment="Center"
+                               Foreground="{DynamicResource SecondaryForegroundBrush}"
+                               FontSize="12"
+                               Text="Drag on the image to crop." />
                     <TextBlock x:Name="EditSummaryTextBlock"
+                               Margin="12,0,0,0"
                                VerticalAlignment="Center"
                                Foreground="{DynamicResource SecondaryForegroundBrush}"
                                FontSize="12"
@@ -135,6 +141,11 @@
                 <StackPanel Grid.Column="3"
                             Orientation="Horizontal"
                             VerticalAlignment="Center">
+                    <Button x:Name="ClearCropButton"
+                            Margin="0,0,8,0"
+                            Content="Clear Crop"
+                            Command="{Binding ClearCropCommand}"
+                            Visibility="Collapsed" />
                     <Button Margin="0,0,8,0"
                             Content="Copy"
                             Command="{Binding CopyCommand}" />

@@ -75,6 +75,7 @@ public partial class PreviewEditorWindow : Window
                 ViewportControl.SetCrop(ViewModel.CurrentState.CropRect);
                 ViewportControl.SetCutBands(ViewModel.CurrentState.CutRanges, ViewModel.Direction);
                 ChromeCheckBox.IsChecked = ViewModel.CurrentState.IncludeChrome;
+                UpdateCropAffordances();
                 break;
             case nameof(PreviewEditorViewModel.PreviewImage):
                 RefreshPreviewSurface();
@@ -102,6 +103,7 @@ public partial class PreviewEditorWindow : Window
         EditSummaryTextBlock.Text = ViewModel.EditSummary;
         ChromeCheckBox.IsChecked = ViewModel.CurrentState.IncludeChrome;
         CutBandToggleButton.Visibility = ViewModel.IsScrollingCapture ? Visibility.Visible : Visibility.Collapsed;
+        UpdateCropAffordances();
     }
 
     private void RefreshPreviewSurface()
@@ -176,6 +178,20 @@ public partial class PreviewEditorWindow : Window
     private void OnChromeCheckBoxClick(object sender, RoutedEventArgs e)
     {
         ViewModel?.ToggleChromeCommand.Execute(null);
+    }
+
+    private void UpdateCropAffordances()
+    {
+        if (ViewModel is null)
+        {
+            return;
+        }
+
+        CropHintTextBlock.Text = ViewModel.HasCrop
+            ? "Drag the crop box or its handles to adjust it. Press Esc or use Clear Crop to remove it."
+            : "Drag on the image to crop.";
+        ClearCropButton.Visibility = ViewModel.HasCrop ? Visibility.Visible : Visibility.Collapsed;
+        EditSummaryTextBlock.Visibility = string.IsNullOrWhiteSpace(ViewModel.EditSummary) ? Visibility.Collapsed : Visibility.Visible;
     }
 
     private void OnCutBandClick(object sender, RoutedEventArgs e)
