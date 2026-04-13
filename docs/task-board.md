@@ -35,6 +35,7 @@
 | Phase 30 | Completed | Guided overlay capture flow | Reworked the selection overlay so region selection leads to explicit instant/vertical/horizontal capture actions, refreshed the live preview strip, and kept the existing shortcut path as a secondary convenience instead of the only discoverable workflow |
 | Phase 31 | Completed | Explicit editor modes and export workflow | Rebuilt the editor around visible pan/crop and trim/cut modes, added real zoom controls and fit-to-view behavior, surfaced edit/export summaries, and added close-confirmation behavior so users do not accidentally discard unsaved work |
 | Phase 32 | Completed | Tone down styling and restore contrast | Kept the improved layout and workflows, but switched the shared UI styling back to a restrained light palette with dark text, simpler control styling, and less shouty labeling so the app reads more like a native desktop tool than a themed mockup |
+| Phase 33 | Completed | Collapse secondary settings panes | Kept the primary capture pane fully visible, but tucked output, shortcut, and advanced settings behind collapsed expanders so the main window defaults to a much simpler first-run surface |
 
 ## Commits
 
@@ -73,6 +74,7 @@
 | Phase 30 | `f96ccc6` |
 | Phase 31 | `cea5ca2` |
 | Phase 32 | `6b41378` |
+| Phase 33 | `e18fc79` |
 
 ## Notes
 
@@ -81,6 +83,7 @@
 - The newest UI pass shifts the product from a prototype-style WPF surface toward a more intentional app flow: the shared theme now gives the app/editor/overlay one visual language, the main window is task-first instead of field-first, and the overlay no longer depends on memorized mouse/keyboard lore to start the right capture mode.
 - The editor workflow is now more explicit too: crop is a visible tool instead of a hidden `Ctrl` gesture, trim and cut are separate modes with guidance, zoom has real toolbar controls plus an actual fit-to-view implementation, and the side inspector makes export state/edit state readable before saving.
 - The immediate follow-up pass deliberately pulled the styling back toward a more native Windows feel after the first theme pass proved too dark and too loud. Layout, spacing, and workflow improvements stay; the visual system is now lighter, higher-contrast, and less decorative.
+- The next simplification pass narrowed the main window further: the top pane remains a dedicated “start capture” surface, while the rest of the configuration is now progressive disclosure. That keeps the app approachable for first-time users without removing the secondary controls.
 - The current algorithm-improvement loop now has an offline path: generate overlapping datasets from a ground-truth image, replay them through `ScrollSession`, and compare against the expected final image.
 - Real scroll captures can now emit opt-in debug datasets from the app itself, including raw frames, manifest metadata, and a stitched output/report snapshot for offline analysis.
 - The first real-dump stabilization pass focused on correctness over aggressive appending: defer locking zones on unusable starter pairs, retry zone detection when overlap matching fails, and compare overlaps on a stable central crop to reduce edge-noise sensitivity.
