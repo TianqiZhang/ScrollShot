@@ -114,6 +114,8 @@ public partial class PreviewEditorWindow : Window
         }
 
         ViewportControl.SetImage(ViewModel.PreviewImage);
+        ViewportControl.SetCrop(ViewModel.CurrentState.CropRect);
+        ViewportControl.SetCutBands(ViewModel.CurrentState.CutRanges, ViewModel.Direction);
         DimensionsTextBlock.Text = ViewModel.PreviewSizeText;
 
         if (!_hasInitializedViewport &&

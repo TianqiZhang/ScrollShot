@@ -15,7 +15,7 @@ public partial class ImageViewport : UserControl
 {
     private const double HandleHitRadius = 6;
     private const double HandleSize = 10;
-    private const double MinCropPixels = 2;
+    private const int MinCropPixels = 2;
 
     private BitmapSource? _image;
     private CropRect? _cropRect;
@@ -61,7 +61,7 @@ public partial class ImageViewport : UserControl
 
     public void SetCrop(CropRect? cropRect)
     {
-        _cropRect = cropRect;
+        _cropRect = ClampCropToImage(cropRect);
         UpdateCropVisuals();
     }
 
@@ -82,6 +82,11 @@ public partial class ImageViewport : UserControl
 
         foreach (var cut in cutRanges)
         {
+            if (!TryGetClampedCutRange(cut, direction, out var startPixel, out var endPixel))
+            {
+                continue;
+            }
+
             var rect = new Rectangle
             {
                 Fill = new SolidColorBrush(Color.FromArgb(120, 220, 53, 69)),
@@ -91,15 +96,15 @@ public partial class ImageViewport : UserControl
             if (direction == ScrollDirection.Vertical)
             {
                 Canvas.SetLeft(rect, 0);
-                Canvas.SetTop(rect, cut.StartPixel);
+                Canvas.SetTop(rect, startPixel);
                 rect.Width = _image.PixelWidth;
-                rect.Height = cut.EndPixel - cut.StartPixel;
+                rect.Height = endPixel - startPixel;
             }
             else
             {
-                Canvas.SetLeft(rect, cut.StartPixel);
+                Canvas.SetLeft(rect, startPixel);
                 Canvas.SetTop(rect, 0);
-                rect.Width = cut.EndPixel - cut.StartPixel;
+                rect.Width = endPixel - startPixel;
                 rect.Height = _image.PixelHeight;
             }
 
@@ -188,7 +193,7 @@ public partial class ImageViewport : UserControl
             _cutBandStart = _dragStartImage;
             CutBandPreview.Visibility = Visibility.Visible;
             UpdateCutBandPreview(_dragStartImage, _dragStartImage);
-            CaptureMouse();
+            ScrollViewer.CaptureMouse();
             return;
         }
 
@@ -199,7 +204,7 @@ public partial class ImageViewport : UserControl
             {
                 _currentDrag = handle;
                 _dragStartCrop = crop;
-                CaptureMouse();
+                ScrollViewer.CaptureMouse();
                 return;
             }
 
@@ -207,21 +212,21 @@ public partial class ImageViewport : UserControl
             {
                 _currentDrag = DragAction.MoveCrop;
                 _dragStartCrop = crop;
-                CaptureMouse();
+                ScrollViewer.CaptureMouse();
                 return;
             }
         }
 
         // Outside crop (or no crop): start new crop
         _currentDrag = DragAction.NewCrop;
-        CaptureMouse();
+        ScrollViewer.CaptureMouse();
     }
 
     private void OnMouseMove(object sender, MouseEventArgs e)
     {
         if (_isCutBandMode && _cutBandStart is not null && e.LeftButton == MouseButtonState.Pressed)
         {
-            UpdateCutBandPreview(_cutBandStart.Value, e.GetPosition(OverlayCanvas));
+            UpdateCutBandPreview(_cutBandStart.Value, ClampToImageBounds(e.GetPosition(OverlayCanvas)));
             return;
         }
 
@@ -241,12 +246,12 @@ public partial class ImageViewport : UserControl
             return;
         }
 
-        var imagePos = e.GetPosition(OverlayCanvas);
+        var clampedImagePos = ClampToImageBounds(e.GetPosition(OverlayCanvas));
 
         switch (_currentDrag)
         {
             case DragAction.NewCrop:
-                var newRect = MakeRect(_dragStartImage, imagePos);
+                var newRect = MakeRect(_dragStartImage, clampedImagePos);
                 if (newRect.Width >= MinCropPixels && newRect.Height >= MinCropPixels)
                 {
                     _cropRect = new CropRect((int)newRect.X, (int)newRect.Y, (int)newRect.Width, (int)newRect.Height);
@@ -256,16 +261,16 @@ public partial class ImageViewport : UserControl
                 break;
 
             case DragAction.MoveCrop when _dragStartCrop is { } startCrop:
-                var dx = (int)(imagePos.X - _dragStartImage.X);
-                var dy = (int)(imagePos.Y - _dragStartImage.Y);
-                _cropRect = new CropRect(startCrop.X + dx, startCrop.Y + dy, startCrop.Width, startCrop.Height);
+                var dx = (int)(clampedImagePos.X - _dragStartImage.X);
+                var dy = (int)(clampedImagePos.Y - _dragStartImage.Y);
+                _cropRect = ClampCropToImage(new CropRect(startCrop.X + dx, startCrop.Y + dy, startCrop.Width, startCrop.Height));
                 UpdateCropVisuals();
                 break;
 
             default:
                 if (_currentDrag >= DragAction.ResizeTL && _dragStartCrop is { } sc)
                 {
-                    _cropRect = ResizeCrop(sc, _currentDrag, imagePos);
+                    _cropRect = ResizeCrop(sc, _currentDrag, clampedImagePos, _image?.PixelWidth ?? 0, _image?.PixelHeight ?? 0);
                     UpdateCropVisuals();
                 }
 
@@ -277,11 +282,11 @@ public partial class ImageViewport : UserControl
     {
         if (_isCutBandMode && _cutBandStart is not null)
         {
-            var endPos = e.GetPosition(OverlayCanvas);
+            var endPos = ClampToImageBounds(e.GetPosition(OverlayCanvas));
             CutBandPreview.Visibility = Visibility.Collapsed;
             EmitCutBand(_cutBandStart.Value, endPos);
             _cutBandStart = null;
-            ReleaseMouseCapture();
+            ScrollViewer.ReleaseMouseCapture();
             return;
         }
 
@@ -289,7 +294,7 @@ public partial class ImageViewport : UserControl
         {
             if (_currentDrag == DragAction.NewCrop)
             {
-                var finalPos = e.GetPosition(OverlayCanvas);
+                var finalPos = ClampToImageBounds(e.GetPosition(OverlayCanvas));
                 var finalRect = MakeRect(_dragStartImage, finalPos);
                 if (finalRect.Width < MinCropPixels || finalRect.Height < MinCropPixels)
                 {
@@ -311,7 +316,7 @@ public partial class ImageViewport : UserControl
 
             _currentDrag = DragAction.None;
             _dragStartCrop = null;
-            ReleaseMouseCapture();
+            ScrollViewer.ReleaseMouseCapture();
         }
     }
 
@@ -320,13 +325,13 @@ public partial class ImageViewport : UserControl
     private void OnMouseRightButtonDown(object sender, MouseButtonEventArgs e)
     {
         _rightPanStart = e.GetPosition(this);
-        CaptureMouse();
+        ScrollViewer.CaptureMouse();
     }
 
     private void OnMouseRightButtonUp(object sender, MouseButtonEventArgs e)
     {
         _rightPanStart = null;
-        ReleaseMouseCapture();
+        ScrollViewer.ReleaseMouseCapture();
     }
 
     // --- Crop visuals ---
@@ -435,52 +440,48 @@ public partial class ImageViewport : UserControl
                imagePos.Y >= crop.Y && imagePos.Y <= crop.Y + crop.Height;
     }
 
-    private static CropRect ResizeCrop(CropRect start, DragAction handle, Point imagePos)
+    private static CropRect ResizeCrop(CropRect start, DragAction handle, Point imagePos, int imageWidth, int imageHeight)
     {
         var left = start.X;
         var top = start.Y;
         var right = start.X + start.Width;
         var bottom = start.Y + start.Height;
+        var clampedX = Math.Clamp((int)imagePos.X, 0, imageWidth);
+        var clampedY = Math.Clamp((int)imagePos.Y, 0, imageHeight);
 
         switch (handle)
         {
             case DragAction.ResizeTL:
-                left = (int)imagePos.X;
-                top = (int)imagePos.Y;
+                left = Math.Clamp(clampedX, 0, Math.Max(0, right - MinCropPixels));
+                top = Math.Clamp(clampedY, 0, Math.Max(0, bottom - MinCropPixels));
                 break;
             case DragAction.ResizeTC:
-                top = (int)imagePos.Y;
+                top = Math.Clamp(clampedY, 0, Math.Max(0, bottom - MinCropPixels));
                 break;
             case DragAction.ResizeTR:
-                right = (int)imagePos.X;
-                top = (int)imagePos.Y;
+                right = Math.Clamp(clampedX, Math.Min(imageWidth, left + MinCropPixels), imageWidth);
+                top = Math.Clamp(clampedY, 0, Math.Max(0, bottom - MinCropPixels));
                 break;
             case DragAction.ResizeML:
-                left = (int)imagePos.X;
+                left = Math.Clamp(clampedX, 0, Math.Max(0, right - MinCropPixels));
                 break;
             case DragAction.ResizeMR:
-                right = (int)imagePos.X;
+                right = Math.Clamp(clampedX, Math.Min(imageWidth, left + MinCropPixels), imageWidth);
                 break;
             case DragAction.ResizeBL:
-                left = (int)imagePos.X;
-                bottom = (int)imagePos.Y;
+                left = Math.Clamp(clampedX, 0, Math.Max(0, right - MinCropPixels));
+                bottom = Math.Clamp(clampedY, Math.Min(imageHeight, top + MinCropPixels), imageHeight);
                 break;
             case DragAction.ResizeBC:
-                bottom = (int)imagePos.Y;
+                bottom = Math.Clamp(clampedY, Math.Min(imageHeight, top + MinCropPixels), imageHeight);
                 break;
             case DragAction.ResizeBR:
-                right = (int)imagePos.X;
-                bottom = (int)imagePos.Y;
+                right = Math.Clamp(clampedX, Math.Min(imageWidth, left + MinCropPixels), imageWidth);
+                bottom = Math.Clamp(clampedY, Math.Min(imageHeight, top + MinCropPixels), imageHeight);
                 break;
         }
 
-        // Normalize in case user dragged past opposite edge
-        var x = Math.Min(left, right);
-        var y = Math.Min(top, bottom);
-        var w = Math.Max(1, Math.Abs(right - left));
-        var h = Math.Max(1, Math.Abs(bottom - top));
-
-        return new CropRect(x, y, w, h);
+        return new CropRect(left, top, Math.Max(MinCropPixels, right - left), Math.Max(MinCropPixels, bottom - top));
     }
 
     private void UpdateCursor(Point imagePos)
@@ -517,6 +518,9 @@ public partial class ImageViewport : UserControl
             return;
         }
 
+        start = ClampToImageBounds(start);
+        current = ClampToImageBounds(current);
+
         if (_cutDirection == ScrollDirection.Vertical)
         {
             var y1 = Math.Min(start.Y, current.Y);
@@ -539,6 +543,14 @@ public partial class ImageViewport : UserControl
 
     private void EmitCutBand(Point start, Point end)
     {
+        if (_image is null)
+        {
+            return;
+        }
+
+        start = ClampToImageBounds(start);
+        end = ClampToImageBounds(end);
+
         int startPixel, endPixel;
         if (_cutDirection == ScrollDirection.Vertical)
         {
@@ -553,8 +565,43 @@ public partial class ImageViewport : UserControl
 
         if (endPixel - startPixel > 1)
         {
-            CutRequested?.Invoke(this, new CutRange(Math.Max(0, startPixel), endPixel));
+            var axisLength = _cutDirection == ScrollDirection.Vertical ? _image.PixelHeight : _image.PixelWidth;
+            CutRequested?.Invoke(this, new CutRange(Math.Clamp(startPixel, 0, axisLength), Math.Clamp(endPixel, 0, axisLength)));
         }
+    }
+
+    private Point ClampToImageBounds(Point point)
+    {
+        if (_image is null)
+        {
+            return point;
+        }
+
+        return new Point(
+            Math.Clamp(point.X, 0, _image.PixelWidth),
+            Math.Clamp(point.Y, 0, _image.PixelHeight));
+    }
+
+    private CropRect? ClampCropToImage(CropRect? cropRect)
+    {
+        if (cropRect is null || _image is null)
+        {
+            return cropRect;
+        }
+
+        var width = Math.Min(cropRect.Value.Width, _image.PixelWidth);
+        var height = Math.Min(cropRect.Value.Height, _image.PixelHeight);
+        var x = Math.Clamp(cropRect.Value.X, 0, Math.Max(0, _image.PixelWidth - width));
+        var y = Math.Clamp(cropRect.Value.Y, 0, Math.Max(0, _image.PixelHeight - height));
+        return new CropRect(x, y, width, height);
+    }
+
+    private bool TryGetClampedCutRange(CutRange cutRange, ScrollDirection direction, out int startPixel, out int endPixel)
+    {
+        var axisLength = direction == ScrollDirection.Vertical ? _image?.PixelHeight ?? 0 : _image?.PixelWidth ?? 0;
+        startPixel = Math.Clamp(cutRange.StartPixel, 0, axisLength);
+        endPixel = Math.Clamp(cutRange.EndPixel, 0, axisLength);
+        return endPixel > startPixel;
     }
 
     private static Rect MakeRect(Point a, Point b)
