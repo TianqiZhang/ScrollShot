@@ -19,16 +19,15 @@
                        MouseMove="OnMouseMove"
                        MouseRightButtonDown="OnMouseRightButtonDown"
                        MouseRightButtonUp="OnMouseRightButtonUp">
-            <Grid>
+            <Grid HorizontalAlignment="Left"
+                  VerticalAlignment="Top">
+                <Grid.LayoutTransform>
+                    <ScaleTransform x:Name="ScaleTransform"
+                                    ScaleX="1"
+                                    ScaleY="1" />
+                </Grid.LayoutTransform>
                 <Image x:Name="ViewportImage"
-                       Stretch="None"
-                       RenderTransformOrigin="0,0">
-                    <Image.RenderTransform>
-                        <ScaleTransform x:Name="ScaleTransform"
-                                        ScaleX="1"
-                                        ScaleY="1" />
-                    </Image.RenderTransform>
-                </Image>
+                       Stretch="None" />
                 <Canvas x:Name="OverlayCanvas"
                         Background="Transparent"
                         ClipToBounds="True">
