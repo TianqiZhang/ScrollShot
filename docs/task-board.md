@@ -46,6 +46,7 @@
 | Phase 41 | Completed | Tighten hotkey combo sizing | Reduced the shared ComboBox padding/min-height used by the settings hotkey dropdowns so they feel closer to native control sizing instead of oversized |
 | Phase 42 | Completed | Restore direct capture flow | Removed the post-selection action menu from the overlay and returned to the simpler direct flow: select a region, then use Enter or the mouse wheel shortcuts without an extra decision step |
 | Phase 43 | Completed | Remove viewport mode overlay | Deleted the in-canvas “Move / Crop” badge from the editor viewport because the side panel already explains the current tool and the overlay was visually redundant |
+| Phase 44 | Completed | Guard editor fit-to-view against zero-size images | Added zero-dimension image guards in `ImageViewport.FitToView()` so malformed or empty bitmap sources fall back safely instead of risking divide-by-zero during zoom-to-fit |
 
 ## Commits
 
@@ -95,6 +96,7 @@
 | Phase 41 | `05d65a3` |
 | Phase 42 | `a255700` |
 | Phase 43 | `111846d` |
+| Phase 44 | `f38292e` |
 
 ## Notes
 
@@ -114,6 +116,7 @@
 - The latest sizing cleanup tightens the shared ComboBox style as well, because the hotkey dropdowns were inheriting an oversized `MinHeight`/`Padding` combination that made them feel bulkier than the rest of the form.
 - The latest capture-flow adjustment rolls back the overlay action menu: the app now returns to the simpler direct flow after selection, while the instruction card explains the Enter / wheel / Shift+wheel shortcuts up front instead of interrupting the flow with a second choice surface.
 - The latest editor cleanup removes the in-canvas mode badge from the viewport too, because mode explanation already exists in the side panel and the overlay only made the editor feel busier.
+- The latest hardening pass closes the only issue raised by the branch review: `ImageViewport.FitToView()` now treats zero-dimension images the same way it already treated unavailable layout dimensions, avoiding a possible divide-by-zero and falling back to 100% zoom safely.
 - The current algorithm-improvement loop now has an offline path: generate overlapping datasets from a ground-truth image, replay them through `ScrollSession`, and compare against the expected final image.
 - Real scroll captures can now emit opt-in debug datasets from the app itself, including raw frames, manifest metadata, and a stitched output/report snapshot for offline analysis.
 - The first real-dump stabilization pass focused on correctness over aggressive appending: defer locking zones on unusable starter pairs, retry zone detection when overlap matching fails, and compare overlaps on a stable central crop to reduce edge-noise sensitivity.
