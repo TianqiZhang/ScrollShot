@@ -1,10 +1,7 @@
 using System.Collections.ObjectModel;
-using System.Diagnostics;
-using System.IO;
 using System.Windows;
 using System.Windows.Input;
 using Forms = System.Windows.Forms;
-using MessageBox = System.Windows.MessageBox;
 using ScrollShot.App.Models;
 using ScrollShot.App.Services;
 
@@ -120,32 +117,6 @@ public partial class SettingsWindow : Window
         return dialog.ShowDialog() == Forms.DialogResult.OK
             ? dialog.SelectedPath
             : null;
-    }
-
-    private static void OpenFolder(string? folder)
-    {
-        if (string.IsNullOrWhiteSpace(folder))
-        {
-            return;
-        }
-
-        try
-        {
-            Directory.CreateDirectory(folder);
-            Process.Start(new ProcessStartInfo
-            {
-                FileName = folder,
-                UseShellExecute = true,
-            });
-        }
-        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or InvalidOperationException or System.ComponentModel.Win32Exception)
-        {
-            MessageBox.Show(
-                exception.Message,
-                "ScrollShot",
-                MessageBoxButton.OK,
-                MessageBoxImage.Warning);
-        }
     }
 
     private static void SelectOrInsertOption<T>(

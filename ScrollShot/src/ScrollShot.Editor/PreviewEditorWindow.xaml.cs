@@ -74,7 +74,41 @@ public partial class PreviewEditorWindow : Window
 
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        RefreshFromViewModel();
+        if (ViewModel is null)
+        {
+            return;
+        }
+
+        switch (e.PropertyName)
+        {
+            case nameof(PreviewEditorViewModel.CurrentState):
+                ViewportControl.SetCrop(ViewModel.CurrentState.CropRect);
+                RefreshTimelineState();
+                break;
+            case nameof(PreviewEditorViewModel.PreviewImage):
+            case nameof(PreviewEditorViewModel.PreviewPrimaryAxisLength):
+                RefreshPreviewSurface();
+                RefreshTimelineState();
+                break;
+            case nameof(PreviewEditorViewModel.PreviewSizeText):
+                PreviewMetricsTextBlock.Text = ViewModel.PreviewSizeText;
+                break;
+            case nameof(PreviewEditorViewModel.ChromeSummary):
+                ChromeSummaryTextBlock.Text = ViewModel.ChromeSummary;
+                break;
+            case nameof(PreviewEditorViewModel.EditSummary):
+                EditSummaryTextBlock.Text = ViewModel.EditSummary;
+                break;
+            case nameof(PreviewEditorViewModel.SaveLocationHint):
+                SaveLocationTextBlock.Text = ViewModel.SaveLocationHint;
+                break;
+            case nameof(PreviewEditorViewModel.HasUnsavedChanges):
+                UpdateDirtyState();
+                break;
+            default:
+                RefreshFromViewModel();
+                break;
+        }
     }
 
     private void RefreshFromViewModel()
@@ -84,31 +118,15 @@ public partial class PreviewEditorWindow : Window
             return;
         }
 
-        ViewportControl.SetImage(ViewModel.PreviewImage);
         ViewportControl.SetCrop(ViewModel.CurrentState.CropRect);
-        TimelineStripControl.SetState(
-            ViewModel.PreviewImage,
-            ViewModel.Direction,
-            ViewModel.PreviewPrimaryAxisLength,
-            ViewModel.CurrentState.TrimRange,
-            ViewModel.CurrentState.CutRanges);
-        TimelineStripControl.SetEditMode(_timelineMode);
-
+        RefreshPreviewSurface();
+        RefreshTimelineState();
         EditorTitleTextBlock.Text = ViewModel.HasTimeline ? "Finish your scrolling capture" : "Review your screenshot";
         EditorSubtitleTextBlock.Text = "Crop, trim, and remove anything you do not want before saving.";
-        DirtyStateTextBlock.Text = ViewModel.HasUnsavedChanges ? "Unsaved changes" : "Saved";
-        DirtyStateTextBlock.Foreground = (Brush)(TryFindResource(ViewModel.HasUnsavedChanges ? "DangerBrush" : "SuccessBrush") ?? Brushes.White);
-        PreviewMetricsTextBlock.Text = ViewModel.PreviewSizeText;
+        UpdateDirtyState();
         ChromeSummaryTextBlock.Text = ViewModel.ChromeSummary;
         EditSummaryTextBlock.Text = ViewModel.EditSummary;
         SaveLocationTextBlock.Text = ViewModel.SaveLocationHint;
-
-        if (!_hasInitializedViewport && ViewModel.PreviewImage is not null)
-        {
-            _hasInitializedViewport = true;
-            ViewportControl.FitToView();
-            UpdateZoomText(ViewportControl.ZoomFactor);
-        }
 
         TimelineStripControl.Visibility = ViewModel.HasTimeline ? Visibility.Visible : Visibility.Collapsed;
         if (!ViewModel.HasTimeline)
@@ -136,6 +154,51 @@ public partial class PreviewEditorWindow : Window
             Grid.SetColumnSpan(TimelineStripControl, 2);
             TimelineStripControl.Margin = new Thickness(0, 12, 0, 0);
         }
+    }
+
+    private void RefreshPreviewSurface()
+    {
+        if (ViewModel is null)
+        {
+            return;
+        }
+
+        ViewportControl.SetImage(ViewModel.PreviewImage);
+        PreviewMetricsTextBlock.Text = ViewModel.PreviewSizeText;
+
+        if (!_hasInitializedViewport && ViewModel.PreviewImage is not null)
+        {
+            _hasInitializedViewport = true;
+            ViewportControl.FitToView();
+            UpdateZoomText(ViewportControl.ZoomFactor);
+        }
+    }
+
+    private void RefreshTimelineState()
+    {
+        if (ViewModel is null)
+        {
+            return;
+        }
+
+        TimelineStripControl.SetState(
+            ViewModel.PreviewImage,
+            ViewModel.Direction,
+            ViewModel.PreviewPrimaryAxisLength,
+            ViewModel.CurrentState.TrimRange,
+            ViewModel.CurrentState.CutRanges);
+        TimelineStripControl.SetEditMode(_timelineMode);
+    }
+
+    private void UpdateDirtyState()
+    {
+        if (ViewModel is null)
+        {
+            return;
+        }
+
+        DirtyStateTextBlock.Text = ViewModel.HasUnsavedChanges ? "Unsaved changes" : "Saved";
+        DirtyStateTextBlock.Foreground = (Brush)(TryFindResource(ViewModel.HasUnsavedChanges ? "DangerBrush" : "SuccessBrush") ?? Brushes.White);
     }
 
     private void OnCutRequested(object? sender, Models.CutRange e)
