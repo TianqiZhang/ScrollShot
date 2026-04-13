@@ -1,0 +1,156 @@
+<Window x:Class="ScrollShot.App.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="ScrollShot Settings"
+        Height="700"
+        Width="760"
+        MinHeight="620"
+        MinWidth="680"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="CanMinimize">
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="24" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="20" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0">
+            <TextBlock FontSize="12"
+                       FontWeight="SemiBold"
+                       Foreground="{DynamicResource SecondaryForegroundBrush}"
+                       Text="Settings" />
+            <TextBlock Margin="0,8,0,6"
+                       FontSize="26"
+                       FontWeight="SemiBold"
+                       Text="Adjust save location, shortcut, and advanced options" />
+            <TextBlock Style="{StaticResource SectionSubtitleTextBlockStyle}"
+                       Text="These are secondary controls, so they live in a separate dialog instead of the main capture surface." />
+        </StackPanel>
+
+        <Border Grid.Row="2"
+                Style="{StaticResource CardBorderStyle}">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource FieldLabelTextBlockStyle}"
+                               Text="Save folder" />
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBox x:Name="SaveFolderTextBox"
+                                 Grid.Column="0"
+                                 Margin="0,0,12,8" />
+                        <Button Grid.Column="1"
+                                Margin="0,0,0,8"
+                                Content="Browse"
+                                Click="OnBrowseSaveFolderClick" />
+                    </Grid>
+
+                    <TextBlock Margin="0,0,0,16"
+                               Style="{StaticResource SectionSubtitleTextBlockStyle}"
+                               Text="Files are named with a capture timestamp. A synced screenshots folder works well if you share captures often." />
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="16" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Style="{StaticResource FieldLabelTextBlockStyle}"
+                                       Text="Modifiers" />
+                            <ComboBox x:Name="HotkeyModifiersComboBox"
+                                      DisplayMemberPath="Label"
+                                      SelectionChanged="OnHotkeySelectionChanged" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Style="{StaticResource FieldLabelTextBlockStyle}"
+                                       Text="Key" />
+                            <ComboBox x:Name="HotkeyKeyComboBox"
+                                      DisplayMemberPath="Label"
+                                      SelectionChanged="OnHotkeySelectionChanged" />
+                        </StackPanel>
+                    </Grid>
+
+                    <Border Margin="0,8,0,0"
+                            Background="{DynamicResource CardMutedBackgroundBrush}"
+                            BorderBrush="{DynamicResource BorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="12"
+                            Padding="14">
+                        <StackPanel>
+                            <TextBlock FontSize="12"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource SecondaryForegroundBrush}"
+                                       Text="Registered hotkey" />
+                            <TextBlock x:Name="HotkeyHelpTextBlock"
+                                       Margin="0,6,0,0"
+                                       FontSize="16"
+                                       FontWeight="SemiBold"
+                                       Text="Ctrl+Shift+S" />
+                        </StackPanel>
+                    </Border>
+
+                    <TextBlock Margin="0,8,0,16"
+                               Style="{StaticResource SectionSubtitleTextBlockStyle}"
+                               Text="The shortcut keeps working while ScrollShot is hidden in the tray." />
+
+                    <CheckBox x:Name="StartWithWindowsCheckBox"
+                              Content="Start ScrollShot automatically when Windows starts" />
+                    <CheckBox x:Name="ScrollCaptureDebugDumpEnabledCheckBox"
+                              Content="Save raw scroll-capture debug dumps for replay and stitching analysis" />
+
+                    <TextBlock Style="{StaticResource FieldLabelTextBlockStyle}"
+                               Text="Debug dump folder" />
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBox x:Name="DebugDumpFolderTextBox"
+                                 Grid.Column="0"
+                                 Margin="0,0,12,8" />
+                        <Button Grid.Column="1"
+                                Margin="0,0,0,8"
+                                Content="Browse"
+                                Click="OnBrowseDebugDumpFolderClick" />
+                    </Grid>
+
+                    <TextBlock Style="{StaticResource SectionSubtitleTextBlockStyle}"
+                               Text="Enable this only while diagnosing stitching issues. It stores frame sequences and reports on disk." />
+                </StackPanel>
+            </ScrollViewer>
+        </Border>
+
+        <DockPanel Grid.Row="4"
+                   LastChildFill="False">
+            <TextBlock x:Name="StatusTextBlock"
+                       VerticalAlignment="Center"
+                       FontSize="13"
+                       Foreground="{DynamicResource SecondaryForegroundBrush}"
+                       TextWrapping="Wrap"
+                       Text="Ready." />
+
+            <StackPanel DockPanel.Dock="Right"
+                        Orientation="Horizontal">
+                <Button Width="100"
+                        Margin="0,0,12,0"
+                        Content="Close"
+                        IsCancel="True" />
+                <Button Width="150"
+                        Style="{StaticResource PrimaryButtonStyle}"
+                        Content="Save Settings"
+                        Click="OnSaveSettingsClick" />
+            </StackPanel>
+        </DockPanel>
+    </Grid>
+</Window>
