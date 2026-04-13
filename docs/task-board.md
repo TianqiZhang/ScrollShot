@@ -31,6 +31,9 @@
 | Phase 26 | Completed | Bidirectional performance pass 7: directional 1D candidate ranking | Ranked overlap candidates with a cheap 1D luma profile and only ran the full exact scan when those candidates did not already contain an excellent match, then kept the pass after another Release dev-suite drop plus a clean correctness gate |
 | Phase 27 | Completed | Bidirectional performance pass 8: threshold-driven exact early exit | Short-circuited exact luma overlap diffs once a candidate could no longer beat the current match/excellent thresholds, then kept the pass after another Release dev-suite drop plus a clean correctness gate |
 | Phase 28 | Completed | Promote bidirectional profile to default | Compared `current` against `bidirectional-current` on the shared correctness datasets, confirmed the old default was wrong on multiple datasets while the bidirectional profile stayed exact on the available ground truths, and switched the default factory/replay profile to `bidirectional-current` while keeping the old `current` profile available explicitly |
+| Phase 29 | Completed | Shared theme foundation and main-window redesign | Added a shared dark theme resource set, restyled core controls, rebuilt the main window around capture/output/shortcut/advanced sections, and replaced raw hotkey enum text entry with browseable folders plus readable hotkey pickers |
+| Phase 30 | Completed | Guided overlay capture flow | Reworked the selection overlay so region selection leads to explicit instant/vertical/horizontal capture actions, refreshed the live preview strip, and kept the existing shortcut path as a secondary convenience instead of the only discoverable workflow |
+| Phase 31 | Completed | Explicit editor modes and export workflow | Rebuilt the editor around visible pan/crop and trim/cut modes, added real zoom controls and fit-to-view behavior, surfaced edit/export summaries, and added close-confirmation behavior so users do not accidentally discard unsaved work |
 
 ## Commits
 
@@ -65,11 +68,16 @@
 | Phase 26 | `1b191c8` |
 | Phase 27 | `9863d6b` |
 | Phase 28 | `212eaf6` |
+| Phase 29 | `c5a3b70` |
+| Phase 30 | `f96ccc6` |
+| Phase 31 | `cea5ca2` |
 
 ## Notes
 
 - The implementation follows `docs\design.md` and the current stitching plan in `docs\implementation-plan.md`.
 - Each phase ends with build/test verification before commit.
+- The newest UI pass shifts the product from a prototype-style WPF surface toward a more intentional app flow: the shared theme now gives the app/editor/overlay one visual language, the main window is task-first instead of field-first, and the overlay no longer depends on memorized mouse/keyboard lore to start the right capture mode.
+- The editor workflow is now more explicit too: crop is a visible tool instead of a hidden `Ctrl` gesture, trim and cut are separate modes with guidance, zoom has real toolbar controls plus an actual fit-to-view implementation, and the side inspector makes export state/edit state readable before saving.
 - The current algorithm-improvement loop now has an offline path: generate overlapping datasets from a ground-truth image, replay them through `ScrollSession`, and compare against the expected final image.
 - Real scroll captures can now emit opt-in debug datasets from the app itself, including raw frames, manifest metadata, and a stitched output/report snapshot for offline analysis.
 - The first real-dump stabilization pass focused on correctness over aggressive appending: defer locking zones on unusable starter pairs, retry zone detection when overlap matching fails, and compare overlaps on a stable central crop to reduce edge-noise sensitivity.
