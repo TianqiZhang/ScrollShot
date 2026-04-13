@@ -1,6 +1,7 @@
 using System.Drawing;
 using System.IO;
 using System.Windows;
+using MessageBox = System.Windows.MessageBox;
 using ScrollShot.App.Models;
 using ScrollShot.Capture;
 using ScrollShot.Capture.Models;

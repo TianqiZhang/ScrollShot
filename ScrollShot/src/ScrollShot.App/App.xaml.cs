@@ -1,11 +1,12 @@
 using System.Windows;
+using MessageBox = System.Windows.MessageBox;
 using ScrollShot.App.Models;
 using ScrollShot.App.Services;
 using ScrollShot.Scroll;
 
 namespace ScrollShot.App;
 
-public partial class App : Application
+public partial class App : System.Windows.Application
 {
     private TrayIconManager? _trayIconManager;
     private GlobalHotkeyService? _hotkeyService;
