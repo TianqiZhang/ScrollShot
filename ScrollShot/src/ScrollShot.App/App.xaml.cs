@@ -1,11 +1,12 @@
 using System.Windows;
+using MessageBox = System.Windows.MessageBox;
 using ScrollShot.App.Models;
 using ScrollShot.App.Services;
 using ScrollShot.Scroll;
 
 namespace ScrollShot.App;
 
-public partial class App : Application
+public partial class App : System.Windows.Application
 {
     private TrayIconManager? _trayIconManager;
     private GlobalHotkeyService? _hotkeyService;
@@ -36,7 +37,7 @@ public partial class App : Application
         _captureOrchestrator = new CaptureOrchestrator(() => _currentSettings, new ScrollSessionFactory());
         _trayIconManager = new TrayIconManager();
         _hotkeyService = new GlobalHotkeyService();
-        _mainWindow = new MainWindow(_captureOrchestrator, _settingsService, _startupRegistrationService, ApplySettings, _currentSettings);
+        _mainWindow = new MainWindow(_captureOrchestrator, _settingsService, ApplySettings, _currentSettings);
 
         _trayIconManager.NewCaptureRequested += async (_, _) => await _captureOrchestrator.BeginCaptureAsync();
         _trayIconManager.ShowWindowRequested += (_, _) => ShowMainWindow();

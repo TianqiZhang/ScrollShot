@@ -1,6 +1,7 @@
 using System.Drawing;
 using System.IO;
 using System.Windows;
+using MessageBox = System.Windows.MessageBox;
 using ScrollShot.App.Models;
 using ScrollShot.Capture;
 using ScrollShot.Capture.Models;
@@ -52,7 +53,7 @@ public sealed class CaptureOrchestrator
             debugDumpWarningShown = true;
             MessageBox.Show(
                 debugDumpSession.FailureMessage,
-                "ScrollShot Debug Dump",
+                "ScrollShot Diagnostics",
                 MessageBoxButton.OK,
                 MessageBoxImage.Warning);
         }
@@ -226,8 +227,8 @@ public sealed class CaptureOrchestrator
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or ArgumentException)
         {
             MessageBox.Show(
-                $"Scroll capture debug dump could not be started.\n\n{exception.Message}",
-                "ScrollShot Debug Dump",
+                $"ScrollShot could not start saving diagnostic capture files.\n\n{exception.Message}",
+                "ScrollShot Diagnostics",
                 MessageBoxButton.OK,
                 MessageBoxImage.Warning);
             return null;

@@ -6,19 +6,41 @@
              mc:Ignorable="d"
              d:DesignHeight="320"
              d:DesignWidth="200">
-    <Border Background="#1A1A1A"
-            BorderBrush="#444"
+    <Border Background="{DynamicResource CardBackgroundBrush}"
+            BorderBrush="{DynamicResource BorderBrush}"
             BorderThickness="1"
-            CornerRadius="6"
-            Padding="4">
+            CornerRadius="16"
+            Padding="10">
         <Grid>
-            <Image x:Name="ThumbnailImage"
-                   Stretch="Fill" />
-            <Canvas x:Name="OverlayCanvas"
-                    Background="Transparent"
-                    MouseLeftButtonDown="OnOverlayMouseLeftButtonDown"
-                    MouseLeftButtonUp="OnOverlayMouseLeftButtonUp"
-                    MouseMove="OnOverlayMouseMove" />
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="10" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <StackPanel Grid.Row="0">
+                <TextBlock x:Name="ModeTextBlock"
+                           FontSize="14"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource PrimaryForegroundBrush}"
+                           Text="Trim ends" />
+                <TextBlock x:Name="HintTextBlock"
+                           Margin="0,4,0,0"
+                           FontSize="12"
+                           Foreground="{DynamicResource SecondaryForegroundBrush}"
+                           TextWrapping="Wrap"
+                           Text="Drag the top and bottom handles to shorten the capture." />
+            </StackPanel>
+
+            <Grid Grid.Row="2">
+                <Image x:Name="ThumbnailImage"
+                       Stretch="Fill" />
+                <Canvas x:Name="OverlayCanvas"
+                        Background="Transparent"
+                        MouseLeftButtonDown="OnOverlayMouseLeftButtonDown"
+                        MouseLeftButtonUp="OnOverlayMouseLeftButtonUp"
+                        MouseMove="OnOverlayMouseMove" />
+            </Grid>
         </Grid>
     </Border>
 </UserControl>

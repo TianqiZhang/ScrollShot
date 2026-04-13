@@ -24,6 +24,7 @@ public sealed class PreviewEditorViewModel : INotifyPropertyChanged
     private readonly Func<DateTimeOffset> _nowProvider;
     private readonly RelayCommand _undoCommand;
     private readonly RelayCommand _redoCommand;
+    private readonly RelayCommand _clearCropCommand;
     private BitmapSource? _previewImage;
     private string? _lastSavedPath;
     private EditState _currentState;
@@ -50,6 +51,7 @@ public sealed class PreviewEditorViewModel : INotifyPropertyChanged
 
         _undoCommand = new RelayCommand(() => ApplyState(EditCommands.Undo()), () => EditCommands.CanUndo);
         _redoCommand = new RelayCommand(() => ApplyState(EditCommands.Redo()), () => EditCommands.CanRedo);
+        _clearCropCommand = new RelayCommand(() => SetCrop(null), () => CurrentState.CropRect is not null);
         SaveCommand = new RelayCommand(Save);
         CopyCommand = new RelayCommand(Copy);
         DiscardCommand = new RelayCommand(Discard);
@@ -78,6 +80,9 @@ public sealed class PreviewEditorViewModel : INotifyPropertyChanged
             _currentState = value;
             OnPropertyChanged();
             OnPropertyChanged(nameof(HasUnsavedChanges));
+            OnPropertyChanged(nameof(HasCrop));
+            OnPropertyChanged(nameof(EditSummary));
+            OnPropertyChanged(nameof(ChromeSummary));
         }
     }
 
@@ -87,6 +92,10 @@ public sealed class PreviewEditorViewModel : INotifyPropertyChanged
 
     public string SaveFolder { get; }
 
+    public string SaveLocationHint => LastSavedPath is null
+        ? $"Images are saved to {SaveFolder}"
+        : $"Last saved to {LastSavedPath}";
+
     public string? LastSavedPath
     {
         get => _lastSavedPath;
@@ -94,6 +103,7 @@ public sealed class PreviewEditorViewModel : INotifyPropertyChanged
         {
             _lastSavedPath = value;
             OnPropertyChanged();
+            OnPropertyChanged(nameof(SaveLocationHint));
         }
     }
 
@@ -105,6 +115,7 @@ public sealed class PreviewEditorViewModel : INotifyPropertyChanged
             _previewImage = value;
             OnPropertyChanged();
             OnPropertyChanged(nameof(PreviewPrimaryAxisLength));
+            OnPropertyChanged(nameof(PreviewSizeText));
         }
     }
 
@@ -114,9 +125,23 @@ public sealed class PreviewEditorViewModel : INotifyPropertyChanged
             ? PreviewImage.PixelHeight
             : PreviewImage.PixelWidth;
 
+    public string PreviewSizeText => PreviewImage is null
+        ? "No preview"
+        : $"{PreviewImage.PixelWidth} × {PreviewImage.PixelHeight} px";
+
+    public bool HasCrop => CurrentState.CropRect is not null;
+
+    public string ChromeSummary => CurrentState.IncludeChrome
+        ? "The window frame will stay in the saved image."
+        : "The window frame will be removed from the saved image.";
+
+    public string EditSummary => BuildEditSummary(CurrentState);
+
     public ICommand UndoCommand => _undoCommand;
 
     public ICommand RedoCommand => _redoCommand;
+
+    public ICommand ClearCropCommand => _clearCropCommand;
 
     public ICommand SaveCommand { get; }
 
@@ -174,6 +199,7 @@ public sealed class PreviewEditorViewModel : INotifyPropertyChanged
         RefreshPreview();
         _undoCommand.RaiseCanExecuteChanged();
         _redoCommand.RaiseCanExecuteChanged();
+        _clearCropCommand.RaiseCanExecuteChanged();
     }
 
     private void RefreshPreview()
@@ -190,5 +216,33 @@ public sealed class PreviewEditorViewModel : INotifyPropertyChanged
     private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
     {
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
+
+    private static string BuildEditSummary(EditState state)
+    {
+        var parts = new List<string>();
+        if (state.TrimRange.HeadTrimPixels > 0 || state.TrimRange.TailTrimPixels > 0)
+        {
+            parts.Add($"Trim {state.TrimRange.HeadTrimPixels}px / {state.TrimRange.TailTrimPixels}px");
+        }
+
+        if (state.CutRanges.Count > 0)
+        {
+            parts.Add($"{state.CutRanges.Count} cut{(state.CutRanges.Count == 1 ? string.Empty : "s")}");
+        }
+
+        if (state.CropRect is { } cropRect)
+        {
+            parts.Add($"Crop {cropRect.Width} × {cropRect.Height}");
+        }
+
+        if (!state.IncludeChrome)
+        {
+            parts.Add("Window frame removed");
+        }
+
+        return parts.Count == 0
+            ? "No changes yet. Choose a tool, then drag on the image or the strip below."
+            : string.Join(" · ", parts);
     }
 }

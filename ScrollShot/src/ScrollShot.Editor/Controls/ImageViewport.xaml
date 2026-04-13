@@ -6,17 +6,18 @@
              mc:Ignorable="d"
              d:DesignHeight="450"
              d:DesignWidth="800">
-    <Border Background="#111"
-            BorderBrush="#444"
+    <Border Background="{DynamicResource CardMutedBackgroundBrush}"
+            BorderBrush="{DynamicResource BorderBrush}"
             BorderThickness="1"
-            CornerRadius="6">
+            CornerRadius="16">
         <ScrollViewer x:Name="ScrollViewer"
-                      PreviewMouseWheel="OnPreviewMouseWheel"
-                      MouseLeftButtonDown="OnMouseLeftButtonDown"
-                      MouseLeftButtonUp="OnMouseLeftButtonUp"
-                      MouseMove="OnMouseMove">
+                       PreviewMouseWheel="OnPreviewMouseWheel"
+                       MouseLeftButtonDown="OnMouseLeftButtonDown"
+                       MouseLeftButtonUp="OnMouseLeftButtonUp"
+                       MouseMove="OnMouseMove">
             <Grid>
                 <Image x:Name="ViewportImage"
+                       Stretch="None"
                        RenderTransformOrigin="0,0">
                     <Image.RenderTransform>
                         <ScaleTransform x:Name="ScaleTransform"
@@ -27,9 +28,9 @@
                 <Canvas x:Name="OverlayCanvas"
                         Background="Transparent">
                     <Rectangle x:Name="CropRectangle"
-                               Stroke="Orange"
+                               Stroke="{DynamicResource AccentBrush}"
                                StrokeThickness="2"
-                               Fill="#22FFA500"
+                               Fill="#2260A5FA"
                                Visibility="Collapsed" />
                 </Canvas>
             </Grid>

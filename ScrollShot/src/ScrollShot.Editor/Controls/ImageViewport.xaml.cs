@@ -8,20 +8,34 @@ using Rect = System.Windows.Rect;
 
 namespace ScrollShot.Editor.Controls;
 
+public enum ImageViewportInteractionMode
+{
+    Pan,
+    Crop,
+}
+
 public partial class ImageViewport : UserControl
 {
     private Point? _lastPanPoint;
     private Point? _cropStart;
+    private BitmapSource? _image;
+    private ImageViewportInteractionMode _interactionMode;
 
     public ImageViewport()
     {
         InitializeComponent();
+        UpdateInteractionVisuals();
     }
 
     public event EventHandler<CropRect?>? CropChanged;
 
+    public event EventHandler<double>? ZoomChanged;
+
+    public double ZoomFactor => ScaleTransform.ScaleX;
+
     public void SetImage(BitmapSource? image)
     {
+        _image = image;
         ViewportImage.Source = image;
         OverlayCanvas.Width = image?.PixelWidth ?? 0;
         OverlayCanvas.Height = image?.PixelHeight ?? 0;
@@ -42,33 +56,62 @@ public partial class ImageViewport : UserControl
         CropRectangle.Height = cropRect.Value.Height;
     }
 
-    public void FitToView()
+    public bool FitToView()
     {
-        ScaleTransform.ScaleX = 1;
-        ScaleTransform.ScaleY = 1;
+        if (_image is null ||
+            _image.PixelWidth <= 0 ||
+            _image.PixelHeight <= 0 ||
+            ScrollViewer.ViewportWidth <= 0 ||
+            ScrollViewer.ViewportHeight <= 0)
+        {
+            SetZoom(1);
+            return false;
+        }
+
+        var fitScale = Math.Min(
+            ScrollViewer.ViewportWidth / _image.PixelWidth,
+            ScrollViewer.ViewportHeight / _image.PixelHeight);
+        SetZoom(Math.Clamp(fitScale, 0.1, 5.0));
+        return true;
     }
 
     public void SetOneToOne()
     {
-        ScaleTransform.ScaleX = 1;
-        ScaleTransform.ScaleY = 1;
+        SetZoom(1);
+    }
+
+    public void ZoomIn()
+    {
+        SetZoom(ScaleTransform.ScaleX + 0.1);
+    }
+
+    public void ZoomOut()
+    {
+        SetZoom(ScaleTransform.ScaleX - 0.1);
+    }
+
+    public void SetInteractionMode(ImageViewportInteractionMode interactionMode)
+    {
+        _interactionMode = interactionMode;
+        UpdateInteractionVisuals();
     }
 
     private void OnPreviewMouseWheel(object sender, MouseWheelEventArgs e)
     {
-        var delta = e.Delta > 0 ? 0.1 : -0.1;
-        var nextScale = Math.Clamp(ScaleTransform.ScaleX + delta, 0.2, 5.0);
-        ScaleTransform.ScaleX = nextScale;
-        ScaleTransform.ScaleY = nextScale;
+        SetZoom(ScaleTransform.ScaleX + (e.Delta > 0 ? 0.1 : -0.1));
         e.Handled = true;
     }
 
     private void OnMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
-        if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
+        if (_interactionMode == ImageViewportInteractionMode.Crop)
         {
             _cropStart = e.GetPosition(OverlayCanvas);
             CropRectangle.Visibility = Visibility.Visible;
+            Canvas.SetLeft(CropRectangle, _cropStart.Value.X);
+            Canvas.SetTop(CropRectangle, _cropStart.Value.Y);
+            CropRectangle.Width = 0;
+            CropRectangle.Height = 0;
         }
         else
         {
@@ -115,5 +158,20 @@ public partial class ImageViewport : UserControl
         _lastPanPoint = null;
         _cropStart = null;
         ReleaseMouseCapture();
+    }
+
+    private void SetZoom(double zoom)
+    {
+        var normalizedZoom = Math.Clamp(zoom, 0.1, 5.0);
+        ScaleTransform.ScaleX = normalizedZoom;
+        ScaleTransform.ScaleY = normalizedZoom;
+        ZoomChanged?.Invoke(this, normalizedZoom);
+    }
+
+    private void UpdateInteractionVisuals()
+    {
+        Cursor = _interactionMode == ImageViewportInteractionMode.Crop
+            ? Cursors.Cross
+            : Cursors.SizeAll;
     }
 }
