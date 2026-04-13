@@ -1,7 +1,6 @@
 using System.ComponentModel;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Media;
+using System.Windows.Input;
 using ScrollShot.Editor.Controls;
 using ScrollShot.Editor.ViewModels;
 
@@ -9,7 +8,6 @@ namespace ScrollShot.Editor;
 
 public partial class PreviewEditorWindow : Window
 {
-    private ImageViewportInteractionMode _viewportMode = ImageViewportInteractionMode.Pan;
     private bool _isClosingFromViewModel;
     private bool _hasInitializedViewport;
 
@@ -20,6 +18,9 @@ public partial class PreviewEditorWindow : Window
         DataContextChanged += OnDataContextChanged;
         Closing += OnClosing;
         ViewportControl.ZoomChanged += OnViewportZoomChanged;
+        ViewportControl.CropChanged += OnCropChanged;
+        ViewportControl.CutRequested += OnCutRequested;
+        KeyDown += OnWindowKeyDown;
     }
 
     public PreviewEditorWindow(PreviewEditorViewModel viewModel)
@@ -33,16 +34,15 @@ public partial class PreviewEditorWindow : Window
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
         HookViewModel(ViewModel);
-        SetViewportMode(ImageViewportInteractionMode.Pan);
         RefreshFromViewModel();
     }
 
     private void OnDataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
     {
-        if (e.OldValue is PreviewEditorViewModel oldViewModel)
+        if (e.OldValue is PreviewEditorViewModel oldVm)
         {
-            oldViewModel.PropertyChanged -= OnViewModelPropertyChanged;
-            oldViewModel.CloseRequested -= OnCloseRequested;
+            oldVm.PropertyChanged -= OnViewModelPropertyChanged;
+            oldVm.CloseRequested -= OnCloseRequested;
         }
 
         HookViewModel(e.NewValue as PreviewEditorViewModel);
@@ -60,9 +60,6 @@ public partial class PreviewEditorWindow : Window
         viewModel.CloseRequested -= OnCloseRequested;
         viewModel.PropertyChanged += OnViewModelPropertyChanged;
         viewModel.CloseRequested += OnCloseRequested;
-
-        ViewportControl.CropChanged -= OnCropChanged;
-        ViewportControl.CropChanged += OnCropChanged;
     }
 
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -76,28 +73,17 @@ public partial class PreviewEditorWindow : Window
         {
             case nameof(PreviewEditorViewModel.CurrentState):
                 ViewportControl.SetCrop(ViewModel.CurrentState.CropRect);
+                ViewportControl.SetCutBands(ViewModel.CurrentState.CutRanges, ViewModel.Direction);
+                ChromeCheckBox.IsChecked = ViewModel.CurrentState.IncludeChrome;
                 break;
             case nameof(PreviewEditorViewModel.PreviewImage):
-            case nameof(PreviewEditorViewModel.PreviewPrimaryAxisLength):
                 RefreshPreviewSurface();
                 break;
             case nameof(PreviewEditorViewModel.PreviewSizeText):
-                PreviewMetricsTextBlock.Text = ViewModel.PreviewSizeText;
-                break;
-            case nameof(PreviewEditorViewModel.ChromeSummary):
-                ChromeSummaryTextBlock.Text = ViewModel.ChromeSummary;
+                DimensionsTextBlock.Text = ViewModel.PreviewSizeText;
                 break;
             case nameof(PreviewEditorViewModel.EditSummary):
                 EditSummaryTextBlock.Text = ViewModel.EditSummary;
-                break;
-            case nameof(PreviewEditorViewModel.SaveLocationHint):
-                SaveLocationTextBlock.Text = ViewModel.SaveLocationHint;
-                break;
-            case nameof(PreviewEditorViewModel.HasUnsavedChanges):
-                UpdateDirtyState();
-                break;
-            default:
-                RefreshFromViewModel();
                 break;
         }
     }
@@ -109,14 +95,13 @@ public partial class PreviewEditorWindow : Window
             return;
         }
 
-        ViewportControl.SetCrop(ViewModel.CurrentState.CropRect);
         RefreshPreviewSurface();
-        EditorTitleTextBlock.Text = ViewModel.HasTimeline ? "Finish your scrolling capture" : "Review your screenshot";
-        EditorSubtitleTextBlock.Text = "Crop, trim, and remove anything you do not want before saving.";
-        UpdateDirtyState();
-        ChromeSummaryTextBlock.Text = ViewModel.ChromeSummary;
+        ViewportControl.SetCrop(ViewModel.CurrentState.CropRect);
+        ViewportControl.SetCutBands(ViewModel.CurrentState.CutRanges, ViewModel.Direction);
+        DimensionsTextBlock.Text = ViewModel.PreviewSizeText;
         EditSummaryTextBlock.Text = ViewModel.EditSummary;
-        SaveLocationTextBlock.Text = ViewModel.SaveLocationHint;
+        ChromeCheckBox.IsChecked = ViewModel.CurrentState.IncludeChrome;
+        CutBandToggleButton.Visibility = ViewModel.IsScrollingCapture ? Visibility.Visible : Visibility.Collapsed;
     }
 
     private void RefreshPreviewSurface()
@@ -127,7 +112,7 @@ public partial class PreviewEditorWindow : Window
         }
 
         ViewportControl.SetImage(ViewModel.PreviewImage);
-        PreviewMetricsTextBlock.Text = ViewModel.PreviewSizeText;
+        DimensionsTextBlock.Text = ViewModel.PreviewSizeText;
 
         if (!_hasInitializedViewport &&
             ViewModel.PreviewImage is not null &&
@@ -138,20 +123,16 @@ public partial class PreviewEditorWindow : Window
         }
     }
 
-    private void UpdateDirtyState()
-    {
-        if (ViewModel is null)
-        {
-            return;
-        }
-
-        DirtyStateTextBlock.Text = ViewModel.HasUnsavedChanges ? "Unsaved changes" : "Saved";
-        DirtyStateTextBlock.Foreground = (Brush)(TryFindResource(ViewModel.HasUnsavedChanges ? "DangerBrush" : "SuccessBrush") ?? Brushes.White);
-    }
-
     private void OnCropChanged(object? sender, Models.CropRect? e)
     {
         ViewModel?.SetCrop(e);
+    }
+
+    private void OnCutRequested(object? sender, Models.CutRange e)
+    {
+        ViewModel?.AddCut(e);
+        CutBandToggleButton.IsChecked = false;
+        ViewportControl.SetCutBandMode(false);
     }
 
     private void OnCloseRequested(object? sender, PreviewEditorCloseRequestedEventArgs e)
@@ -174,54 +155,47 @@ public partial class PreviewEditorWindow : Window
         ViewModel.DiscardCommand.Execute(null);
     }
 
-    private void OnPanModeClick(object sender, RoutedEventArgs e)
+    private void OnWindowKeyDown(object sender, KeyEventArgs e)
     {
-        SetViewportMode(ImageViewportInteractionMode.Pan);
+        if (e.Key == Key.Escape)
+        {
+            if (ViewportControl.IsCutBandMode)
+            {
+                CutBandToggleButton.IsChecked = false;
+                ViewportControl.SetCutBandMode(false);
+            }
+            else if (ViewModel?.CurrentState.CropRect is not null)
+            {
+                ViewModel.SetCrop(null);
+            }
+
+            e.Handled = true;
+        }
     }
 
-    private void OnCropModeClick(object sender, RoutedEventArgs e)
+    private void OnChromeCheckBoxClick(object sender, RoutedEventArgs e)
     {
-        SetViewportMode(ImageViewportInteractionMode.Crop);
+        ViewModel?.ToggleChromeCommand.Execute(null);
     }
 
-    private void OnZoomOutClick(object sender, RoutedEventArgs e)
+    private void OnCutBandClick(object sender, RoutedEventArgs e)
     {
-        ViewportControl.ZoomOut();
+        var isActive = CutBandToggleButton.IsChecked == true;
+        ViewportControl.SetCutBandMode(isActive);
     }
 
-    private void OnZoomInClick(object sender, RoutedEventArgs e)
-    {
-        ViewportControl.ZoomIn();
-    }
+    private void OnZoomOutClick(object sender, RoutedEventArgs e) => ViewportControl.ZoomOut();
 
-    private void OnFitClick(object sender, RoutedEventArgs e)
-    {
-        ViewportControl.FitToView();
-    }
+    private void OnZoomInClick(object sender, RoutedEventArgs e) => ViewportControl.ZoomIn();
 
-    private void OnOneToOneClick(object sender, RoutedEventArgs e)
-    {
-        ViewportControl.SetOneToOne();
-    }
+    private void OnFitClick(object sender, RoutedEventArgs e) => ViewportControl.FitToView();
 
-    private void OnViewportZoomChanged(object? sender, double zoomFactor)
-    {
-        UpdateZoomText(zoomFactor);
-    }
+    private void OnOneToOneClick(object sender, RoutedEventArgs e) => ViewportControl.SetOneToOne();
 
-    private void SetViewportMode(ImageViewportInteractionMode mode)
-    {
-        _viewportMode = mode;
-        ViewportControl.SetInteractionMode(mode);
-        PanModeToggleButton.IsChecked = mode == ImageViewportInteractionMode.Pan;
-        CropModeToggleButton.IsChecked = mode == ImageViewportInteractionMode.Crop;
-        ViewportModeHintTextBlock.Text = mode == ImageViewportInteractionMode.Pan
-            ? "Move lets you look around the image. Use the mouse wheel or the zoom buttons to get a closer look."
-            : "Crop lets you drag a box around the part you want to keep. Use Clear Crop if you want to start over.";
-    }
+    private void OnViewportZoomChanged(object? sender, double zoomFactor) => UpdateZoomText(zoomFactor);
 
     private void UpdateZoomText(double zoomFactor)
     {
-        ZoomTextBlock.Text = $"{zoomFactor:P0}";
+        ZoomTextBlock.Text = $"{(int)(zoomFactor * 100)}%";
     }
 }

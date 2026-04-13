@@ -72,6 +72,8 @@ public sealed class PreviewEditorViewModel : INotifyPropertyChanged
 
     public bool HasTimeline => _captureResult.IsScrollingCapture;
 
+    public bool IsScrollingCapture => _captureResult.IsScrollingCapture;
+
     public EditState CurrentState
     {
         get => _currentState;
@@ -242,7 +244,7 @@ public sealed class PreviewEditorViewModel : INotifyPropertyChanged
         }
 
         return parts.Count == 0
-            ? "No changes yet. Choose a tool, then drag on the image or the strip below."
-            : string.Join(" · ", parts);
+            ? ""
+            : string.Join(" \u00b7 ", parts);
     }
 }
