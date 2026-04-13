@@ -155,8 +155,12 @@ public partial class MainWindow : Window
         {
             Description = description,
             ShowNewFolderButton = true,
-            InitialDirectory = string.IsNullOrWhiteSpace(initialPath) ? null : initialPath,
         };
+
+        if (!string.IsNullOrWhiteSpace(initialPath))
+        {
+            dialog.InitialDirectory = initialPath;
+        }
 
         return dialog.ShowDialog() == Forms.DialogResult.OK
             ? dialog.SelectedPath
