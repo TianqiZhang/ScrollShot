@@ -40,6 +40,7 @@
 | Phase 35 | Completed | Remove separate status pane | Removed the dedicated status pane entirely and kept any remaining save/validation feedback inline inside the settings pane, which leaves the main window with just the primary capture pane plus progressive-disclosure settings |
 | Phase 36 | Completed | Make settings a single expander | Replaced the nested “pane plus inner expanders” structure with one top-level collapsed settings expander, so the main window now defaults to a very compact surface and only reveals the full settings form when the user intentionally opens it |
 | Phase 37 | Completed | Move settings into modal dialog | Simplified the main window down to the menu bar plus the primary capture pane, then moved all save-location / shortcut / advanced configuration into a separate settings dialog opened from the menu bar |
+| Phase 38 | Completed | Rewrite end-user copy and tighten UI sizing | Reworked user-facing text across the main window, settings dialog, overlay, live preview, and editor so it reads like product copy, then tightened sizing/spacing to remove obvious extra whitespace and unnecessary scrollbars |
 
 ## Commits
 
@@ -83,6 +84,7 @@
 | Phase 35 | `0649abc` |
 | Phase 36 | `6142530` |
 | Phase 37 | `0a8c04b` |
+| Phase 38 | `dc2c217` |
 
 ## Notes
 
@@ -96,6 +98,7 @@
 - The newest cleanup pass removed the last leftover structural noise from the main window: there is no separate status pane anymore, because save/validation feedback is more coherent when shown inline with the settings action that produced it.
 - The most recent simplification completes that direction: the settings surface is now one collapsed expander instead of a visible pane containing more hidden subsections, which keeps the first-run UI compact and makes “open settings” a single deliberate action.
 - The latest IA change goes one step further and makes the separation explicit: the main window is now just the capture surface, while settings live in their own dialog behind the menu bar. That keeps the core UI very focused and makes configuration feel like a secondary workflow instead of part of the primary surface.
+- The newest polish pass finishes the wording/sizing cleanup requested after that IA change: user-facing text across the main window, settings dialog, overlay, live preview, and editor now reads like product copy instead of internal tooling language, and the most obvious extra space / auto-scroll surfaces were tightened so the UI feels less temporary.
 - The current algorithm-improvement loop now has an offline path: generate overlapping datasets from a ground-truth image, replay them through `ScrollSession`, and compare against the expected final image.
 - Real scroll captures can now emit opt-in debug datasets from the app itself, including raw frames, manifest metadata, and a stitched output/report snapshot for offline analysis.
 - The first real-dump stabilization pass focused on correctness over aggressive appending: defer locking zones on unusable starter pairs, retry zone detection when overlap matching fails, and compare overlaps on a stable central crop to reduce edge-noise sensitivity.
