@@ -68,9 +68,9 @@
             <Setter Property="Foreground" Value="{DynamicResource PrimaryForegroundBrush}" />
             <Setter Property="BorderBrush" Value="{DynamicResource InputBorderBrush}" />
             <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="Padding" Value="10,6" />
+            <Setter Property="Padding" Value="10,5" />
             <Setter Property="Margin" Value="0,0,0,8" />
-            <Setter Property="MinHeight" Value="38" />
+            <Setter Property="MinHeight" Value="34" />
         </Style>
 
         <Style TargetType="CheckBox">
