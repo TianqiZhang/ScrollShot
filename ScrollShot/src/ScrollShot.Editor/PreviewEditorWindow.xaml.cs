@@ -74,7 +74,6 @@ public partial class PreviewEditorWindow : Window
             case nameof(PreviewEditorViewModel.CurrentState):
                 ViewportControl.SetCrop(ViewModel.CurrentState.CropRect);
                 ViewportControl.SetCutBands(ViewModel.CurrentState.CutRanges, ViewModel.Direction);
-                ChromeCheckBox.IsChecked = ViewModel.CurrentState.IncludeChrome;
                 UpdateCropAffordances();
                 break;
             case nameof(PreviewEditorViewModel.PreviewImage):
@@ -101,7 +100,6 @@ public partial class PreviewEditorWindow : Window
         ViewportControl.SetCutBands(ViewModel.CurrentState.CutRanges, ViewModel.Direction);
         DimensionsTextBlock.Text = ViewModel.PreviewSizeText;
         EditSummaryTextBlock.Text = ViewModel.EditSummary;
-        ChromeCheckBox.IsChecked = ViewModel.CurrentState.IncludeChrome;
         CutBandToggleButton.Visibility = ViewModel.IsScrollingCapture ? Visibility.Visible : Visibility.Collapsed;
         UpdateCropAffordances();
     }

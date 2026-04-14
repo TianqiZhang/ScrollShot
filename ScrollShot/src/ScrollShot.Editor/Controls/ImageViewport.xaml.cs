@@ -92,6 +92,7 @@ public partial class ImageViewport : UserControl
                 Fill = new SolidColorBrush(Color.FromArgb(120, 220, 53, 69)),
                 IsHitTestVisible = false,
             };
+            Panel.SetZIndex(rect, -1);
 
             if (direction == ScrollDirection.Vertical)
             {
