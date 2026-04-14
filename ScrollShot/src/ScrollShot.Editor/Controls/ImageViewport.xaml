@@ -9,29 +9,57 @@
     <Border Background="{DynamicResource CardMutedBackgroundBrush}"
             BorderBrush="{DynamicResource BorderBrush}"
             BorderThickness="1"
-            CornerRadius="16">
+            CornerRadius="12">
         <ScrollViewer x:Name="ScrollViewer"
+                       HorizontalScrollBarVisibility="Auto"
+                       VerticalScrollBarVisibility="Auto"
                        PreviewMouseWheel="OnPreviewMouseWheel"
                        MouseLeftButtonDown="OnMouseLeftButtonDown"
                        MouseLeftButtonUp="OnMouseLeftButtonUp"
-                       MouseMove="OnMouseMove">
-            <Grid>
+                       MouseMove="OnMouseMove"
+                       MouseRightButtonDown="OnMouseRightButtonDown"
+                       MouseRightButtonUp="OnMouseRightButtonUp">
+            <Grid HorizontalAlignment="Left"
+                  VerticalAlignment="Top">
+                <Grid.LayoutTransform>
+                    <ScaleTransform x:Name="ScaleTransform"
+                                    ScaleX="1"
+                                    ScaleY="1" />
+                </Grid.LayoutTransform>
                 <Image x:Name="ViewportImage"
-                       Stretch="None"
-                       RenderTransformOrigin="0,0">
-                    <Image.RenderTransform>
-                        <ScaleTransform x:Name="ScaleTransform"
-                                        ScaleX="1"
-                                        ScaleY="1" />
-                    </Image.RenderTransform>
-                </Image>
+                       Stretch="None" />
                 <Canvas x:Name="OverlayCanvas"
-                        Background="Transparent">
-                    <Rectangle x:Name="CropRectangle"
+                        Background="Transparent"
+                        ClipToBounds="True">
+                    <!-- Dim overlay: 4 rectangles around crop -->
+                    <Rectangle x:Name="DimTop" Fill="#66000000" Visibility="Collapsed" IsHitTestVisible="False" />
+                    <Rectangle x:Name="DimBottom" Fill="#66000000" Visibility="Collapsed" IsHitTestVisible="False" />
+                    <Rectangle x:Name="DimLeft" Fill="#66000000" Visibility="Collapsed" IsHitTestVisible="False" />
+                    <Rectangle x:Name="DimRight" Fill="#66000000" Visibility="Collapsed" IsHitTestVisible="False" />
+
+                    <!-- Crop border -->
+                    <Rectangle x:Name="CropBorder"
                                Stroke="{DynamicResource AccentBrush}"
                                StrokeThickness="2"
-                               Fill="#2260A5FA"
-                               Visibility="Collapsed" />
+                               Fill="Transparent"
+                               Visibility="Collapsed"
+                               IsHitTestVisible="False" />
+
+                    <!-- 8 crop handles -->
+                    <Rectangle x:Name="HandleTL" Width="10" Height="10" Fill="{DynamicResource AccentBrush}" Visibility="Collapsed" IsHitTestVisible="False" />
+                    <Rectangle x:Name="HandleTC" Width="10" Height="10" Fill="{DynamicResource AccentBrush}" Visibility="Collapsed" IsHitTestVisible="False" />
+                    <Rectangle x:Name="HandleTR" Width="10" Height="10" Fill="{DynamicResource AccentBrush}" Visibility="Collapsed" IsHitTestVisible="False" />
+                    <Rectangle x:Name="HandleML" Width="10" Height="10" Fill="{DynamicResource AccentBrush}" Visibility="Collapsed" IsHitTestVisible="False" />
+                    <Rectangle x:Name="HandleMR" Width="10" Height="10" Fill="{DynamicResource AccentBrush}" Visibility="Collapsed" IsHitTestVisible="False" />
+                    <Rectangle x:Name="HandleBL" Width="10" Height="10" Fill="{DynamicResource AccentBrush}" Visibility="Collapsed" IsHitTestVisible="False" />
+                    <Rectangle x:Name="HandleBC" Width="10" Height="10" Fill="{DynamicResource AccentBrush}" Visibility="Collapsed" IsHitTestVisible="False" />
+                    <Rectangle x:Name="HandleBR" Width="10" Height="10" Fill="{DynamicResource AccentBrush}" Visibility="Collapsed" IsHitTestVisible="False" />
+
+                    <!-- Cut band preview during drag -->
+                    <Rectangle x:Name="CutBandPreview"
+                               Fill="#50DC3545"
+                               Visibility="Collapsed"
+                               IsHitTestVisible="False" />
                 </Canvas>
             </Grid>
         </ScrollViewer>

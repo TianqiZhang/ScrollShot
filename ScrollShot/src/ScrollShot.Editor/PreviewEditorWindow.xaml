@@ -1,287 +1,159 @@
 <Window x:Class="ScrollShot.Editor.PreviewEditorWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:controls="clr-namespace:ScrollShot.Editor.Controls"
-        mc:Ignorable="d"
         Title="ScrollShot Editor"
         Height="860"
         Width="1360"
         MinHeight="720"
         MinWidth="1120"
         WindowStartupLocation="CenterOwner">
-    <Grid x:Name="RootGrid"
-          Margin="12">
+    <Window.InputBindings>
+        <KeyBinding Key="Z" Modifiers="Ctrl" Command="{Binding UndoCommand}" />
+        <KeyBinding Key="Y" Modifiers="Ctrl" Command="{Binding RedoCommand}" />
+        <KeyBinding Key="S" Modifiers="Ctrl" Command="{Binding SaveCommand}" />
+        <KeyBinding Key="C" Modifiers="Ctrl" Command="{Binding CopyCommand}" />
+    </Window.InputBindings>
+    <Grid Margin="12">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
-            <RowDefinition Height="12" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="12" />
+            <RowDefinition Height="8" />
             <RowDefinition Height="*" />
-            <RowDefinition Height="0" />
+            <RowDefinition Height="8" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*" />
-            <ColumnDefinition Width="220" />
-            <ColumnDefinition Width="300" />
-        </Grid.ColumnDefinitions>
 
+        <!-- Toolbar -->
         <Border Grid.Row="0"
-                Grid.ColumnSpan="3"
-                Style="{StaticResource CardBorderStyle}">
+                Style="{StaticResource CardBorderStyle}"
+                Padding="14,10">
             <Grid>
                 <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <StackPanel>
-                    <TextBlock FontSize="12"
-                               FontWeight="SemiBold"
-                               Foreground="{DynamicResource SecondaryForegroundBrush}"
-                               Text="Editor" />
-                    <TextBlock x:Name="EditorTitleTextBlock"
-                               Margin="0,8,0,6"
-                               FontSize="28"
-                               FontWeight="SemiBold"
-                               Text="Finish your capture" />
-                    <TextBlock x:Name="EditorSubtitleTextBlock"
-                               FontSize="14"
-                               Foreground="{DynamicResource SecondaryForegroundBrush}"
-                               TextWrapping="Wrap"
-                               Text="Crop, trim, and remove anything you do not want before saving the final image." />
-                </StackPanel>
-
-                <Border Grid.Column="1"
-                        Background="{DynamicResource CardMutedBackgroundBrush}"
-                        BorderBrush="{DynamicResource BorderBrush}"
-                        BorderThickness="1"
-                        CornerRadius="12"
-                        Padding="14,12"
-                        Margin="20,0,0,0"
-                        VerticalAlignment="Top">
-                    <StackPanel>
-                        <TextBlock FontSize="12"
-                                   FontWeight="SemiBold"
-                                   Foreground="{DynamicResource SecondaryForegroundBrush}"
-                                   Text="State" />
-                        <TextBlock x:Name="DirtyStateTextBlock"
-                                   Margin="0,6,0,0"
-                                   FontSize="16"
-                                   FontWeight="SemiBold"
-                                   Text="Saved" />
-                    </StackPanel>
-                </Border>
-            </Grid>
-        </Border>
-
-        <Border Grid.Row="2"
-                Grid.ColumnSpan="3"
-                Style="{StaticResource CardBorderStyle}">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-
+                <!-- Left: Undo/Redo + Chrome -->
                 <StackPanel Grid.Column="0"
                             Orientation="Horizontal"
                             VerticalAlignment="Center">
-                    <StackPanel Margin="0,0,18,0">
-                        <TextBlock Style="{StaticResource FieldLabelTextBlockStyle}"
-                                   Text="Image" />
-                        <StackPanel Orientation="Horizontal">
-                            <ToggleButton x:Name="PanModeToggleButton"
-                                          Width="84"
-                                          Margin="0,0,8,0"
-                                          Content="Move"
-                                          Click="OnPanModeClick" />
-                            <ToggleButton x:Name="CropModeToggleButton"
-                                          Width="84"
-                                          Content="Crop"
-                                          Click="OnCropModeClick" />
-                        </StackPanel>
-                    </StackPanel>
-
-                    <StackPanel Margin="0,0,18,0">
-                        <TextBlock Style="{StaticResource FieldLabelTextBlockStyle}"
-                                   Text="Sequence" />
-                        <StackPanel Orientation="Horizontal">
-                            <ToggleButton x:Name="TrimModeToggleButton"
-                                          Width="96"
-                                          Margin="0,0,8,0"
-                                          Content="Trim Ends"
-                                          Click="OnTrimModeClick" />
-                            <ToggleButton x:Name="CutModeToggleButton"
-                                          Width="104"
-                                          Content="Remove Part"
-                                          Click="OnCutModeClick" />
-                        </StackPanel>
-                    </StackPanel>
-
-                    <StackPanel Margin="0,0,18,0">
-                        <TextBlock Style="{StaticResource FieldLabelTextBlockStyle}"
-                                   Text="Edits" />
-                        <StackPanel Orientation="Horizontal">
-                            <Button Width="84"
-                                     Margin="0,0,8,0"
-                                     Content="Undo"
-                                     Command="{Binding UndoCommand}" />
-                            <Button Width="84"
-                                     Margin="0,0,8,0"
-                                     Content="Redo"
-                                     Command="{Binding RedoCommand}" />
-                            <Button Width="104"
-                                    Content="Window Frame"
-                                    Command="{Binding ToggleChromeCommand}" />
-                        </StackPanel>
-                    </StackPanel>
+                    <Button Width="72"
+                            Margin="0,0,6,0"
+                            Content="Undo"
+                            Command="{Binding UndoCommand}" />
+                    <Button Width="72"
+                            Margin="0,0,18,0"
+                            Content="Redo"
+                            Command="{Binding RedoCommand}" />
+                    <CheckBox x:Name="ChromeCheckBox"
+                              VerticalAlignment="Center"
+                              Margin="0"
+                              Content="Window Frame"
+                              IsChecked="{Binding CurrentState.IncludeChrome, Mode=OneWay}"
+                              Click="OnChromeCheckBoxClick" />
                 </StackPanel>
 
-                <StackPanel Grid.Column="1"
+                <!-- Right: Zoom controls -->
+                <StackPanel Grid.Column="2"
                             Orientation="Horizontal"
                             VerticalAlignment="Center">
                     <TextBlock VerticalAlignment="Center"
-                               Margin="0,0,10,0"
+                               Margin="0,0,8,0"
                                Foreground="{DynamicResource SecondaryForegroundBrush}"
+                               FontSize="12"
+                               FontWeight="SemiBold"
                                Text="Zoom" />
-                    <Button Width="42"
-                            Margin="0,0,8,0"
+                    <Button Width="36"
+                            Margin="0,0,4,0"
                             Content="-"
                             Click="OnZoomOutClick" />
                     <TextBlock x:Name="ZoomTextBlock"
-                               Width="72"
+                               Width="56"
                                VerticalAlignment="Center"
                                TextAlignment="Center"
                                FontWeight="SemiBold"
+                               FontSize="13"
                                Text="100%" />
-                    <Button Width="42"
-                            Margin="8,0,8,0"
+                    <Button Width="36"
+                            Margin="4,0,4,0"
                             Content="+"
                             Click="OnZoomInClick" />
-                    <Button Width="64"
-                            Margin="0,0,8,0"
+                    <Button Width="52"
+                            Margin="0,0,4,0"
                             Content="Fit"
                             Click="OnFitClick" />
-                    <Button Width="64"
+                    <Button Width="52"
                             Content="1:1"
                             Click="OnOneToOneClick" />
                 </StackPanel>
             </Grid>
         </Border>
 
+        <!-- Viewport -->
         <controls:ImageViewport x:Name="ViewportControl"
-                                Grid.Row="4"
-                                Grid.Column="0" />
+                                Grid.Row="2" />
 
-        <controls:TimelineStrip x:Name="TimelineStripControl"
-                                Grid.Row="4"
-                                Grid.Column="1"
-                                Margin="12,0,0,0" />
+        <!-- Status Bar -->
+        <Border Grid.Row="4"
+                Style="{StaticResource CardBorderStyle}"
+                Padding="14,10">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="16" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
 
-        <Border x:Name="InspectorPanel"
-                Grid.Row="4"
-                Grid.Column="2"
-                Grid.RowSpan="2"
-                Margin="12,0,0,0"
-                Style="{StaticResource CardBorderStyle}">
-            <StackPanel>
-                    <TextBlock Style="{StaticResource SectionTitleTextBlockStyle}"
-                               Text="Save or share" />
-                    <TextBlock Margin="0,8,0,16"
-                               Style="{StaticResource SectionSubtitleTextBlockStyle}"
-                               Text="When the preview looks right, save it or copy it." />
+                <!-- Left: Dimensions -->
+                <TextBlock x:Name="DimensionsTextBlock"
+                           Grid.Column="0"
+                           VerticalAlignment="Center"
+                           FontSize="13"
+                           FontWeight="SemiBold"
+                           Text="0 x 0 px" />
 
-                    <Button Style="{StaticResource PrimaryButtonStyle}"
-                            Content="Save Image"
-                            Command="{Binding SaveCommand}" />
-                    <Button Margin="0,10,0,0"
-                            Content="Copy Image"
-                            Command="{Binding CopyCommand}" />
-                    <Button Margin="0,10,0,0"
-                            Content="Discard Changes"
-                            Command="{Binding DiscardCommand}" />
-                    <Button Margin="0,10,0,0"
+                <!-- Center: Edit summary + Cut Band -->
+                <StackPanel Grid.Column="2"
+                            Orientation="Horizontal"
+                            VerticalAlignment="Center">
+                    <TextBlock x:Name="CropHintTextBlock"
+                               VerticalAlignment="Center"
+                               Foreground="{DynamicResource SecondaryForegroundBrush}"
+                               FontSize="12"
+                               Text="Drag on the image to crop." />
+                    <TextBlock x:Name="EditSummaryTextBlock"
+                               Margin="12,0,0,0"
+                               VerticalAlignment="Center"
+                               Foreground="{DynamicResource SecondaryForegroundBrush}"
+                               FontSize="12"
+                               Text="" />
+                    <ToggleButton x:Name="CutBandToggleButton"
+                                  Margin="16,0,0,0"
+                                  Padding="10,6"
+                                  Content="Cut Band"
+                                  Click="OnCutBandClick"
+                                  Visibility="Collapsed" />
+                </StackPanel>
+
+                <!-- Right: Save + Copy -->
+                <StackPanel Grid.Column="3"
+                            Orientation="Horizontal"
+                            VerticalAlignment="Center">
+                    <Button x:Name="ClearCropButton"
+                            Margin="0,0,8,0"
                             Content="Clear Crop"
-                            Command="{Binding ClearCropCommand}" />
-
-                    <Border Margin="0,22,0,0"
-                            Background="{DynamicResource CardMutedBackgroundBrush}"
-                            BorderBrush="{DynamicResource BorderBrush}"
-                            BorderThickness="1"
-                            CornerRadius="12"
-                            Padding="14">
-                        <StackPanel>
-                            <TextBlock FontSize="12"
-                                       FontWeight="SemiBold"
-                                       Foreground="{DynamicResource SecondaryForegroundBrush}"
-                                       Text="Preview" />
-                            <TextBlock x:Name="PreviewMetricsTextBlock"
-                                       Margin="0,6,0,0"
-                                       FontSize="16"
-                                       FontWeight="SemiBold"
-                                       Text="0 × 0 px" />
-                            <TextBlock x:Name="ChromeSummaryTextBlock"
-                                       Margin="0,8,0,0"
-                                       FontSize="13"
-                                       Foreground="{DynamicResource SecondaryForegroundBrush}"
-                                       TextWrapping="Wrap"
-                                        Text="The window frame will stay in the saved image." />
-                        </StackPanel>
-                    </Border>
-
-                    <Border Margin="0,16,0,0"
-                            Background="{DynamicResource CardMutedBackgroundBrush}"
-                            BorderBrush="{DynamicResource BorderBrush}"
-                            BorderThickness="1"
-                            CornerRadius="12"
-                            Padding="14">
-                        <StackPanel>
-                            <TextBlock FontSize="12"
-                                       FontWeight="SemiBold"
-                                       Foreground="{DynamicResource SecondaryForegroundBrush}"
-                                       Text="Current edits" />
-                            <TextBlock x:Name="EditSummaryTextBlock"
-                                       Margin="0,8,0,0"
-                                       FontSize="13"
-                                       Foreground="{DynamicResource PrimaryForegroundBrush}"
-                                       TextWrapping="Wrap"
-                                        Text="No changes yet." />
-                        </StackPanel>
-                    </Border>
-
-                    <Border Margin="0,16,0,0"
-                            Background="{DynamicResource CardMutedBackgroundBrush}"
-                            BorderBrush="{DynamicResource BorderBrush}"
-                            BorderThickness="1"
-                            CornerRadius="12"
-                            Padding="14">
-                        <StackPanel>
-                            <TextBlock FontSize="12"
-                                       FontWeight="SemiBold"
-                                       Foreground="{DynamicResource SecondaryForegroundBrush}"
-                                       Text="Workflow tips" />
-                            <TextBlock x:Name="ViewportModeHintTextBlock"
-                                       Margin="0,8,0,0"
-                                       FontSize="13"
-                                       Foreground="{DynamicResource PrimaryForegroundBrush}"
-                                       TextWrapping="Wrap"
-                                        Text="Move lets you look around the image. Crop lets you choose exactly what to keep." />
-                            <TextBlock x:Name="TimelineModeHintTextBlock"
-                                       Margin="0,12,0,0"
-                                       FontSize="13"
-                                       Foreground="{DynamicResource PrimaryForegroundBrush}"
-                                       TextWrapping="Wrap"
-                                        Text="Trim Ends shortens the capture from the beginning or end. Remove Part cuts out something in the middle." />
-                        </StackPanel>
-                    </Border>
-
-                    <TextBlock x:Name="SaveLocationTextBlock"
-                               Margin="0,18,0,0"
-                               Style="{StaticResource SectionSubtitleTextBlockStyle}"
-                               Text="Images are saved to your screenshots folder." />
-            </StackPanel>
+                            Command="{Binding ClearCropCommand}"
+                            Visibility="Collapsed" />
+                    <Button Margin="0,0,8,0"
+                            Content="Copy"
+                            Command="{Binding CopyCommand}" />
+                    <Button Style="{StaticResource PrimaryButtonStyle}"
+                            Content="Save"
+                            Command="{Binding SaveCommand}" />
+                </StackPanel>
+            </Grid>
         </Border>
     </Grid>
 </Window>
